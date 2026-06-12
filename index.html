@@ -26,7 +26,7 @@
 <style>
 :root{
  --ink:#0A1F18;--pitch:#0B3D2E;--pitch2:#125640;--gold:#E8B84B;--gold-soft:#f3e2b4;
- --paper:#FBFAF6;--card:#fff;--line:#e4e7e3;--text:#16211c;--muted:#6b7a72;
+ --paper:#FBFAF6;--card:#fff;--line:#e4e7e3;--text:#16211c;--muted:#586860;
  --advance:#dff3e3;--advance-line:#7cc593;--live:#d8442f;
 }
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
@@ -53,17 +53,17 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .prov .src{font-weight:600;color:var(--pitch)}
 .prov .dot{width:8px;height:8px;border-radius:50%;background:#9fb0a7;display:inline-block}
 .prov.on .dot{background:var(--live);animation:pulse 1.6s infinite}
-.prov .rfr{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--pitch);font-weight:600}
+.prov .rfr{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:7px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--pitch);font-weight:600}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .controls{padding:8px 0 6px}
 #search{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff}
 #search:focus{outline:2px solid var(--pitch);border-color:var(--pitch)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;-webkit-overflow-scrolling:touch}
-.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--pitch);color:#fff;border-color:var(--pitch)}
 .chip:focus-visible{outline:2px solid var(--gold)}
 .next{background:linear-gradient(120deg,#fff,#fbf6e9);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:12px 14px;margin:10px 0 4px;display:flex;align-items:center;gap:12px}
-.next .lab{font-family:Oswald;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:#9a7a1f}
+.next .lab{font-family:Oswald;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:#7d6314}
 .next .m{font-weight:600;font-size:16px}
 .next .cd{margin-left:auto;font-family:Oswald;font-size:15px;color:var(--pitch);white-space:nowrap}
 .livebanner{background:linear-gradient(120deg,#fff,#fdecea);border:1px solid #f3c9c2;border-left:5px solid var(--live);border-radius:12px;padding:12px 14px;margin:10px 0 4px;display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
@@ -81,10 +81,10 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .tline{font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .tline .vs{color:var(--muted);font-weight:500;font-size:12px}
 .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
-.meta .drive{color:#9a7a1f;font-weight:600}
+.meta .drive{color:#7d6314;font-weight:600}
 .badge{font-family:Oswald;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--c,#7A8C99);border-radius:5px;padding:2px 6px;display:inline-block}
 .right{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
-.cal{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--pitch);border-radius:8px;padding:6px 9px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+.cal{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--pitch);border-radius:8px;padding:9px 11px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
 .cal:hover{background:#f3f8f5;border-color:var(--pitch2)}
 .cal svg{width:13px;height:13px}
 .result{font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);background:#eef2ee;border-radius:8px;padding:3px 11px;display:inline-flex;align-items:center;gap:7px}
@@ -93,7 +93,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .livepill{background:var(--live)}
 .htpill{background:#C0922B}
 .ftpill{background:#8a978f}
-.result.half{background:#fdf4e0;color:#9a7a1f}
+.result.half{background:#fdf4e0;color:#7d6314}
 .livedot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -142,6 +142,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  .result{background:#23302a;color:var(--text)}
  .result.ongoing{background:#3a1f1b;color:#ff8a78}
  .result.half{background:#33291a;color:#e8c25f}
+ .next .lab,.meta .drive{color:#e0b552}
  .gcard{background:var(--card)}
  table.st td{border-bottom-color:#222c26}
  td.pos b{background:#28332c;color:var(--text)}
@@ -312,7 +313,7 @@ function renderList(){
   const teams=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
-  let right=new Date(m.utc)>now?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
+  let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
   const es=cardScore(m.n);
   if(es){
    const t=liveTag(es);
