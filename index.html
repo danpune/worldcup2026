@@ -281,14 +281,15 @@ function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
  const rows=MATCHES.filter(passes);
  if(!rows.length){list.innerHTML='<div class="empty">No matches match that filter. Try clearing the search.</div>';return;}
- let lastDay=null;
+ let lastDay=null;const now=new Date();
  rows.forEach(m=>{
   const p=dParts(m.utc);
   if(p.day!==lastDay){lastDay=p.day;const d=document.createElement("div");d.className="daydiv";d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
   const c=document.createElement("div");c.className="card";c.style.setProperty("--c",STAGE_COLOR[m.stage]);
   const teams=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
-  let right=`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add</a>`;
+  /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
+  let right=new Date(m.utc)>now?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add</a>`:"";
   const es=cardScore(m.n);
   if(es){
    const t=liveTag(es);
