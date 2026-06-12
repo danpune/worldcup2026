@@ -63,6 +63,12 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .next .lab{font-family:Oswald;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:#9a7a1f}
 .next .m{font-weight:600;font-size:16px}
 .next .cd{margin-left:auto;font-family:Oswald;font-size:15px;color:var(--pitch);white-space:nowrap}
+.livebanner{background:linear-gradient(120deg,#fff,#fdecea);border:1px solid #f3c9c2;border-left:5px solid var(--live);border-radius:12px;padding:12px 14px;margin:10px 0 4px;display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.livebanner .ll{display:flex;align-items:center;gap:6px;font-family:Oswald;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:var(--live);font-weight:600}
+.livebanner .lm{font-weight:600;font-size:16px}
+.livebanner .lsc{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);white-space:nowrap}
+.livebanner .lst{font-family:Oswald;font-size:10px;letter-spacing:.06em;color:#fff;background:var(--live);border-radius:4px;padding:2px 6px}
+.livebanner .lst.ht{background:#C0922B}
 .daydiv{display:flex;align-items:center;gap:12px;margin:20px 0 8px}
 .daydiv span{font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted)}
 .daydiv:after{content:"";height:1px;background:var(--line);flex:1}
@@ -142,6 +148,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
    <input id="search" type="search" placeholder="Search a team, city or stadium…" aria-label="Search matches">
    <div class="chips" id="chips" role="group" aria-label="Filters"></div>
   </div>
+  <div id="livenow"></div>
   <div id="nextup"></div>
   <div id="list"></div>
  </section>
@@ -256,7 +263,20 @@ function updateProv(){
 }
 
 const calSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
-function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();renderNext();}
+function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();renderLive();renderNext();}
+/* "LIVE NOW" banner — pins any in-play / half-time match to the top so the live game finds the user */
+function renderLive(){
+ const box=document.getElementById("livenow");
+ if(currentView!=="schedule"){box.innerHTML="";return;}
+ const live=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&isOngoing(s.s);});
+ box.innerHTML=live.map(m=>{
+  const es=cardScore(m.n);
+  const tm=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
+  const ht=es.s==="PAUSED";
+  const lab=ht?"HT":(Number.isInteger(es.min)?es.min+"'":"LIVE");
+  return `<div class="livebanner"><span class="ll"><span class="livedot"></span>Live now</span><span class="lm">${tm}</span><span class="lsc">${es.h}–${es.a} <span class="lst${ht?" ht":""}">${lab}</span></span></div>`;
+ }).join("");
+}
 function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
  const rows=MATCHES.filter(passes);
