@@ -84,7 +84,11 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .score .dash{color:var(--muted)}
 .result{font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);background:#eef2ee;border-radius:8px;padding:3px 11px;display:inline-flex;align-items:center;gap:7px}
 .result.ongoing{background:#fdecea;color:var(--live)}
-.livepill{font-family:Oswald;font-size:9.5px;letter-spacing:.08em;color:#fff;background:var(--live);border-radius:4px;padding:1px 5px}
+.livepill,.htpill,.ftpill{font-family:Oswald;font-size:9.5px;letter-spacing:.08em;color:#fff;border-radius:4px;padding:1px 5px}
+.livepill{background:var(--live)}
+.htpill{background:#C0922B}
+.ftpill{background:#8a978f}
+.result.half{background:#fdf4e0;color:#9a7a1f}
 .livedot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -207,6 +211,13 @@ function manualScore(n){const s=manual[n];if(s&&s.h!=null&&s.a!=null)return{h:s.
 function cardScore(n){return liveScore(n)||manualScore(n);}          /* any score to display */
 function tableScore(n){const l=liveScore(n);if(l&&l.s==="FINISHED")return l;return manualScore(n);} /* counts in table */
 function isOngoing(s){return s==="IN_PLAY"||s==="PAUSED";}
+/* map a score status to its on-card style: in-play=red LIVE+pulse, half-time=amber HT, final=muted FT */
+function liveTag(s){
+ if(s==="IN_PLAY") return {cls:" ongoing",dot:true, pill:'<span class="livepill">LIVE</span>'};
+ if(s==="PAUSED")  return {cls:" half",   dot:false,pill:'<span class="htpill">HT</span>'};
+ if(s==="FINISHED")return {cls:"",        dot:false,pill:'<span class="ftpill">FT</span>'};
+ return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
+}
 
 /* filters */
 let filter="all",q="";
@@ -258,8 +269,8 @@ function renderList(){
   let right=`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add</a>`;
   const es=cardScore(m.n);
   if(es){
-   const ong=isOngoing(es.s);
-   right+=`<div class="result${ong?" ongoing":""}">${ong?'<span class="livedot"></span>':""}${es.h}–${es.a}${ong?' <span class="livepill">LIVE</span>':""}</div>`;
+   const t=liveTag(es.s);
+   right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
   }else if(m.group_game){
    const sc=manual[m.n]||{};
    right+=`<div class="score" data-n="${m.n}"><input inputmode="numeric" maxlength="2" value="${sc.h??""}" aria-label="${m.home} goals"><span class="dash">–</span><input inputmode="numeric" maxlength="2" value="${sc.a??""}" aria-label="${m.away} goals"></div>`;
