@@ -14,13 +14,14 @@ import unittest
 import fetch_scores as fs
 
 
-def match(home, away, home_goals=None, away_goals=None, status="FINISHED"):
+def match(home, away, home_goals=None, away_goals=None, status="FINISHED", minute=None):
     """Build a football-data.org-shaped match dict for tests."""
     return {
         "homeTeam": {"name": home},
         "awayTeam": {"name": away},
         "score": {"fullTime": {"home": home_goals, "away": away_goals}},
         "status": status,
+        "minute": minute,
     }
 
 
@@ -104,6 +105,30 @@ class TestBuildScores(unittest.TestCase):
         # 0-0 is a real result; must not be treated as "no score"
         scores, _ = fs.build_scores([match("Mexico", "South Africa", 0, 0)])
         self.assertEqual(scores["1"], {"h": 0, "a": 0, "s": "FINISHED"})
+
+    def test_in_play_includes_minute_when_present(self):
+        scores, _ = fs.build_scores([match("Mexico", "South Africa", 1, 0, status="IN_PLAY", minute=63)])
+        self.assertEqual(scores["1"], {"h": 1, "a": 0, "s": "IN_PLAY", "min": 63})
+
+    def test_in_play_minute_as_string_is_parsed_to_int(self):
+        scores, _ = fs.build_scores([match("Mexico", "South Africa", 1, 0, status="IN_PLAY", minute="63")])
+        self.assertEqual(scores["1"]["min"], 63)
+
+    def test_in_play_without_minute_has_no_min_key(self):
+        # feed omitted the minute (typical on the free tier) -> graceful, no key
+        scores, _ = fs.build_scores([match("Mexico", "South Africa", 1, 0, status="IN_PLAY", minute=None)])
+        self.assertNotIn("min", scores["1"])
+
+    def test_minute_only_attached_to_in_play(self):
+        # half-time and final results must not carry a (meaningless) minute
+        paused, _ = fs.build_scores([match("Mexico", "South Africa", 0, 0, status="PAUSED", minute=46)])
+        self.assertNotIn("min", paused["1"])
+        finished, _ = fs.build_scores([match("Mexico", "South Africa", 2, 0, status="FINISHED", minute=90)])
+        self.assertNotIn("min", finished["1"])
+
+    def test_garbage_minute_is_ignored(self):
+        scores, _ = fs.build_scores([match("Mexico", "South Africa", 1, 0, status="IN_PLAY", minute="HT")])
+        self.assertNotIn("min", scores["1"])
 
 
 if __name__ == "__main__":
