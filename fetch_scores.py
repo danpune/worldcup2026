@@ -29,6 +29,7 @@ PAIR_LOOKUP = {frozenset(pr): no for no, pr in SCHEDULE_PAIRS}
 
 def resolve_team(name):
     n = norm(name)
+    if not n: return None                      # empty name must not fuzzy-match the first team
     if n in ALIAS: return ALIAS[n]
     if n in CANON_NORM: return CANON_NORM[n]
     for cn, canon in CANON_NORM.items():       # fuzzy: one contains the other
