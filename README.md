@@ -14,6 +14,19 @@ You don't need to write any code. Just put these files in a GitHub repo and turn
 | `scores.json` | The live scores the page reads (starts empty; the Action overwrites it) | repo root |
 | `fetch_scores.py` | Pulls scores from football-data.org and writes `scores.json` | repo root |
 | `update-scores.yml` | The scheduled job that runs the fetcher | **`.github/workflows/update-scores.yml`** |
+| `highlights.json` | Official match highlights for the Highlights tab (you curate these by hand) | repo root |
+
+### Adding a highlight
+The **Highlights** tab shows official FIFA clips you add to `highlights.json`. After a match, grab the official FIFA / FIFA+ YouTube video, copy its **video ID** (the part after `watch?v=` in the URL), and add an entry keyed by the match number:
+
+```json
+"highlights": {
+  "1": {"yt": "VIDEO_ID_HERE"},
+  "2": {"yt": "ANOTHER_VIDEO_ID"}
+}
+```
+
+Commit/push and it appears on the Highlights tab (newest first). Availability depends on the video's region settings — some clips are geo-restricted by broadcast rights, which the page can't change.
 
 ## One-time setup (about 10 minutes)
 
