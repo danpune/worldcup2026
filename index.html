@@ -211,9 +211,11 @@ function manualScore(n){const s=manual[n];if(s&&s.h!=null&&s.a!=null)return{h:s.
 function cardScore(n){return liveScore(n)||manualScore(n);}          /* any score to display */
 function tableScore(n){const l=liveScore(n);if(l&&l.s==="FINISHED")return l;return manualScore(n);} /* counts in table */
 function isOngoing(s){return s==="IN_PLAY"||s==="PAUSED";}
-/* map a score status to its on-card style: in-play=red LIVE+pulse, half-time=amber HT, final=muted FT */
-function liveTag(s){
- if(s==="IN_PLAY") return {cls:" ongoing",dot:true, pill:'<span class="livepill">LIVE</span>'};
+/* map a score to its on-card style: in-play=red LIVE/minute+pulse, half-time=amber HT, final=muted FT */
+function liveTag(es){
+ const s=es.s;
+ if(s==="IN_PLAY"){const m=Number.isInteger(es.min)?es.min+"'":"LIVE";  /* show "63'" if the feed gave a minute, else LIVE */
+                   return {cls:" ongoing",dot:true, pill:'<span class="livepill">'+m+'</span>'};}
  if(s==="PAUSED")  return {cls:" half",   dot:false,pill:'<span class="htpill">HT</span>'};
  if(s==="FINISHED")return {cls:"",        dot:false,pill:'<span class="ftpill">FT</span>'};
  return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
@@ -269,7 +271,7 @@ function renderList(){
   let right=`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add</a>`;
   const es=cardScore(m.n);
   if(es){
-   const t=liveTag(es.s);
+   const t=liveTag(es);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
   }else if(m.group_game){
    const sc=manual[m.n]||{};

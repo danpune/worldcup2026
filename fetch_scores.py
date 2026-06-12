@@ -55,7 +55,14 @@ def build_scores(api_matches):
         status = STATUS_MAP.get(m.get("status"), m.get("status"))
         if gh is None or ga is None: continue
         if status not in ("FINISHED", "IN_PLAY", "PAUSED"): continue
-        scores[str(no)] = {"h": gh, "a": ga, "s": status}
+        entry = {"h": gh, "a": ga, "s": status}
+        if status == "IN_PLAY":                    # attach the live minute only when in play and the feed provides it
+            try:
+                mn = m.get("minute")
+                if mn is not None: entry["min"] = int(mn)
+            except (TypeError, ValueError):
+                pass
+        scores[str(no)] = entry
     return scores, unresolved
 
 def main():
