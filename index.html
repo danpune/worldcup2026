@@ -84,10 +84,6 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .cal{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--pitch);border-radius:8px;padding:6px 9px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
 .cal:hover{background:#f3f8f5;border-color:var(--pitch2)}
 .cal svg{width:13px;height:13px}
-.score{display:flex;align-items:center;gap:4px}
-.score input{width:34px;height:30px;text-align:center;font-family:Oswald;font-size:16px;border:1px solid var(--line);border-radius:7px;background:#fffdf5}
-.score input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
-.score .dash{color:var(--muted)}
 .result{font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);background:#eef2ee;border-radius:8px;padding:3px 11px;display:inline-flex;align-items:center;gap:7px}
 .result.ongoing{background:#fdecea;color:var(--live)}
 .livepill,.htpill,.ftpill{font-family:Oswald;font-size:9.5px;letter-spacing:.08em;color:#fff;border-radius:4px;padding:1px 5px}
@@ -161,7 +157,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 
  <section id="view-info" class="hide info">
   <h3>How live scores work</h3>
-  <p>Final scores are pulled automatically from a football data feed on a schedule and shown here; the standings recalculate from completed matches. If the feed is ever unavailable, you can still type scores yourself on the Schedule tab and the tables update the same way. The bar at the top of the Schedule and Standings tabs always shows the source and when it last updated.</p>
+  <p>Final scores are pulled automatically from a football data feed on a schedule and shown here; the standings recalculate from completed matches. The bar at the top of the Schedule and Standings tabs always shows the source and when it last updated. Scores are read-only — they come straight from the feed.</p>
   <h3>Add a match to your calendar</h3>
   <p>Tap <b>Add</b> on any match for a Google Calendar event pre-filled with teams, time and venue. On iPhone the same button works with Apple Calendar.</p>
   <h3>Find your team</h3>
@@ -198,10 +194,6 @@ TZ_OPTS.forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.t
 tzSel.value="__local__";tzSel.addEventListener("change",()=>{TZ=tzSel.value==="__local__"?localTZ:tzSel.value;render();});
 function dParts(iso){const d=new Date(iso);return{day:d.toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"}),time:d.toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}),d};}
 
-/* manual scores (guarded localStorage) */
-let manual={};try{const s=localStorage.getItem("wc26scores");if(s)manual=JSON.parse(s);}catch(e){}
-function saveManual(){try{localStorage.setItem("wc26scores",JSON.stringify(manual));}catch(e){}}
-
 /* live scores from feed */
 let LIVE={scores:{},updated:null,source:null,ok:false};
 async function fetchLive(){
@@ -214,9 +206,8 @@ async function fetchLive(){
  render();
 }
 function liveScore(n){const s=LIVE.scores[n];if(s&&s.h!=null&&s.a!=null)return s;return null;}
-function manualScore(n){const s=manual[n];if(s&&s.h!=null&&s.a!=null)return{h:s.h,a:s.a,s:"MANUAL"};return null;}
-function cardScore(n){return liveScore(n)||manualScore(n);}          /* any score to display */
-function tableScore(n){const l=liveScore(n);if(l&&l.s==="FINISHED")return l;return manualScore(n);} /* counts in table */
+function cardScore(n){return liveScore(n);}                          /* score to display — feed only, read-only */
+function tableScore(n){const l=liveScore(n);return l&&l.s==="FINISHED"?l:null;} /* counts in the table once final */
 function isOngoing(s){return s==="IN_PLAY"||s==="PAUSED";}
 /* map a score to its on-card style: in-play=red LIVE/minute+pulse, half-time=amber HT, final=muted FT */
 function liveTag(es){
@@ -258,7 +249,7 @@ function updateProv(){
  const live=Object.values(LIVE.scores).some(s=>isOngoing(s.s));
  let txt;
  if(LIVE.ok){txt=`<span class="dot"></span><span><span class="src">Scores: football-data.org</span>${LIVE.updated?" · updated "+relTime(LIVE.updated):""} · schedule per FIFA</span>`;}
- else{txt=`<span class="dot"></span><span><span class="src">Manual mode</span> — scores you enter here. Connect the feed for automatic updates (see Info &amp; Sources).</span>`;}
+ else{txt=`<span class="dot"></span><span><span class="src">Scores unavailable</span> — couldn't reach the live feed right now. Schedule and times still work; tap Refresh to retry.</span>`;}
  [document.getElementById("prov"),document.getElementById("prov2")].forEach(el=>{if(!el)return;el.className="prov"+(live?" on":"");el.innerHTML=txt+'<button class="rfr" type="button" onclick="fetchLive()">Refresh</button>';});
 }
 
@@ -294,21 +285,9 @@ function renderList(){
   if(es){
    const t=liveTag(es);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
-  }else if(m.group_game){
-   const sc=manual[m.n]||{};
-   right+=`<div class="score" data-n="${m.n}"><input inputmode="numeric" maxlength="2" value="${sc.h??""}" aria-label="${m.home} goals"><span class="dash">–</span><input inputmode="numeric" maxlength="2" value="${sc.a??""}" aria-label="${m.away} goals"></div>`;
   }
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> ${m.venue}, ${m.city}${driveTxt}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
- });
- list.querySelectorAll(".score").forEach(box=>{
-  const n=box.dataset.n,ins=box.querySelectorAll("input");
-  ins.forEach((inp,i)=>inp.addEventListener("input",()=>{
-   const v=inp.value.replace(/[^0-9]/g,"").slice(0,2);inp.value=v;
-   manual[n]=manual[n]||{};manual[n][i===0?"h":"a"]=v===""?undefined:parseInt(v,10);
-   if(manual[n].h===undefined&&manual[n].a===undefined)delete manual[n];
-   saveManual();if(currentView==="standings")renderStandings();
-  }));
  });
 }
 function renderNext(){
