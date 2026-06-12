@@ -1,0 +1,15 @@
+{
+  "name": "World Cup 2026 — Schedule & Live Scores",
+  "short_name": "World Cup 2026",
+  "description": "Every World Cup 2026 match in your timezone — live scores, standings, highlights and one-tap calendar adds.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1512",
+  "theme_color": "#0A1F18",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
