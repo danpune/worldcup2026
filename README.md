@@ -2,7 +2,7 @@
 
 A single web page that shows the full schedule in **your** timezone, a **Standings** table that
 recalculates as results come in, and an **Add to Google Calendar** button on every match.
-Scores update automatically from a football data feed; you can also type scores in by hand.
+Scores update automatically from a football data feed and are shown read-only.
 
 You don't need to write any code. Just put these files in a GitHub repo and turn two switches on.
 
@@ -45,7 +45,7 @@ Done. Open your Pages link on your phone — flags, your-timezone times, calenda
 ## How "live" works
 - The job fetches **final and in-play** group scores. Final scores feed the standings; in-play games show a **LIVE** badge but only count once full-time.
 - The bar at the top of the page shows the source and **when it last updated**.
-- If the feed is ever down, the page automatically falls back to **manual entry** — type a score and the table updates the same way. The job never overwrites a good file with a failed fetch.
+- Scores are **read-only** — they come straight from the feed; there's no manual editing. If the feed is ever down, the job never overwrites a good `scores.json` with a failed fetch, so the last known scores stay put.
 
 ## Good to know / troubleshooting
 - **Refresh cadence:** every ~10 min (GitHub's scheduler can add a few minutes' delay under load). You can lower it in `update-scores.yml` (`cron`), but football-data.org's free tier allows ~10 calls/minute, so don't go below ~5 min.
