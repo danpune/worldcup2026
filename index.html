@@ -77,6 +77,8 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .livebanner .lm{font-weight:600;font-size:16px}
 .livebanner .lsc{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);white-space:nowrap}
 .livebanner .lst{font-family:Oswald;font-size:10px;letter-spacing:.06em;color:#fff;background:var(--live);border-radius:4px;padding:2px 6px}
+.livebanner .hlisten{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--live);color:var(--live);border-radius:999px;padding:5px 11px;font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
+.livebanner .hlisten:hover{background:var(--live);color:#fff}
 .livebanner .lst.ht{background:#C0922B}
 .daydiv{display:flex;align-items:center;gap:12px;margin:20px 0 8px}
 .daydiv span{font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted)}
@@ -355,7 +357,7 @@ function renderLive(){
   const tm=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
   const ht=es.s==="PAUSED";
   const lab=ht?"HT":(Number.isInteger(es.min)?es.min+"'":"LIVE");
-  return `<div class="livebanner"><span class="ll"><span class="livedot"></span>Live now</span><span class="lm">${tm}</span><span class="lsc">${es.h}–${es.a} <span class="lst${ht?" ht":""}">${lab}</span></span></div>`;
+  return `<div class="livebanner"><span class="ll"><span class="livedot"></span>Live now</span><span class="lm">${tm}</span><span class="lsc">${es.h}–${es.a} <span class="lst${ht?" ht":""}">${lab}</span></span><a class="hlisten" href="https://www.iheart.com/live/fifa-world-cup-2026-11554/" target="_blank" rel="noopener" aria-label="Listen to live English commentary on iHeartRadio (US, opens in a new tab)">🔊 Listen</a></div>`;
  }).join("");
 }
 function renderList(){
