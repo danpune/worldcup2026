@@ -44,6 +44,8 @@ header{background:linear-gradient(160deg,var(--ink),var(--pitch));color:#fff;bor
 .tzwrap{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#bcd3c8}
 .share{align-self:flex-end;border:1px solid rgba(232,184,75,.55);background:rgba(255,255,255,.07);color:#f3e2b4;border-radius:999px;padding:9px 14px;font-family:Oswald;text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .share:hover{background:rgba(232,184,75,.16);border-color:var(--gold)}
+.kofi{align-self:flex-end;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(232,184,75,.55);background:rgba(232,184,75,.16);color:#f3e2b4;border-radius:999px;padding:9px 13px;font-family:Oswald;text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+.kofi:hover{background:rgba(232,184,75,.3);border-color:var(--gold)}
 .buzzgrid{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
 .buzzbtn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:13px 16px;font-weight:600;font-size:14px;text-decoration:none}
 .buzzbtn:hover{border-color:var(--gold)}
@@ -193,6 +195,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   </div>
   <div class="tzwrap"><label for="tz">Show times in</label><select id="tz" aria-label="Choose timezone"></select></div>
   <button class="share" id="shareBtn" type="button" aria-label="Share this page">↗ Share</button>
+  <a class="kofi" href="https://ko-fi.com/worldcup202619138" target="_blank" rel="noopener" aria-label="Support this project — buy me a coffee (opens in a new tab)">☕ Tip</a>
  </div>
 </header>
 <nav class="tabs"><div class="tabs-in" role="tablist">
