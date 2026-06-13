@@ -212,7 +212,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 
  <section id="view-standings" class="hide">
   <div class="prov" id="prov2"></div>
-  <p class="note"><b>Green = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see fifa.com for that cross-group cut. Live scores only count toward the table once a match is final. <b>#</b> = FIFA World Ranking (11 Jun 2026) · <span class="pm">%</span> = Polymarket odds to win the group (live) — for insight only, not betting advice.</p>
+  <p class="note"><b>Green = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see fifa.com for that cross-group cut. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
   <div class="gwrap" id="groups"></div>
  </section>
 
@@ -250,15 +250,19 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p>English on FOX &amp; FS1 (streams on the FOX apps; Round of 16 onward all on FOX). Spanish on Telemundo / Universo and Peacock.</p>
   <h3>Drivable from Austin</h3>
   <p>🚗 Dallas — AT&amp;T Stadium (~3 hrs, 9 games incl. a semifinal) and Houston — NRG (~2.5 hrs). Both air-conditioned.</p>
-  <h3>Sources</h3>
+  <h3>Sources — where every number comes from</h3>
   <ul>
-   <li><b>Official source of truth</b> — FIFA: <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener">fifa.com/.../canadamexicousa2026</a> (schedule, venues, official results).</li>
-   <li><b>Live scores feed</b> — <a href="https://www.football-data.org/" target="_blank" rel="noopener">football-data.org</a> (free tier). FIFA remains canonical for official results.</li>
-   <li><b>Schedule curated from</b> — <a href="https://www.nbcsports.com/soccer/world-cup/schedule-scores" target="_blank" rel="noopener">NBC Sports</a>, cross-checked against World Cup Wiki and FIFA host-city sites (<a href="https://www.dallasfwc26.com/our-venues/match-schedule/" target="_blank" rel="noopener">Dallas</a>, <a href="https://nynjfwc26.com/schedule/" target="_blank" rel="noopener">NY/NJ</a>, Atlanta). Dallas &amp; Atlanta CT kickoff times matched exactly.</li>
-   <li><b>Kickoff times</b> — converted from the official Eastern kickoff times to your device's timezone.</li>
+   <li><b>Schedule, venues &amp; official results</b> — <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener">FIFA</a> (the official source of truth), cross-checked against <a href="https://www.nbcsports.com/soccer/world-cup/schedule-scores" target="_blank" rel="noopener">NBC Sports</a> and FIFA host-city sites (<a href="https://www.dallasfwc26.com/our-venues/match-schedule/" target="_blank" rel="noopener">Dallas</a>, <a href="https://nynjfwc26.com/schedule/" target="_blank" rel="noopener">NY/NJ</a>, Atlanta).</li>
+   <li><b>Live scores &amp; standings</b> — <a href="https://www.football-data.org/" target="_blank" rel="noopener">football-data.org</a> (free tier). FIFA remains canonical for official results.</li>
+   <li><b>FIFA World Ranking (#)</b> — the official <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA/Coca-Cola Men's World Ranking</a> (snapshot 11 Jun 2026).</li>
+   <li><b>Group odds (%)</b> — <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a>, a prediction market (live "to win the group" — informational only, not betting advice).</li>
+   <li><b>Highlights</b> — official broadcaster uploads on YouTube (e.g. <a href="https://www.youtube.com/channel/UCwNqHDsnBCKT-olwJwIFyfg" target="_blank" rel="noopener">FOX Sports</a>); availability varies by region.</li>
+   <li><b>Live audio (USA)</b> — <a href="https://www.iheart.com/live/fifa-world-cup-2026-11554/" target="_blank" rel="noopener">iHeartRadio</a> (free FOX Sports English commentary).</li>
+   <li><b>Social buzz</b> — <a href="https://x.com/search?q=%23FIFAWorldCup&f=live" target="_blank" rel="noopener">X (#FIFAWorldCup)</a>.</li>
    <li><b>TV listings (USA)</b> — <a href="https://www.foxsports.com/soccer/fifa-world-cup" target="_blank" rel="noopener">FOX Sports</a>.</li>
+   <li><b>Kickoff times</b> — official Eastern kickoff times, converted to your device's timezone.</li>
   </ul>
-  <p class="note">Not affiliated with FIFA. Live data accuracy depends on the feed; for official confirmation of a result, check fifa.com.</p>
+  <p class="note">Not affiliated with FIFA or Polymarket. Live data accuracy depends on the feeds; for official confirmation of a result, check fifa.com.</p>
  </section>
 </main>
 
@@ -334,7 +338,7 @@ function updateProv(){
  const on=LIVE.ok&&Object.keys(LIVE.scores).length>0;
  const live=Object.values(LIVE.scores).some(s=>isOngoing(s.s));
  let txt;
- if(LIVE.ok){txt=`<span class="dot"></span><span><span class="src">Scores: football-data.org</span>${LIVE.updated?" · updated "+relTime(LIVE.updated):""} · schedule per FIFA</span>`;}
+ if(LIVE.ok){txt=`<span class="dot"></span><span><span class="src">Scores: <a href="https://www.football-data.org/" target="_blank" rel="noopener">football-data.org</a></span>${LIVE.updated?" · updated "+relTime(LIVE.updated):""} · schedule per FIFA</span>`;}
  else{txt=`<span class="dot"></span><span><span class="src">Scores unavailable</span> — couldn't reach the live feed right now. Schedule and times still work; tap Refresh to retry.</span>`;}
  [document.getElementById("prov"),document.getElementById("prov2")].forEach(el=>{if(!el)return;el.className="prov"+(live?" on":"");el.innerHTML=txt+'<button class="rfr" type="button" onclick="fetchLive()">Refresh</button>';});
 }
