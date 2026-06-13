@@ -73,6 +73,15 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--pitch);color:#fff;border-color:var(--pitch)}
 .chip:focus-visible{outline:2px solid var(--gold)}
+.datestrip{position:sticky;top:49px;z-index:15;display:flex;gap:7px;overflow-x:auto;margin:0 -14px;padding:9px 14px;background:var(--paper);border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.datestrip::-webkit-scrollbar{display:none}
+.dpill{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:54px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:8px 10px;cursor:pointer;line-height:1.12;white-space:nowrap}
+.dpill b{font-family:Oswald;font-size:11px;letter-spacing:.05em;color:var(--muted)}
+.dpill span{font-size:15px;font-weight:600}
+.dpill.on{background:var(--pitch);border-color:var(--pitch);color:#fff}
+.dpill.on b{color:var(--gold-soft)}
+.dpill:focus-visible{outline:2px solid var(--gold)}
+.daydiv{scroll-margin-top:116px}
 .next{background:linear-gradient(120deg,#fff,#fbf6e9);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:12px 14px;margin:10px 0 4px;display:flex;align-items:center;gap:12px}
 .next .lab{font-family:Oswald;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:#7d6314}
 .next .m{font-weight:600;font-size:16px}
@@ -211,6 +220,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
    <input id="search" type="search" placeholder="Search a team, city or stadium…" aria-label="Search matches">
    <div class="chips" id="chips" role="group" aria-label="Filters"></div>
   </div>
+  <div class="datestrip" id="datestrip" role="group" aria-label="Jump to a date"></div>
   <div id="livenow"></div>
   <div id="nextup"></div>
   <div id="list"></div>
@@ -312,6 +322,8 @@ async function fetchLive(){
   LIVE={scores:j.scores||{},updated:j.updated||null,source:j.source||"feed",ok:true};
  }catch(e){LIVE.ok=false;}
  render();
+ /* now that scores are in and card heights are final, land precisely on today (once, unless the user already scrolled) */
+ if(!initialScrollDone){initialScrollDone=true;if(!userInteracted&&currentView==="schedule")requestAnimationFrame(jumpToToday);}
 }
 function liveScore(n){const s=LIVE.scores[n];if(s&&s.h!=null&&s.a!=null)return s;return null;}
 function cardScore(n){return liveScore(n);}                          /* score to display — feed only, read-only */
@@ -418,10 +430,10 @@ function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
  const rows=MATCHES.filter(passes);
  if(!rows.length){list.innerHTML='<div class="empty">No matches match that filter. Try clearing the search.</div>';return;}
- let lastDay=null;const now=new Date();
+ let lastDay=null;const now=new Date();const days=[];
  rows.forEach(m=>{
   const p=dParts(m.utc);
-  if(p.day!==lastDay){lastDay=p.day;const d=document.createElement("div");d.className="daydiv";d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
+  if(p.day!==lastDay){lastDay=p.day;days.push(p.day);const d=document.createElement("div");d.className="daydiv";d.dataset.day=p.day;d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
   const c=document.createElement("div");c.className="card";c.style.setProperty("--c",STAGE_COLOR[m.stage]);
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
   const teams=m.group_game?`${m.hf} ${m.home}${rkx(m.home)} <span class="vs">v</span> ${m.af} ${m.away}${rkx(m.away)}`:`${m.home} <span class="vs">v</span> ${m.away}`;
@@ -437,7 +449,49 @@ function renderList(){
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
  });
+ renderDateStrip(days);
 }
+/* date strip: pinned day-navigator — tap a day to jump to its matches; the active pill
+   tracks your scroll, and on first load we land on today (or the next match day). */
+let initialScrollDone=false,userInteracted=false;
+function setActivePill(day,center){
+ const strip=document.getElementById("datestrip");if(!strip)return;
+ strip.querySelectorAll(".dpill").forEach(x=>{const on=x.dataset.day===day;x.classList.toggle("on",on);
+  if(on&&center){const sl=x.offsetLeft-strip.clientWidth/2+x.offsetWidth/2;strip.scrollTo({left:Math.max(0,sl),behavior:"smooth"});}});
+}
+function syncActiveDay(){
+ const strip=document.getElementById("datestrip");if(!strip||currentView!=="schedule"||!strip.children.length)return;
+ const offset=132;let cur=null;
+ document.querySelectorAll(".daydiv").forEach(d=>{if(d.getBoundingClientRect().top<=offset)cur=d.dataset.day;});
+ if(cur)setActivePill(cur,false);
+}
+/* jump the list to today (or the next match day) and highlight its pill */
+function jumpToToday(){
+ const strip=document.getElementById("datestrip");if(!strip||!strip.children.length)return;
+ const days=[...strip.querySelectorAll(".dpill")].map(p=>p.dataset.day);
+ let tgt=todayStr();
+ if(!days.includes(tgt)){const now=new Date();const fm=MATCHES.find(m=>new Date(m.utc)>=now);tgt=fm?dParts(fm.utc).day:days[0];}
+ const el=document.querySelector(`.daydiv[data-day="${CSS.escape(tgt)}"]`);
+ if(el){const y=el.getBoundingClientRect().top+window.scrollY-116;window.scrollTo(0,Math.max(0,y));}
+ setActivePill(tgt,true);
+}
+function renderDateStrip(days){
+ const strip=document.getElementById("datestrip");if(!strip)return;
+ if(days.length<2){strip.innerHTML="";return;}
+ strip.innerHTML=days.map(d=>{const parts=d.split(", ");const wd=parts[0]||d;const dt=parts[1]||"";
+  return `<button class="dpill" type="button" data-day="${d}"><b>${wd}</b><span>${dt}</span></button>`;}).join("");
+ strip.querySelectorAll(".dpill").forEach(p=>p.addEventListener("click",()=>{
+  userInteracted=true;
+  const target=document.querySelector(`.daydiv[data-day="${CSS.escape(p.dataset.day)}"]`);
+  if(target){const y=target.getBoundingClientRect().top+window.scrollY-116;window.scrollTo(0,Math.max(0,y));}
+  setActivePill(p.dataset.day,true);
+ }));
+ /* best-effort jump on first paint; re-asserted once scores load (see fetchLive) for a stable layout */
+ if(!initialScrollDone&&!userInteracted)requestAnimationFrame(jumpToToday);else syncActiveDay();
+}
+if(!window.__daySyncBound){window.__daySyncBound=true;let tick=false;
+ addEventListener("scroll",()=>{if(tick)return;tick=true;requestAnimationFrame(()=>{syncActiveDay();tick=false;});},{passive:true});
+ ["wheel","touchstart","keydown"].forEach(ev=>addEventListener(ev,()=>{userInteracted=true;},{passive:true,once:true}));}
 function renderNext(){
  const box=document.getElementById("nextup");const now=new Date();
  const up=MATCHES.find(m=>new Date(m.utc)>now);
@@ -477,8 +531,7 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
  document.getElementById("view-"+currentView).classList.remove("hide");
  render();
 }));
-/* smart default: open focused on Today's matches when there are any (else keep All) */
-if(MATCHES.some(m=>dParts(m.utc).day===todayStr())){filter="today";[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed",c.textContent.trim()==="Today"?"true":"false"));}
+/* land on "All" so the pinned date strip shows; renderDateStrip auto-scrolls to today's matches */
 render();fetchLive();fetchHighlights();
 /* fun footer visit counter (free Abacus API; counts page views; fails silently if the service is down) */
 fetch("https://abacus.jasoncameron.dev/hit/danpune-worldcup2026/visits").then(r=>r.json()).then(d=>{if(d&&d.value!=null)document.getElementById("visits").textContent=" · 👀 "+d.value.toLocaleString()+" visits";}).catch(()=>{});
