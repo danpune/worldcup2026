@@ -102,6 +102,11 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .teams{min-width:0}
 .tline{font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .tline .vs{color:var(--muted);font-weight:500;font-size:12px}
+.fav{border:0;background:none;cursor:pointer;font-size:15px;line-height:1;padding:0 1px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent}
+.fav.on{color:var(--gold);opacity:1}
+.fav:hover{opacity:1}
+.fav:focus-visible{outline:2px solid var(--gold);border-radius:4px;opacity:1}
+.card.following{border-left-color:var(--gold)}
 .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
 .meta .drive{color:#7d6314;font-weight:600}
 .mno{color:var(--muted);font-weight:600;font-size:11px}
@@ -341,9 +346,17 @@ function liveTag(es){
  return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
 }
 
+/* follow-your-team: favourites saved in the browser (localStorage); powers the ⭐ Following filter + card highlight */
+let FOLLOWS=new Set();try{FOLLOWS=new Set(JSON.parse(localStorage.getItem("wc2026_follows")||"[]"));}catch(e){}
+const isFollowed=t=>FOLLOWS.has(t);
+function toggleFollow(t){FOLLOWS.has(t)?FOLLOWS.delete(t):FOLLOWS.add(t);try{localStorage.setItem("wc2026_follows",JSON.stringify([...FOLLOWS]));}catch(e){}render();}
+const escA=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const favBtn=t=>RANK[t]?`<button class="fav${isFollowed(t)?" on":""}" type="button" data-team="${escA(t)}" aria-pressed="${isFollowed(t)}" aria-label="${isFollowed(t)?"Unfollow ":"Follow "}${escA(t)}" title="${isFollowed(t)?"Following — tap to unfollow":"Follow this team"}">${isFollowed(t)?"★":"☆"}</button>`:"";
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".fav");if(b){e.preventDefault();toggleFollow(b.dataset.team);}});
+
 /* filters */
 let filter="all",q="";
-const CHIPS=[["all","All"],["today","Today"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["knockout","Knockouts"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
+const CHIPS=[["all","All"],["today","Today"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["knockout","Knockouts"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
 CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v==="all");b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
 document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
@@ -352,6 +365,7 @@ function passes(m){
  if(q){if(!(m.home+" "+m.away+" "+m.city+" "+m.venue+" "+m.grp).toLowerCase().includes(q))return false;}
  if(filter==="all")return true;
  if(filter==="today")return dParts(m.utc).day===todayStr();
+ if(filter==="fav")return isFollowed(m.home)||isFollowed(m.away);
  if(filter==="knockout")return !m.group_game;
  if(filter==="near")return m.near;
  if(filter==="USA"||filter==="Mexico"||filter==="Canada")return m.home===filter||m.away===filter;
@@ -431,14 +445,14 @@ function renderLive(){
 function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
  const rows=MATCHES.filter(passes);
- if(!rows.length){list.innerHTML='<div class="empty">No matches match that filter. Try clearing the search.</div>';return;}
+ if(!rows.length){const msg=(filter==="fav"&&FOLLOWS.size===0)?'No teams followed yet — tap the ☆ next to any team and their matches will collect here.':'No matches match that filter. Try clearing the search.';list.innerHTML='<div class="empty">'+msg+'</div>';renderDateStrip([]);return;}
  let lastDay=null;const now=new Date();const days=[];
  rows.forEach(m=>{
   const p=dParts(m.utc);
   if(p.day!==lastDay){lastDay=p.day;days.push(p.day);const d=document.createElement("div");d.className="daydiv";d.dataset.day=p.day;d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
-  const c=document.createElement("div");c.className="card";c.style.setProperty("--c",STAGE_COLOR[m.stage]);
+  const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
-  const teams=m.group_game?`${m.hf} ${m.home}${rkx(m.home)} <span class="vs">v</span> ${m.af} ${m.away}${rkx(m.away)}`:`${m.home} <span class="vs">v</span> ${m.away}`;
+  const teams=m.group_game?`${m.hf} ${m.home}${rkx(m.home)}${favBtn(m.home)} <span class="vs">v</span> ${m.af} ${m.away}${rkx(m.away)}${favBtn(m.away)}`:`${m.home}${favBtn(m.home)} <span class="vs">v</span> ${m.away}${favBtn(m.away)}`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
