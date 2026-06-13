@@ -276,6 +276,8 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
    <li><b>Kickoff times</b> — official Eastern kickoff times, converted to your device's timezone.</li>
   </ul>
   <p class="note">Not affiliated with FIFA or Polymarket. Live data accuracy depends on the feeds; for official confirmation of a result, check fifa.com.</p>
+  <h3>Privacy</h3>
+  <p>This site sets <b>no cookies</b> and collects <b>no personal information</b> — there's no sign-up or login. It uses <b>privacy-friendly, cookieless analytics</b> (Cloudflare) and a simple visit counter to gauge interest. Like any website, it loads some third-party resources — fonts from Google, and (only when you open those tabs) live odds from Polymarket and video from YouTube via privacy-mode embeds — so those providers may see your IP address. Your timezone choice stays in your browser.</p>
  </section>
 </main>
 
@@ -382,9 +384,10 @@ async function fetchHighlights(){
  try{const r=await fetch("highlights.json?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();HL=j.highlights||{};}}catch(e){}
  if(currentView==="highlights")renderHighlights();
 }
+const ytOk=id=>/^[\w-]{11}$/.test(id||"");  /* valid YouTube video ID only — defensive against malformed entries */
 function renderHighlights(){
  const box=document.getElementById("hlwrap");if(!box)return;
- const rows=MATCHES.filter(m=>HL[m.n]&&HL[m.n].yt).sort((a,b)=>new Date(b.utc)-new Date(a.utc));
+ const rows=MATCHES.filter(m=>HL[m.n]&&ytOk(HL[m.n].yt)).sort((a,b)=>new Date(b.utc)-new Date(a.utc));
  if(!rows.length){box.innerHTML='<div class="empty">No highlights yet — official clips appear here after matches (where available in your region).</div>';return;}
  box.innerHTML=rows.map(m=>{
   const id=HL[m.n].yt;
