@@ -94,6 +94,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
 .meta .drive{color:#7d6314;font-weight:600}
 .mno{color:var(--muted);font-weight:600;font-size:11px}
+.meta .pred{color:#6a78e0;font-weight:600}
 .badge{font-family:Oswald;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--c,#7A8C99);border-radius:5px;padding:2px 6px;display:inline-block}
 .right{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
 .cal{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--pitch);border-radius:8px;padding:9px 11px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
@@ -240,6 +241,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <ul>
    <li><b># — FIFA World Ranking</b> (official, snapshot 11 Jun 2026): a measure of overall team strength.</li>
    <li><b>% — Polymarket</b>: the live "chance to win the group" figure from Polymarket, a prediction market, shown to reflect current market sentiment.</li>
+   <li><b>📊 — Match win estimate</b> (on the schedule, upcoming games): a rough chance-to-win derived from the two teams' FIFA ranks — a simple model, not betting odds (it ignores form, injuries and draws).</li>
   </ul>
   <p>This site is <b>not affiliated with FIFA or Polymarket</b>, does not accept wagers, and handles no money. If you choose to use a prediction market, do so responsibly and only where it is legal for you.</p>
   <h3>Add a match to your calendar</h3>
@@ -275,6 +277,8 @@ const STAGE_SHORT={"Group Stage":"Group","Round of 32":"R32","Round of 16":"R16"
 const FLAGMAP={};MATCHES.forEach(m=>{FLAGMAP[m.home]=m.hf;FLAGMAP[m.away]=m.af;});
 /* FIFA/Coca-Cola World Ranking, 11 Jun 2026 (static for the tournament) — shown next to teams for context */
 const RANK={"Argentina":1,"Spain":2,"France":3,"England":4,"Portugal":5,"Brazil":6,"Morocco":7,"Netherlands":8,"Belgium":9,"Germany":10,"Croatia":11,"Colombia":13,"Mexico":14,"Senegal":15,"Uruguay":16,"USA":17,"Japan":18,"Switzerland":19,"Iran":20,"Türkiye":22,"Ecuador":23,"Austria":24,"South Korea":25,"Australia":27,"Algeria":28,"Egypt":29,"Canada":30,"Norway":31,"Ivory Coast":33,"Panama":34,"Sweden":38,"Czechia":40,"Paraguay":41,"Scotland":42,"Tunisia":45,"DR Congo":46,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,"Jordan":63,"Bosnia & Herzegovina":64,"Cape Verde":67,"Ghana":73,"Curaçao":82,"Haiti":83,"New Zealand":85};
+/* rough per-match win estimate from the two FIFA ranks — a simple model, NOT betting odds (ignores form, injuries, draws) */
+function matchPred(m){const ra=RANK[m.home],rb=RANK[m.away];if(!ra||!rb)return null;let p=1/(1+Math.pow(10,-(rb-ra)/60));p=0.5+(p-0.5)*0.8;const hf=p>=0.5;return {team:hf?m.home:m.away,pct:Math.round((hf?p:1-p)*100)};}
 
 /* timezone */
 const localTZ=Intl.DateTimeFormat().resolvedOptions().timeZone||"America/Chicago";
@@ -404,7 +408,8 @@ function renderList(){
   const p=dParts(m.utc);
   if(p.day!==lastDay){lastDay=p.day;const d=document.createElement("div");d.className="daydiv";d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
   const c=document.createElement("div");c.className="card";c.style.setProperty("--c",STAGE_COLOR[m.stage]);
-  const teams=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
+  const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
+  const teams=m.group_game?`${m.hf} ${m.home}${rkx(m.home)} <span class="vs">v</span> ${m.af} ${m.away}${rkx(m.away)}`:`${m.home} <span class="vs">v</span> ${m.away}`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
@@ -413,7 +418,8 @@ function renderList(){
    const t=liveTag(es);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
   }
-  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}</div></div><div class="right">${right}</div>`;
+  const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
+  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
  });
 }
