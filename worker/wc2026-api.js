@@ -5,9 +5,10 @@
  *   https://wc2026-api.<subdomain>.workers.dev
  *
  * It proxies the licensed API-Football feed, caches ~15s, and exposes:
- *   GET /scores  -> all World Cup 2026 fixtures (live + finished + scheduled), clean JSON
- *   GET /status  -> account/key check (subscription, requests used)
- *   GET /        -> health check
+ *   GET /scores     -> all World Cup 2026 fixtures (live + finished + scheduled), clean JSON
+ *   GET /match?id=  -> team statistics for one fixture (possession, shots, etc.)
+ *   GET /status     -> account/key check (subscription, requests used)
+ *   GET /           -> health check
  *
  * SETUP (Cloudflare dashboard, no CLI needed):
  *   1. Workers & Pages -> Create -> Worker -> name "wc2026-api".
@@ -36,6 +37,26 @@ export default {
     if (url.pathname === "/status") {
       var s = await fetch(API + "/status", { headers });
       return json(await s.json());
+    }
+
+    if (url.pathname === "/match") {
+      var id = url.searchParams.get("id");
+      if (!id) return json({ error: "missing id" });
+      var mcache = caches.default;
+      var mkey = new Request(new URL("/match?id=" + id, url.origin).toString());
+      var mhit = await mcache.match(mkey);
+      if (mhit) return mhit;
+      var stats = [], merrors = null;
+      try {
+        var sr = await fetch(API + "/fixtures/statistics?fixture=" + id, { headers });
+        var sd = await sr.json();
+        if (sd.errors && Object.keys(sd.errors).length) merrors = sd.errors;
+        stats = sd.response || [];
+      } catch (e) { merrors = String(e); }
+      var mbody = JSON.stringify({ id: id, stats: stats, errors: merrors }, null, 2);
+      var mres = new Response(mbody, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=30" }) });
+      ctx.waitUntil(mcache.put(mkey, mres.clone()));
+      return mres;
     }
 
     if (url.pathname === "/scores") {

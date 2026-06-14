@@ -124,6 +124,16 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .ftpill{background:#8a978f}
 .result.half{background:#fdf4e0;color:#7d6314}
 .livedot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
+.statsbtn{border:1px solid var(--line);background:var(--card);color:var(--pitch);border-radius:8px;padding:7px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.statsbtn:hover{border-color:var(--pitch2);background:#f3f8f5}
+.statswrap{margin:-2px 0 10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px 13px}
+.statload{color:var(--muted);font-size:13px;padding:5px 0}
+.strow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:10px}
+.strow .sv{font-weight:700;min-width:42px}
+.strow .sv:last-child{text-align:right}
+.strow .sl{color:var(--muted);font-size:12px;text-align:center;flex:1}
+.sbar{height:5px;border-radius:3px;background:#dd8c46;overflow:hidden;margin-top:4px}
+.sbar>span{display:block;height:100%;background:#3f78c9;border-radius:3px}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -182,6 +192,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  .time{color:#7fcfa2}
  .cal{background:#1d2922;color:#cfe3d8}
  .cal:hover{background:#243029}
+ .statsbtn:hover{background:#243029}
  .result{background:#23302a;color:var(--text)}
  .result.ongoing{background:#3a1f1b;color:#ff8a78}
  .result.half{background:#33291a;color:#e8c25f}
@@ -338,7 +349,7 @@ async function fetchLive(){
   if(r.ok){const j=await r.json();apiOk=true;apiUpdated=j.updated||null;
    (j.matches||[]).forEach(f=>{const n=PAIR2N[pairKey(f.home,f.away)];if(!n)return;const st=mapApiStatus(f.status);
     if(st.s==="SCHEDULED"&&f.h==null)return;
-    overlay[n]={h:f.h,a:f.a,s:st.s,min:f.minute};if(st.live)anyLive=true;});}
+    overlay[n]={h:f.h,a:f.a,s:st.s,min:f.minute,fid:f.id};if(st.live)anyLive=true;});}
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
  LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:usingApi?"api-football":"football-data",ok:(apiOk||Object.keys(base).length>0)};
@@ -359,6 +370,31 @@ function liveTag(es){
  if(s==="FINISHED")return {cls:"",        dot:false,pill:'<span class="ftpill">FT</span>'};
  return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
 }
+
+/* tap-to-expand match stats (possession, shots, etc.) — API-Football /fixtures/statistics via the Worker */
+const STATS_API="https://wc2026-api.footy26.workers.dev/match";
+let openStats=new Set(),statsCache={};
+const STAT_ROWS=[["Ball Possession","Possession"],["Total Shots","Shots"],["Shots on Goal","On target"],["expected_goals","Expected goals (xG)"],["Total passes","Passes"],["Passes %","Pass accuracy"],["Corner Kicks","Corners"],["Fouls","Fouls"],["Offsides","Offsides"],["Yellow Cards","Yellow cards"],["Red Cards","Red cards"]];
+const statNum=v=>{if(v==null)return 0;if(typeof v==="string"){const m=v.match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):0;}return v;};
+const statGet=(team,type)=>{if(!team||!team.statistics)return null;const s=team.statistics.find(x=>x.type===type);return s?s.value:null;};
+async function fetchStats(fid){
+ try{const r=await fetch(STATS_API+"?id="+fid);if(r.ok){statsCache[fid]=await r.json();if(currentView==="schedule")renderList();}}catch(e){}
+}
+function statsPanelHTML(fid){
+ const d=statsCache[fid];
+ if(!d)return '<div class="statload">Loading match stats…</div>';
+ const arr=d.stats||[];
+ if(arr.length<2)return '<div class="statload">Match stats aren’t available for this game.</div>';
+ const H=arr[0],A=arr[1];let rows="";
+ STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
+  const tot=statNum(hv)+statNum(av),hp=tot>0?Math.round(statNum(hv)/tot*100):50;
+  rows+='<div class="strow"><span class="sv">'+(hv==null?"–":hv)+'</span><span class="sl">'+label+'</span><span class="sv">'+(av==null?"–":av)+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
+ return rows||'<div class="statload">No stats yet.</div>';
+}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".statsbtn");if(!b)return;
+ const n=+b.dataset.n,fid=b.dataset.fid;
+ if(openStats.has(n))openStats.delete(n);else{openStats.add(n);if(!statsCache[fid])fetchStats(fid);}
+ renderList();});
 
 /* follow-your-team: favourites saved in the browser (localStorage); powers the ⭐ Following filter + card highlight */
 let FOLLOWS=new Set();try{FOLLOWS=new Set(JSON.parse(localStorage.getItem("wc2026_follows")||"[]"));}catch(e){}
@@ -474,10 +510,12 @@ function renderList(){
   if(es){
    const t=liveTag(es);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
+   if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
   }
   const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
+  if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.innerHTML=statsPanelHTML(es.fid);list.appendChild(sp);}
  });
  renderDateStrip(days);
 }
