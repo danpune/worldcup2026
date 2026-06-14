@@ -5,7 +5,9 @@
  *
  * HTTP routes (fetch handler):
  *   GET /scores        -> all World Cup 2026 fixtures (live + finished + scheduled)
- *   GET /match?id=     -> team statistics for one fixture (possession, shots, xG…)
+ *   GET /match?id=     -> {stats, events, lineups} for one fixture
+ *                         stats = possession/shots/xG…; events = goal/card/sub timeline;
+ *                         lineups = starting XI + formation per team
  *   GET /status        -> API-Football account/key check
  *   GET /testpush[?team=X] -> send a test push (all subscribers, or one team's followers)
  *   GET /run           -> run the alert detector once (first call seeds silently)
@@ -15,6 +17,9 @@
  * Scheduled handler: a Cron trigger ("* * * * *", every minute) runs the detector,
  * which sends OneSignal pushes for kickoff / goals / cards / subs / VAR / half-time /
  * full-time, targeted to subscribers who follow either team (or all_matches).
+ * Alert tiers: "core" events (kickoff, goals, full-time) go to everyone following the
+ * team; "extra" events (cards, subs, VAR, half-time) only reach subscribers whose
+ * alerts="all" tag is set (the site's "Goals only" vs "Everything" preference).
  *
  * Cloudflare setup:
  *   - Secret  APISPORTS_KEY        = API-Football (api-sports.io) key
@@ -40,12 +45,17 @@ export default {
       var id = url.searchParams.get("id"); if (!id) return json({ error: "missing id" });
       var mc = caches.default, mk = new Request(new URL("/match?id=" + id, url.origin).toString());
       var mh = await mc.match(mk); if (mh) return mh;
-      var stats = [], me = null;
+      var stats = [], events = [], lineups = [], me = null;
       try {
-        var sd = await (await fetch(API + "/fixtures/statistics?fixture=" + id, { headers })).json();
-        if (sd.errors && Object.keys(sd.errors).length) me = sd.errors; stats = sd.response || [];
+        var r = await Promise.all([
+          fetch(API + "/fixtures/statistics?fixture=" + id, { headers }).then(function (x) { return x.json(); }),
+          fetch(API + "/fixtures/events?fixture=" + id, { headers }).then(function (x) { return x.json(); }),
+          fetch(API + "/fixtures/lineups?fixture=" + id, { headers }).then(function (x) { return x.json(); })
+        ]);
+        stats = r[0].response || []; events = r[1].response || []; lineups = r[2].response || [];
+        if (r[0].errors && Object.keys(r[0].errors).length) me = r[0].errors;
       } catch (e) { me = String(e); }
-      var mr = new Response(JSON.stringify({ id: id, stats: stats, errors: me }, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=30" }) });
+      var mr = new Response(JSON.stringify({ id: id, stats: stats, events: events, lineups: lineups, errors: me }, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=30" }) });
       ctx.waitUntil(mc.put(mk, mr.clone())); return mr;
     }
 
@@ -83,20 +93,21 @@ async function runDetector(env) {
   try { fixtures = (await (await fetch(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json()).response || []; }
   catch (e) { return { error: String(e) }; }
   var now = Date.now();
-  async function fire(title, body, teams) { if (sending) { await sendPush(env, title, body, teams); sent++; log.push(title); } }
+  // tier "core" -> everyone following the team gets it; tier "extra" -> only subscribers whose alerts="all"
+  async function fire(title, body, teams, tier) { if (sending) { await sendPush(env, title, body, teams, tier); sent++; log.push(title); } }
   for (var i = 0; i < fixtures.length; i++) {
     var f = fixtures[i], fid = String(f.fixture.id), short = f.fixture.status.short;
     var home = f.teams.home.name, away = f.teams.away.name, teams = [home, away];
     var gh = f.goals.home == null ? 0 : f.goals.home, ga = f.goals.away == null ? 0 : f.goals.away, score = gh + "–" + ga;
     var ko = Date.parse(f.fixture.date), st = state.fx[fid] || {};
     var live = LIVE_S.indexOf(short) >= 0, finished = FINAL_S.indexOf(short) >= 0;
-    if (short === "NS" && !st.ko && ko - now > 0 && ko - now <= 11 * 60000) { await fire("🔜 Kicking off soon", home + " vs " + away + " starts in ~10 min", teams); st.ko = true; }
-    if (short === "HT" && st.short !== "HT") await fire("⏸️ Half-time", home + " " + score + " " + away, teams);
-    if (finished && !st.ft) { await fire("🏁 Full-time", home + " " + score + " " + away, teams); st.ft = true; }
+    if (short === "NS" && !st.ko && ko - now > 0 && ko - now <= 11 * 60000) { await fire("🔜 Kicking off soon", home + " vs " + away + " starts in ~10 min", teams, "core"); st.ko = true; }
+    if (short === "HT" && st.short !== "HT") await fire("⏸️ Half-time", home + " " + score + " " + away, teams, "extra");
+    if (finished && !st.ft) { await fire("🏁 Full-time", home + " " + score + " " + away, teams, "core"); st.ft = true; }
     if (live || (finished && !st.evDone)) {
       try {
         var events = (await (await fetch(API + "/fixtures/events?fixture=" + fid, { headers })).json()).response || [];
-        for (var j = (st.seen || 0); j < events.length; j++) { var m = eventMessage(events[j]); if (m) await fire(m.title, m.body, teams); }
+        for (var j = (st.seen || 0); j < events.length; j++) { var m = eventMessage(events[j]); if (m) await fire(m.title, m.body, teams, m.tier); }
         st.seen = events.length; if (finished) st.evDone = true;
       } catch (e) {}
     }
@@ -110,26 +121,30 @@ function eventMessage(e) {
   var team = e.team && e.team.name ? e.team.name : "", player = e.player && e.player.name ? e.player.name : "";
   var t = e.time && e.time.elapsed != null ? e.time.elapsed + "'" : "", type = e.type, detail = e.detail || "";
   if (type === "Goal") {
-    if (detail === "Missed Penalty") return { title: "🎯 Penalty missed — " + team, body: player + " " + t };
+    if (detail === "Missed Penalty") return { title: "🎯 Penalty missed — " + team, body: player + " " + t, tier: "core" };
     var lb = detail === "Own Goal" ? "Own goal" : (detail === "Penalty" ? "Penalty goal" : "GOAL!");
-    return { title: "⚽ " + lb + " — " + team, body: player + " " + t };
+    return { title: "⚽ " + lb + " — " + team, body: player + " " + t, tier: "core" };
   }
   if (type === "Card") {
-    if (detail === "Red Card") return { title: "🟥 Red card — " + team, body: player + " " + t };
-    if (detail === "Yellow Card") return { title: "🟨 Yellow card — " + team, body: player + " " + t };
+    if (detail === "Red Card") return { title: "🟥 Red card — " + team, body: player + " " + t, tier: "extra" };
+    if (detail === "Yellow Card") return { title: "🟨 Yellow card — " + team, body: player + " " + t, tier: "extra" };
     return null;
   }
-  if (type === "subst") return { title: "🔀 Substitution — " + team, body: player + " " + t };
-  if (type === "Var") return { title: "📺 VAR — " + team, body: detail + " " + t };
+  if (type === "subst") return { title: "🔀 Substitution — " + team, body: player + " " + t, tier: "extra" };
+  if (type === "Var") return { title: "📺 VAR — " + team, body: detail + " " + t, tier: "extra" };
   return null;
 }
 
-async function sendPush(env, title, body, teams) {
+async function sendPush(env, title, body, teams, tier) {
   var payload = { app_id: OS_APP, headings: { en: title }, contents: { en: body } };
   if (teams && teams.length) {
     var filters = [];
     for (var i = 0; i < teams.length; i++) { if (i > 0) filters.push({ operator: "OR" }); filters.push({ field: "tag", key: "team_" + tagKey(teams[i]), relation: "=", value: "1" }); }
     filters.push({ operator: "OR" }); filters.push({ field: "tag", key: "all_matches", relation: "=", value: "1" });
+    // "extra" events (cards, subs, VAR, half-time) only reach subscribers who opted into everything.
+    // The trailing entry has no {operator:"OR"} before it, so it ANDs against the whole team-OR group:
+    //   (team_A OR team_B OR all_matches) AND alerts="all"
+    if (tier === "extra") filters.push({ field: "tag", key: "alerts", relation: "=", value: "all" });
     payload.filters = filters;
   } else { payload.included_segments = ["Subscribed Users"]; }
   try { return await (await fetch("https://api.onesignal.com/notifications", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Basic " + env.ONESIGNAL_REST_KEY }, body: JSON.stringify(payload) })).json(); }
