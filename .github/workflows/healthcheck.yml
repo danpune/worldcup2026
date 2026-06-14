@@ -1,0 +1,45 @@
+name: Health check
+
+# Hourly (and on-demand) monitoring of the live site, the Cloudflare Worker, the
+# scores feed, and the API-Football quota/plan. On a hard failure it fails the run
+# (GitHub emails the repo owner) AND opens/updates a tracking issue, so there's a
+# persistent log of incidents. Run logs are retained ~90 days under the Actions tab.
+
+on:
+  schedule:
+    - cron: "17 * * * *"     # hourly, at :17 (GitHub may delay a few min under load)
+  workflow_dispatch:           # lets you run it on demand from the Actions tab
+
+permissions:
+  contents: read
+  issues: write                # so it can open/comment a tracking issue on failure
+
+concurrency:
+  group: healthcheck
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6 (SHA-pinned)
+
+      - name: Run health checks
+        run: python3 healthcheck.py
+
+      - name: Open or update tracking issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="[health] wc2026 monitoring alert"
+          BODY="$(cat report.md 2>/dev/null || echo 'Health check failed (no report produced).')
+
+          — run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          EXISTING=$(gh issue list --state open --json number,title \
+            --jq ".[] | select(.title==\"$TITLE\") | .number" | head -1)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
