@@ -24,6 +24,37 @@ The site is split into a free base anyone can run, and a live layer that runs on
 - **Free base — this repo, fully reproducible.** `index.html` + a small GitHub Action that pulls final & in-play **group** scores from [football-data.org](https://www.football-data.org/) (free tier) into `scores.json`. This is what the setup steps below get you: schedule, your-timezone times, calendar buttons, standings, and finished/in-play scores.
 - **Live layer — optional, runs on 3rd-party accounts.** A **Cloudflare Worker** ([`worker/wc2026-api.js`](worker/wc2026-api.js)) proxies [API-Football](https://www.api-football.com/) for minute-by-minute scores, match stats, the event timeline and line-ups, and runs a cron job that sends **OneSignal** push alerts. This needs paid/third-party accounts (API-Football, Cloudflare, OneSignal), so it isn't part of the basic clone — see [The live layer](#the-live-layer-optional-advanced).
 
+### Architecture at a glance
+
+```mermaid
+flowchart TD
+    UI["📱 Visitor's browser<br/>index.html (one file)"]
+
+    subgraph GH["🐙 GitHub — free base (this repo)"]
+        Pages["GitHub Pages<br/>serves the page"]
+        Action["Action · every ~10 min<br/>fetch_scores.py"]
+        JSON[("scores.json")]
+    end
+
+    subgraph CF["☁️ Cloudflare Worker · wc2026-api — live layer (optional)"]
+        Proxy["/scores · /match<br/>cached 15–30s"]
+        Cron["cron · every 1 min<br/>goal-alert detector"]
+    end
+
+    FD["⚽ football-data.org<br/>free · delayed"]
+    AF["⚡ API-Football<br/>paid · real-time"]
+    OS["🔔 OneSignal<br/>web push"]
+
+    Pages --> UI
+    FD --> Action --> JSON
+    UI -- "base scores (fallback)" --> JSON
+    UI -- "live scores · stats · line-ups" --> Proxy --> AF
+    Cron --> AF
+    Cron -- "goal · card · full-time" --> OS -- "push notification" --> UI
+```
+
+**Reading it:** the page always loads from GitHub Pages and reads `scores.json` (kept fresh by the Action). When the optional Worker is configured, the page overlays real-time scores/stats/line-ups from it, and the Worker's once-a-minute cron sends goal alerts via OneSignal. No Worker? The page falls back to `scores.json` and works fine.
+
 ## What each file is
 
 | File | What it does | Where it goes |
@@ -70,7 +101,7 @@ Done. Open your Pages link on your phone — flags, your-timezone times, calenda
 Minute-by-minute scores, match stats, the event timeline, line-ups, and push alerts are powered by a Cloudflare Worker rather than the GitHub Action, because they need a paid/real-time feed. Reproducing this requires your own:
 
 - **[API-Football](https://www.api-football.com/) key** (paid plan for World Cup + live data),
-- **Cloudflare Worker** running [`worker/wc2026-api.js`](worker/wc2026-api.js) — with the API key and a OneSignal REST key stored as encrypted **secrets** (never in the repo), a **KV** namespace for alert state, and a one-minute **cron trigger**,
+- **Cloudflare Worker** running [`worker/wc2026-api.js`](worker/wc2026-api.js) — with the API-Football key, a OneSignal REST key, and an `ADMIN_KEY` (guards the `/testpush` `/run` `/reset` routes) stored as encrypted **secrets** (never in the repo), a **KV** namespace for alert state, and a one-minute **cron trigger**,
 - **[OneSignal](https://onesignal.com/) app** (free Hobby plan) for delivering web push.
 
 The page automatically falls back to the free football-data.org feed if the Worker isn't configured, so the base site works fine without any of this. The Worker file is documented at the top of [`worker/wc2026-api.js`](worker/wc2026-api.js).
