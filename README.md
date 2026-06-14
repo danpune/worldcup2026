@@ -1,34 +1,44 @@
-# World Cup 2026 — live schedule, standings & calendar page
+# World Cup 2026 — your-timezone schedule, live scores & one-tap calendar
 
-A single web page that shows the full schedule in **your** timezone, a **Standings** table that
-recalculates as results come in, and an **Add to Google Calendar** button on every match.
-Scores update automatically from a football data feed and are shown read-only.
+> Every World Cup I just wanted two simple things: to see when each match kicks off in **my own time zone**, and to add the ones I care about to my **calendar** — without wading through cluttered, ad-heavy sites to piece it together. I couldn't find anything that did just that, cleanly, so I built it. This is that project: a fast, ad-free, no-tracking companion for World Cup 2026. It's a one-person passion project. 🙌
 
-You don't need to write any code. Just put these files in a GitHub repo and turn two switches on.
+**Live site:** https://danpune.github.io/worldcup2026/
+
+A single web page — no build step, no framework, just `index.html` — that you can host for free on GitHub Pages.
+
+## What it does
+
+- 🗓 **Full schedule in your timezone**, with an **Add to Google Calendar** button on every match.
+- 📊 **Standings** that recalculate automatically as results come in.
+- 🔴 **Live scores** — minute-by-minute during matches, with a LIVE badge and a ticking match clock.
+- 📋 **Match detail** — possession, shots, xG and more, plus a **goal/card timeline** and both teams' **starting line-ups**.
+- ⭐ **Follow your team** — star teams to filter to them and target your alerts.
+- 🔔 **Goal alerts** — opt-in push notifications for your teams, with an **Everything / Goals-only** preference.
+- 🎬 **Highlights** — every finished match, with an official clip where one's been added or a YouTube search link otherwise.
+- **Ad-free, no tracking, no accounts, no money handled.**
+
+## How it's built (two layers)
+
+The site is split into a free base anyone can run, and a live layer that runs on the maintainer's own keys.
+
+- **Free base — this repo, fully reproducible.** `index.html` + a small GitHub Action that pulls final & in-play **group** scores from [football-data.org](https://www.football-data.org/) (free tier) into `scores.json`. This is what the setup steps below get you: schedule, your-timezone times, calendar buttons, standings, and finished/in-play scores.
+- **Live layer — optional, runs on 3rd-party accounts.** A **Cloudflare Worker** ([`worker/wc2026-api.js`](worker/wc2026-api.js)) proxies [API-Football](https://www.api-football.com/) for minute-by-minute scores, match stats, the event timeline and line-ups, and runs a cron job that sends **OneSignal** push alerts. This needs paid/third-party accounts (API-Football, Cloudflare, OneSignal), so it isn't part of the basic clone — see [The live layer](#the-live-layer-optional-advanced).
 
 ## What each file is
 
 | File | What it does | Where it goes |
 |---|---|---|
 | `index.html` | The web page itself | repo root |
-| `scores.json` | The live scores the page reads (starts empty; the Action overwrites it) | repo root |
+| `scores.json` | The scores the page reads (starts empty; the Action overwrites it) | repo root |
 | `fetch_scores.py` | Pulls scores from football-data.org and writes `scores.json` | repo root |
 | `update-scores.yml` | The scheduled job that runs the fetcher | **`.github/workflows/update-scores.yml`** |
-| `highlights.json` | Official match highlights for the Highlights tab (you curate these by hand) | repo root |
+| `highlights.json` | Optional curated highlight clips for the Highlights tab | repo root |
+| `worker/wc2026-api.js` | (Live layer) Cloudflare Worker: live-score/stats proxy + push-alert detector | Cloudflare, not GitHub Pages |
+| `OneSignalSDKWorker.js` | (Live layer) OneSignal push service worker | repo root |
 
-### Adding a highlight
-The **Highlights** tab shows official FIFA clips you add to `highlights.json`. After a match, grab the official FIFA / FIFA+ YouTube video, copy its **video ID** (the part after `watch?v=` in the URL), and add an entry keyed by the match number:
+## Run your own copy (the free base, ~10 minutes)
 
-```json
-"highlights": {
-  "1": {"yt": "VIDEO_ID_HERE"},
-  "2": {"yt": "ANOTHER_VIDEO_ID"}
-}
-```
-
-Commit/push and it appears on the Highlights tab (newest first). Availability depends on the video's region settings — some clips are geo-restricted by broadcast rights, which the page can't change.
-
-## One-time setup (about 10 minutes)
+You don't need to write any code — upload these files and turn two switches on.
 
 ### 1. Get a free scores key
 - Sign up at **https://www.football-data.org/client/register** (free tier).
@@ -55,20 +65,45 @@ Commit/push and it appears on the Highlights tab (newest first). Availability de
 
 Done. Open your Pages link on your phone — flags, your-timezone times, calendar buttons, live standings.
 
+## The live layer (optional, advanced)
+
+Minute-by-minute scores, match stats, the event timeline, line-ups, and push alerts are powered by a Cloudflare Worker rather than the GitHub Action, because they need a paid/real-time feed. Reproducing this requires your own:
+
+- **[API-Football](https://www.api-football.com/) key** (paid plan for World Cup + live data),
+- **Cloudflare Worker** running [`worker/wc2026-api.js`](worker/wc2026-api.js) — with the API key and a OneSignal REST key stored as encrypted **secrets** (never in the repo), a **KV** namespace for alert state, and a one-minute **cron trigger**,
+- **[OneSignal](https://onesignal.com/) app** (free Hobby plan) for delivering web push.
+
+The page automatically falls back to the free football-data.org feed if the Worker isn't configured, so the base site works fine without any of this. The Worker file is documented at the top of [`worker/wc2026-api.js`](worker/wc2026-api.js).
+
+## Highlights
+
+The **Highlights** tab lists every **finished** match (newest first) automatically — no upkeep needed. By default each match links out to a YouTube search for that fixture's highlights.
+
+To upgrade a match to an **embedded clip**, add its official video to `highlights.json`: grab the official FIFA / FIFA+ YouTube video, copy its **video ID** (the part after `watch?v=` in the URL), and add an entry keyed by the match number:
+
+```json
+"highlights": {
+  "1": {"yt": "VIDEO_ID_HERE"},
+  "2": {"yt": "ANOTHER_VIDEO_ID"}
+}
+```
+
+Commit/push and that match shows the embedded clip instead of the search link. Availability depends on the video's region settings — some clips are geo-restricted by broadcast rights, which the page can't change.
+
 ## How "live" works
-- The job fetches **final and in-play** group scores. Final scores feed the standings; in-play games show a **LIVE** badge but only count once full-time.
-- The bar at the top of the page shows the source and **when it last updated**.
-- Scores are **read-only** — they come straight from the feed; there's no manual editing. If the feed is ever down, the job never overwrites a good `scores.json` with a failed fetch, so the last known scores stay put.
+- The free base fetches **final and in-play** group scores; finals feed the standings, in-play games show a **LIVE** badge but only count once full-time. The live layer adds minute-by-minute updates and a ticking clock.
+- The bar at the top of the Schedule and Standings tabs shows the source and **when it last updated**.
+- Scores are **read-only** — they come straight from the feed; there's no manual editing. If a feed is ever down, the job never overwrites a good `scores.json` with a failed fetch, so the last known scores stay put.
 
 ## Good to know / troubleshooting
-- **Refresh cadence:** every ~10 min (GitHub's scheduler can add a few minutes' delay under load). You can lower it in `update-scores.yml` (`cron`), but football-data.org's free tier allows ~10 calls/minute, so don't go below ~5 min.
+- **Refresh cadence (free base):** every ~10 min (GitHub's scheduler can add a few minutes' delay under load). You can lower it in `update-scores.yml` (`cron`), but football-data.org's free tier allows ~10 calls/minute, so don't go below ~5 min.
 - **403 / no data:** the free tier uses competition code `WC`. If you get a 403, confirm the World Cup is enabled on your football-data.org dashboard.
 - **Knockout scores:** the standings are group-stage (that's where a points table applies). Knockout team names appear once decided; auto-scoring those is a later add-on.
 - **Hosting elsewhere:** you can serve the page on Netlify instead, but keep the repo on GitHub so the Action can write `scores.json`. GitHub Pages is simplest because it's all in one place.
 
-## Sources
+## Sources & credits
 - **Official (source of truth):** FIFA — https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026
-- **Live scores feed:** football-data.org — https://www.football-data.org/
+- **Live scores & stats:** [API-Football](https://www.api-football.com/) (live layer) and [football-data.org](https://www.football-data.org/) (free base).
 - **Schedule curated from:** NBC Sports, cross-checked against World Cup Wiki and FIFA host-city sites (Dallas, NY/NJ, Atlanta).
 - **TV (USA):** FOX Sports — https://www.foxsports.com/soccer/fifa-world-cup
 
