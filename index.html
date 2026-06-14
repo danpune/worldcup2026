@@ -108,6 +108,12 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .fav:focus-visible{outline:2px solid var(--gold);border-radius:4px;opacity:1}
 .card.following{border-left-color:var(--gold)}
 .alertbtn{display:inline-flex;align-items:center;gap:8px;background:var(--pitch);color:#fff;border:0;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer;margin:2px 0 8px}
+.notifprompt{position:fixed;left:12px;right:12px;bottom:12px;max-width:540px;margin:0 auto;background:var(--pitch);color:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 28px rgba(0,0,0,.32);z-index:50;border:1px solid rgba(232,184,75,.4)}
+.notifprompt>span{font-size:14px;font-weight:600;line-height:1.3}
+.npbtns{display:flex;gap:8px;flex-shrink:0}
+.npbtns button{border:0;border-radius:9px;padding:10px 15px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.npbtns button:first-child{background:var(--gold);color:#1a1208}
+.npbtns .np-no{background:rgba(255,255,255,.16);color:#fff}
 .alertbtn:hover{background:var(--pitch2)}
 .alertbtn.on{background:#1f7a44}
 .iostip{background:#fdf4e0;border:1px solid #e7d4a8;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.5;color:#5b4a1e;margin:2px 0 10px}
@@ -138,7 +144,8 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .ststatus.live{color:var(--live);font-weight:600}
 .statload{color:var(--muted);font-size:13px;padding:5px 0}
 .strow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:10px}
-.strow .sv{font-weight:700;min-width:42px}
+.strow .sv{font-weight:600;color:var(--muted);min-width:42px}
+.strow .sv.lead{font-weight:800;color:var(--text)}
 .strow .sv:last-child{text-align:right}
 .strow .sl{color:var(--muted);font-size:12px;text-align:center;flex:1}
 .sbar{height:5px;border-radius:3px;background:#dd8c46;overflow:hidden;margin-top:4px}
@@ -319,6 +326,10 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  </section>
 </main>
 
+<div id="notifprompt" class="notifprompt" style="display:none" role="dialog" aria-label="Enable goal alerts">
+ <span>🔔 Get goal alerts for your teams?</span>
+ <div class="npbtns"><button type="button" onclick="enableFromPrompt()">Enable</button><button type="button" class="np-no" onclick="dismissPrompt()">Not now</button></div>
+</div>
 <footer><div class="wrap">Personal World Cup 2026 companion · times convert to your selected zone · scores via API-Football, schedule per FIFA · not affiliated with FIFA or Polymarket · prediction figures are informational only, not betting advice<span id="visits"></span></div></footer>
 
 <script>
@@ -427,8 +438,9 @@ function statsPanelHTML(fid){
  if(arr.length<2)return '<div class="statload">Match stats aren’t available for this game.</div>';
  const H=arr[0],A=arr[1];let rows="";
  STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
-  const tot=statNum(hv)+statNum(av),hp=tot>0?Math.round(statNum(hv)/tot*100):50;
-  rows+='<div class="strow"><span class="sv">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="sv">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
+  const hn=statNum(hv),an=statNum(av),tot=hn+an,hp=tot>0?Math.round(hn/tot*100):50;
+  const hc="sv"+(hn>an?" lead":""),ac="sv"+(an>hn?" lead":"");
+  rows+='<div class="strow"><span class="'+hc+'">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="'+ac+'">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
  return rows||'<div class="statload">No stats yet.</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".statsbtn");if(!b)return;
@@ -468,6 +480,17 @@ function updateAlertUI(){
  if(alertsOn()){b.textContent="✅ Goal alerts are ON";b.classList.add("on");}
  else{b.textContent="🔔 Enable goal alerts";b.classList.remove("on");}
 }
+/* gentle one-time soft-prompt inviting new visitors to turn on alerts */
+function showNotifPrompt(){
+ try{
+  if(alertsOn())return;                                   /* already on */
+  if(localStorage.getItem("notif_prompt_seen")==="1")return; /* shown before */
+  const el=document.getElementById("notifprompt");if(el)el.style.display="flex";
+ }catch(e){}
+}
+function dismissPrompt(){const el=document.getElementById("notifprompt");if(el)el.style.display="none";try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}}
+function enableFromPrompt(){try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}dismissPrompt();enableAlerts();}
+setTimeout(showNotifPrompt,4500);
 const escA=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const favBtn=t=>RANK[t]?`<button class="fav${isFollowed(t)?" on":""}" type="button" data-team="${escA(t)}" aria-pressed="${isFollowed(t)}" aria-label="${isFollowed(t)?"Unfollow ":"Follow "}${escA(t)}" title="${isFollowed(t)?"Following — tap to unfollow":"Follow this team"}">${isFollowed(t)?"★":"☆"}</button>`:"";
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".fav");if(b){e.preventDefault();toggleFollow(b.dataset.team);}});
