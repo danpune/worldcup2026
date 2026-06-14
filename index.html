@@ -117,6 +117,13 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .alertbtn:hover{background:var(--pitch2)}
 .alertbtn.on{background:#1f7a44}
 .iostip{background:#fdf4e0;border:1px solid #e7d4a8;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.5;color:#5b4a1e;margin:2px 0 10px}
+.alertpref{margin:4px 0 6px}
+.alertpref .aplabel{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.apseg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.apbtn{border:0;background:transparent;color:var(--text);padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer}
+.apbtn+.apbtn{border-left:1px solid var(--line)}
+.apbtn.on{background:var(--pitch);color:#fff}
+.aphint{font-size:12.5px;color:var(--muted);margin:7px 0 0}
 .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
 .meta .drive{color:#7d6314;font-weight:600}
 .mno{color:var(--muted);font-weight:600;font-size:11px}
@@ -151,6 +158,17 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .strow .sl{color:var(--muted);font-size:12px;text-align:center;flex:1}
 .sbar{height:5px;border-radius:3px;background:#dd8c46;overflow:hidden;margin-top:4px}
 .sbar>span{display:block;height:100%;background:#3f78c9;border-radius:3px}
+.stsub{font-family:Oswald;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);margin:14px 0 7px;padding-top:11px;border-top:1px solid var(--line)}
+.timeline .evrow{display:grid;grid-template-columns:1fr 38px 1fr;align-items:center;font-size:12.5px;margin:6px 0}
+.evrow .evh{text-align:right}.evrow .eva{text-align:left}
+.evrow .evt{text-align:center;font-weight:700;color:var(--muted);font-size:11.5px}
+.evw sub{font-size:8px;vertical-align:super;font-weight:700}
+.lineups{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.luc .lut{font-weight:700;font-size:12.5px;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.luc .luf{font-family:Oswald;color:var(--muted);font-size:11px;font-weight:400}
+.luc ul{list-style:none;margin:0;padding:0}
+.luc li{font-size:12.5px;line-height:1.7;color:var(--text)}
+.luc li b{display:inline-block;min-width:18px;color:var(--muted);font-weight:700}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -318,6 +336,14 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p>Get a notification when your teams play — <b>kickoff</b>, every <b>goal</b>, and the <b>full-time</b> result. Tap the ☆ next to a team to follow them (alerts target your teams; follow none and you'll get every match).</p>
   <button id="alertbtn" class="alertbtn" type="button" onclick="enableAlerts()">🔔 Enable goal alerts</button>
   <div id="iostip" class="iostip" style="display:none">📱 On iPhone: first tap <b>Share</b> → <b>Add to Home Screen</b>, then open it from your home screen and tap “Enable” there. (Apple only allows alerts for installed web apps.)</div>
+  <div class="alertpref">
+   <span class="aplabel">Notify me about</span>
+   <div class="apseg">
+    <button type="button" class="apbtn" data-pref="all" onclick="setAlertPref('all')">Everything</button>
+    <button type="button" class="apbtn" data-pref="goals" onclick="setAlertPref('goals')">Goals only</button>
+   </div>
+   <p class="aphint" id="aphint"></p>
+  </div>
   <h3>How live scores work</h3>
   <p>Final scores are pulled automatically from a football data feed on a schedule and shown here; the standings recalculate from completed matches. The bar at the top of the Schedule and Standings tabs always shows the source and when it last updated. Scores are read-only — they come straight from the feed.</p>
   <h3>About the predictions</h3>
@@ -491,7 +517,29 @@ function statsPanelHTML(fid){
   const hn=statNum(hv),an=statNum(av),tot=hn+an,hp=tot>0?Math.round(hn/tot*100):50;
   const hc="sv"+(hn>an?" lead":""),ac="sv"+(an>hn?" lead":"");
   rows+='<div class="strow"><span class="'+hc+'">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="'+ac+'">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
- return rows||'<div class="statload">No stats yet.</div>';
+ return (rows?'<div class="stsec">'+rows+'</div>':"")+timelineHTML(d.events,H,A)+lineupsHTML(d.lineups)||'<div class="statload">No stats yet.</div>';
+}
+/* goal/card/sub timeline — left column = home team's events, right = away (matched by team name) */
+function timelineHTML(events,H,A){
+ const ev=(events||[]).filter(e=>e.type==="Goal"||e.type==="Card"||e.type==="subst");
+ if(!ev.length)return "";
+ const hname=H&&H.team?H.team.name:null;
+ const ico=e=>{if(e.type==="Goal")return e.detail==="Own Goal"?"⚽<sub>OG</sub>":e.detail==="Penalty"?"⚽<sub>P</sub>":e.detail==="Missed Penalty"?"❌":"⚽";if(e.type==="Card")return e.detail==="Red Card"?"🟥":"🟨";return "🔀";};
+ const rows=ev.map(e=>{
+  const t=(e.time&&e.time.elapsed!=null?e.time.elapsed:"")+(e.time&&e.time.extra?"+"+e.time.extra:"")+"'";
+  const who=e.type==="subst"?(escA((e.assist&&e.assist.name)||e.player&&e.player.name||"")):escA((e.player&&e.player.name)||"");
+  const home=hname!=null&&e.team&&e.team.name===hname;
+  const cell='<span class="evw">'+ico(e)+' '+who+'</span>';
+  return '<div class="evrow"><span class="evh">'+(home?cell:"")+'</span><span class="evt">'+t+'</span><span class="eva">'+(home?"":cell)+'</span></div>';
+ }).join("");
+ return '<div class="stsub">Key moments</div><div class="stsec timeline">'+rows+'</div>';
+}
+/* starting line-ups, two columns */
+function lineupsHTML(lu){
+ if(!lu||lu.length<2||!lu[0].startXI||!lu[1].startXI)return "";
+ const col=t=>{const xi=(t.startXI||[]).map(p=>'<li>'+(p.player&&p.player.number!=null?'<b>'+p.player.number+'</b> ':"")+escA((p.player&&p.player.name)||"")+'</li>').join("");
+  return '<div class="luc"><div class="lut">'+escA((t.team&&t.team.name)||"")+(t.formation?'<span class="luf">'+escA(t.formation)+'</span>':"")+'</div><ul>'+xi+'</ul></div>';};
+ return '<div class="stsub">Starting XI</div><div class="stsec lineups">'+col(lu[0])+col(lu[1])+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".statsbtn");if(!b)return;
  const n=+b.dataset.n,fid=b.dataset.fid;
@@ -508,6 +556,14 @@ const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
 const tagKey=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,"_");
 function alertsOn(){try{return !!(window.OneSignal&&OneSignal.Notifications&&OneSignal.Notifications.permission);}catch(e){return false;}}
+/* alert detail level: "all" = goals + cards + subs + VAR + half-time; "goals" = goals/kickoff/full-time only */
+let alertPref="all";try{alertPref=localStorage.getItem("wc2026_alertpref")||"all";}catch(e){}
+function updateAlertPrefUI(){
+ document.querySelectorAll(".apbtn").forEach(b=>b.classList.toggle("on",b.dataset.pref===alertPref));
+ const h=document.getElementById("aphint");
+ if(h)h.textContent=alertPref==="goals"?"Just the essentials: kickoff, every goal, and the full-time result.":"All key events: goals, yellow/red cards, substitutions, VAR calls and half-time.";
+}
+function setAlertPref(p){alertPref=p;try{localStorage.setItem("wc2026_alertpref",p);}catch(e){}updateAlertPrefUI();syncFollowTags();}
 async function syncFollowTags(){
  if(!window.OneSignal||!OneSignal.User||!alertsOn())return;
  try{
@@ -516,6 +572,7 @@ async function syncFollowTags(){
   for(const k of prev){if(cur.indexOf(k)<0)await OneSignal.User.removeTag("team_"+k);}
   for(const k of cur)await OneSignal.User.addTag("team_"+k,"1");
   await OneSignal.User.addTag("all_matches",cur.length?"0":"1");
+  await OneSignal.User.addTag("alerts",alertPref);
   localStorage.setItem("os_team_tags",JSON.stringify(cur));
  }catch(e){}
 }
@@ -541,6 +598,7 @@ function showNotifPrompt(){
 function dismissPrompt(){const el=document.getElementById("notifprompt");if(el)el.style.display="none";try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}}
 function enableFromPrompt(){try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}dismissPrompt();enableAlerts();}
 setTimeout(showNotifPrompt,4500);
+updateAlertPrefUI();
 const escA=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const favBtn=t=>RANK[t]?`<button class="fav${isFollowed(t)?" on":""}" type="button" data-team="${escA(t)}" aria-pressed="${isFollowed(t)}" aria-label="${isFollowed(t)?"Unfollow ":"Follow "}${escA(t)}" title="${isFollowed(t)?"Following — tap to unfollow":"Follow this team"}">${isFollowed(t)?"★":"☆"}</button>`:"";
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".fav");if(b){e.preventDefault();toggleFollow(b.dataset.team);}});
