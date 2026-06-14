@@ -605,8 +605,11 @@ function showNotifPrompt(){
 }
 function dismissPrompt(){const el=document.getElementById("notifprompt");if(el)el.style.display="none";try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}}
 function enableFromPrompt(){try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}dismissPrompt();enableAlerts();}
-/* feedback: assemble the address in JS (split parts, no literal mailto in source) so spam bots can't harvest it */
+/* feedback: prefer a Google Form (structured, no exposed address); falls back to a JS-assembled
+   mailto (split parts → no literal address in source, so spam bots can't harvest it) until the form URL is set. */
+const FEEDBACK_FORM="";   /* paste the Google Form link here to switch the button + footer to the form */
 function sendFeedback(){
+ if(FEEDBACK_FORM){window.open(FEEDBACK_FORM,"_blank","noopener");return;}
  const a=["worldcup2026.feedback","gmail.com"].join("@");
  const sub=encodeURIComponent("World Cup 2026 — feedback");
  const body=encodeURIComponent("Your feedback or idea:\n\n\n(Optional) phone / browser: ");
