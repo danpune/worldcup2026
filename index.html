@@ -321,16 +321,35 @@ function dParts(iso){const d=new Date(iso);return{day:d.toLocaleDateString("en-U
 
 /* live scores from feed */
 let LIVE={scores:{},updated:null,source:null,ok:false};
+/* Live scores: football-data.org (delayed) is the base; real-time API-Football — via our Cloudflare Worker — is overlaid on in-play matches. */
+const LIVE_API="https://wc2026-api.footy26.workers.dev/scores";
+const TEAM_ALIAS={"Cape Verde Islands":"Cape Verde","Congo DR":"DR Congo"};  /* API-Football spellings → our schedule */
+const normTeam=t=>(TEAM_ALIAS[t]||t);
+const pairKey=(h,a)=>normTeam(h).toLowerCase()+"|"+normTeam(a).toLowerCase();
+const PAIR2N={};MATCHES.forEach(m=>{PAIR2N[pairKey(m.home,m.away)]=m.n;});
+function mapApiStatus(s){
+ if(s==="HT")return{s:"PAUSED",live:true};
+ if(["1H","2H","ET","BT","P","LIVE","INT"].indexOf(s)>=0)return{s:"IN_PLAY",live:true};
+ if(["FT","AET","PEN"].indexOf(s)>=0)return{s:"FINISHED",live:false};
+ return{s:"SCHEDULED",live:false};
+}
+let livePollTimer=null;
 async function fetchLive(){
+ let base={},baseUpdated=null;
+ try{const r=await fetch("scores.json?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();base=j.scores||{};baseUpdated=j.updated||null;}}catch(e){}
+ let overlay={},apiUpdated=null,anyLive=false,apiOk=false;
  try{
-  const r=await fetch("scores.json?t="+Date.now(),{cache:"no-store"});
-  if(!r.ok) throw 0;
-  const j=await r.json();
-  LIVE={scores:j.scores||{},updated:j.updated||null,source:j.source||"feed",ok:true};
- }catch(e){LIVE.ok=false;}
+  const r=await fetch(LIVE_API+"?t="+Date.now(),{cache:"no-store"});
+  if(r.ok){const j=await r.json();apiOk=true;apiUpdated=j.updated||null;
+   (j.matches||[]).forEach(f=>{const n=PAIR2N[pairKey(f.home,f.away)];if(!n)return;const st=mapApiStatus(f.status);
+    if(st.s==="SCHEDULED"&&f.h==null)return;
+    overlay[n]={h:f.h,a:f.a,s:st.s,min:f.minute};if(st.live)anyLive=true;});}
+ }catch(e){}
+ const usingApi=apiOk&&Object.keys(overlay).length>0;
+ LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:usingApi?"api-football":"football-data",ok:(apiOk||Object.keys(base).length>0)};
  render();
- /* now that scores are in and card heights are final, land precisely on today (once, unless the user already scrolled) */
  if(!initialScrollDone){initialScrollDone=true;if(!userInteracted&&currentView==="schedule")requestAnimationFrame(jumpToToday);}
+ clearTimeout(livePollTimer);livePollTimer=setTimeout(fetchLive,anyLive?20000:120000);  /* poll fast while live, slow otherwise */
 }
 function liveScore(n){const s=LIVE.scores[n];if(s&&s.h!=null&&s.a!=null)return s;return null;}
 function cardScore(n){return liveScore(n);}                          /* score to display — feed only, read-only */
@@ -384,7 +403,7 @@ function updateProv(){
  const on=LIVE.ok&&Object.keys(LIVE.scores).length>0;
  const live=Object.values(LIVE.scores).some(s=>isOngoing(s.s));
  let txt;
- if(LIVE.ok){txt=`<span class="dot"></span><span><span class="src">Scores: <a href="https://www.football-data.org/" target="_blank" rel="noopener">football-data.org</a></span>${LIVE.updated?" · updated "+relTime(LIVE.updated):""} · schedule per FIFA</span>`;}
+ if(LIVE.ok){const isApi=LIVE.source==="api-football";const sl='Scores: <a href="'+(isApi?'https://www.api-football.com/':'https://www.football-data.org/')+'" target="_blank" rel="noopener">'+(isApi?'API-Football':'football-data.org')+'</a>'+(live?' <span class="livepill">LIVE</span>':'');txt=`<span class="dot"></span><span><span class="src">${sl}</span>${LIVE.updated?" · updated "+relTime(LIVE.updated):""} · schedule per FIFA</span>`;}
  else{txt=`<span class="dot"></span><span><span class="src">Scores unavailable</span> — couldn't reach the live feed right now. Schedule and times still work; tap Refresh to retry.</span>`;}
  [document.getElementById("prov"),document.getElementById("prov2")].forEach(el=>{if(!el)return;el.className="prov"+(live?" on":"");el.innerHTML=txt+'<button class="rfr" type="button" onclick="fetchLive()">Refresh</button>';});
 }
