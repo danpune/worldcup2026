@@ -78,6 +78,21 @@ export default {
       ctx.waitUntil(c.put(ck, res.clone())); return res;
     }
 
+    // Client error beacon: the site posts anonymous JS-error info here for triage. We log ONLY the error
+    // text + source location + browser — no IP, no identifiers, nothing persisted beyond Cloudflare's logs.
+    if (url.pathname === "/log") {
+      if (request.method !== "POST") return new Response(null, { status: 405, headers: cors() });
+      try {
+        var e = JSON.parse((await request.text()).slice(0, 2000));
+        console.log("wc2026 client-error: " + JSON.stringify({
+          m: String(e.m || "").slice(0, 300), s: String(e.s || "").slice(0, 200),
+          l: e.l, c: e.c, p: String(e.p || "").slice(0, 120),
+          ua: (request.headers.get("user-agent") || "").slice(0, 200)
+        }));
+      } catch (_) {}
+      return new Response(null, { status: 204, headers: cors() });
+    }
+
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
     // Fails closed: if ADMIN_KEY is unset or the ?key= doesn't match, these routes return 403. (Cron is unaffected.)
     if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
@@ -180,5 +195,5 @@ async function sendPush(env, title, body, teams, tier) {
   catch (e) { return { error: String(e) }; }
 }
 function tagKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, "_"); }
-function cors() { return { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, OPTIONS", "access-control-allow-headers": "*" }; }
+function cors() { return { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "*" }; }
 function json(obj) { return new Response(JSON.stringify(obj, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json" }) }); }
