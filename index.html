@@ -131,6 +131,11 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .statsbtn{border:1px solid var(--line);background:var(--card);color:var(--pitch);border-radius:8px;padding:7px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .statsbtn:hover{border-color:var(--pitch2);background:#f3f8f5}
 .statswrap{margin:-2px 0 10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px 13px}
+.stathead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-bottom:9px;margin-bottom:2px;border-bottom:1px solid var(--line)}
+.stathead .sht{font-size:14px;font-weight:600}
+.stathead .sht b{font-size:16px}
+.ststatus{font-family:Oswald;font-size:12px;letter-spacing:.04em;color:var(--muted);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.ststatus.live{color:var(--live);font-weight:600}
 .statload{color:var(--muted);font-size:13px;padding:5px 0}
 .strow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:10px}
 .strow .sv{font-weight:700;min-width:42px}
@@ -358,7 +363,7 @@ async function fetchLive(){
   if(r.ok){const j=await r.json();apiOk=true;apiUpdated=j.updated||null;
    (j.matches||[]).forEach(f=>{const n=PAIR2N[pairKey(f.home,f.away)];if(!n)return;const st=mapApiStatus(f.status);
     if(st.s==="SCHEDULED"&&f.h==null)return;
-    overlay[n]={h:f.h,a:f.a,s:st.s,min:f.minute,fid:f.id};if(st.live)anyLive=true;});}
+    overlay[n]={h:f.h,a:f.a,s:st.s,min:f.minute,fid:f.id,raw:f.status};if(st.live)anyLive=true;});}
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
  LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:usingApi?"api-football":"football-data",ok:(apiOk||Object.keys(base).length>0)};
@@ -380,6 +385,32 @@ function liveTag(es){
  return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
 }
 
+/* fan-friendly match clock/status from the raw API-Football status (e.g. 67', Half-time, ET, Full-time) */
+function statusLabel(es){
+ const raw=es.raw,min=es.min,mm=Number.isInteger(min)?min+"'":"LIVE";
+ switch(raw){
+  case "1H": case "2H": return {text:mm,live:true};
+  case "HT": return {text:"Half-time",live:true};
+  case "ET": return {text:"Extra time "+mm,live:true};
+  case "BT": return {text:"Extra-time break",live:true};
+  case "P": return {text:"Penalties",live:true};
+  case "INT": return {text:"Interrupted "+mm,live:true};
+  case "FT": return {text:"Full-time",live:false};
+  case "AET": return {text:"Full-time (a.e.t.)",live:false};
+  case "PEN": return {text:"Full-time (pens)",live:false};
+  case "SUSP": return {text:"Suspended",live:false};
+  default:
+   if(es.s==="IN_PLAY")return {text:mm,live:true};
+   if(es.s==="PAUSED")return {text:"Half-time",live:true};
+   if(es.s==="FINISHED")return {text:"Full-time",live:false};
+   return {text:"",live:false};
+ }
+}
+function statHeaderHTML(m,es){
+ const st=statusLabel(es);
+ const hf=m.group_game?m.hf+" ":"",af=m.group_game?m.af+" ":"";
+ return '<div class="stathead"><span class="sht">'+hf+m.home+' <b>'+es.h+'–'+es.a+'</b> '+af+m.away+'</span>'+(st.text?'<span class="ststatus'+(st.live?" live":"")+'">'+(st.live?'<span class="livedot"></span>':"")+st.text+'</span>':"")+'</div>';
+}
 /* tap-to-expand match stats (possession, shots, etc.) — API-Football /fixtures/statistics via the Worker */
 const STATS_API="https://wc2026-api.footy26.workers.dev/match";
 let openStats=new Set(),statsCache={};
@@ -552,7 +583,7 @@ function renderList(){
   const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
-  if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.innerHTML=statsPanelHTML(es.fid);list.appendChild(sp);}
+  if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid);list.appendChild(sp);}
  });
  renderDateStrip(days);
 }
