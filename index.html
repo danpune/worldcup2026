@@ -605,6 +605,18 @@ function showNotifPrompt(){
 }
 function dismissPrompt(){const el=document.getElementById("notifprompt");if(el)el.style.display="none";try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}}
 function enableFromPrompt(){try{localStorage.setItem("notif_prompt_seen","1");}catch(e){}dismissPrompt();enableAlerts();}
+/* privacy-safe error beacon: report ONLY the error text + location + browser (no IP/PII, no third-party tracker)
+   to the Worker /log route so real user-facing bugs can be triaged. Capped per page load to avoid flooding. */
+(function(){
+ var LOG="https://wc2026-api.footy26.workers.dev/log",sent=0;
+ function beacon(m,s,l,c){
+  if(sent>=5||!navigator.sendBeacon)return;sent++;
+  try{var p=JSON.stringify({m:String(m||"").slice(0,300),s:String(s||"").slice(0,200),l:l,c:c,p:location.pathname});
+   navigator.sendBeacon(LOG,new Blob([p],{type:"text/plain"}));}catch(e){}
+ }
+ window.addEventListener("error",function(e){beacon(e.message,e.filename,e.lineno,e.colno);});
+ window.addEventListener("unhandledrejection",function(e){beacon("unhandledrejection: "+((e.reason&&e.reason.message)||e.reason),"",0,0);});
+})();
 /* feedback: prefer a Google Form (structured, no exposed address); falls back to a JS-assembled
    mailto (split parts → no literal address in source, so spam bots can't harvest it) until the form URL is set. */
 const FEEDBACK_FORM="https://forms.gle/fj1ogTEtd2dgjPUZ8";   /* Google Form → opens for the Send-feedback button + footer link */

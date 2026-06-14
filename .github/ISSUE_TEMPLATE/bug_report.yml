@@ -1,0 +1,29 @@
+name: 🐞 Bug report
+description: Something on the site is wrong or broken
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect to see instead?
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where on the site?
+      placeholder: e.g. Schedule tab · Mexico vs South Africa · the match-stats panel
+  - type: input
+    id: device
+    attributes:
+      label: Device & browser
+      placeholder: e.g. iPhone 15 / Safari, or Windows / Chrome
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (if you can)
+      placeholder: |
+        1. Open the Standings tab
+        2. …

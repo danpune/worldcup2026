@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Send feedback (no GitHub account needed)
+    url: https://forms.gle/fj1ogTEtd2dgjPUZ8
+    about: Not a developer? Share feedback or report a problem via the quick form — it goes straight to the maintainer.

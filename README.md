@@ -74,6 +74,8 @@ flowchart TD
 | `preview-card.html` / `preview.jpg` | Social/link-preview card and image | repo root |
 | `qr.png` | Scannable QR code of the site URL | repo root |
 | `test_fetch_scores.py` | Unit tests for the score fetcher | repo root |
+| `healthcheck.py` | Pings the site/Worker/feed and checks API quota — used by the monitoring Action, runnable locally | repo root |
+| `healthcheck.yml` | Hourly health-check workflow (alerts + tracking issue on failure) | **`.github/workflows/healthcheck.yml`** |
 | `LICENSE` | MIT license | repo root |
 
 ## Run your own copy (the free base, ~10 minutes)
@@ -140,6 +142,12 @@ Commit/push and that match shows the embedded clip instead of the search link. A
 - **403 / no data:** the free tier uses competition code `WC`. If you get a 403, confirm the World Cup is enabled on your football-data.org dashboard.
 - **Knockout scores:** the standings are group-stage (that's where a points table applies). Knockout team names appear once decided; auto-scoring those is a later add-on.
 - **Hosting elsewhere:** you can serve the page on Netlify instead, but keep the repo on GitHub so the Action can write `scores.json`. GitHub Pages is simplest because it's all in one place.
+
+## Monitoring & health
+- **Hourly health check** — [`healthcheck.py`](healthcheck.py), run by [`.github/workflows/healthcheck.yml`](.github/workflows/healthcheck.yml), verifies the site is up, the Worker is up and serving scores, the admin routes are still locked, the API-Football plan/quota is healthy, and `scores.json` is fresh. On a hard failure it fails the run (GitHub emails the owner) and opens/updates a `[health]` tracking issue. Run it yourself any time: `python3 healthcheck.py`.
+- **Worker errors** — the Worker `console.log`s detector failures and a privacy-safe client error beacon (`/log`); view them in the Cloudflare dashboard (**Workers → Observability → Logs**) or live with `wrangler tail`.
+- **Uptime** — for instant outage alerts, point a free uptime monitor (e.g. UptimeRobot) at the site URL and the Worker's `/scores`.
+- **Error beacon** — the page reports anonymous JS errors (message + source line + browser only — no IP, no identifiers, no third-party tracker) to the Worker `/log` route, so real user-facing bugs can be triaged from the Cloudflare logs.
 
 ## Sources & credits
 - **Official (source of truth):** FIFA — https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026

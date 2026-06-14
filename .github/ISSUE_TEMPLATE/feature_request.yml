@@ -1,0 +1,17 @@
+name: 💡 Feature idea
+description: Suggest something to add or improve
+title: "[idea] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like to see, and why would it help?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Examples, links, or how you'd use it (optional).
