@@ -107,6 +107,10 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .fav:hover{opacity:1}
 .fav:focus-visible{outline:2px solid var(--gold);border-radius:4px;opacity:1}
 .card.following{border-left-color:var(--gold)}
+.alertbtn{display:inline-flex;align-items:center;gap:8px;background:var(--pitch);color:#fff;border:0;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer;margin:2px 0 8px}
+.alertbtn:hover{background:var(--pitch2)}
+.alertbtn.on{background:#1f7a44}
+.iostip{background:#fdf4e0;border:1px solid #e7d4a8;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.5;color:#5b4a1e;margin:2px 0 10px}
 .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
 .meta .drive{color:#7d6314;font-weight:600}
 .mno{color:var(--muted);font-weight:600;font-size:11px}
@@ -193,6 +197,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  .cal{background:#1d2922;color:#cfe3d8}
  .cal:hover{background:#243029}
  .statsbtn:hover{background:#243029}
+ .iostip{background:#2a2418;border-color:#4a3f22;color:#e6d6a8}
  .result{background:#23302a;color:var(--text)}
  .result.ongoing{background:#3a1f1b;color:#ff8a78}
  .result.half{background:#33291a;color:#e8c25f}
@@ -267,6 +272,10 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p>Point a phone camera at this code to open the site — or copy the link below.</p>
   <img class="qr" src="qr.png" width="168" height="168" alt="QR code that opens this site" loading="lazy">
   <p><a href="https://danpune.github.io/worldcup2026/" target="_blank" rel="noopener">danpune.github.io/worldcup2026</a></p>
+  <h3>🔔 Goal alerts</h3>
+  <p>Get a notification when your teams play — <b>kickoff</b>, every <b>goal</b>, and the <b>full-time</b> result. Tap the ☆ next to a team to follow them (alerts target your teams; follow none and you'll get every match).</p>
+  <button id="alertbtn" class="alertbtn" type="button" onclick="enableAlerts()">🔔 Enable goal alerts</button>
+  <div id="iostip" class="iostip" style="display:none">📱 On iPhone: first tap <b>Share</b> → <b>Add to Home Screen</b>, then open it from your home screen and tap “Enable” there. (Apple only allows alerts for installed web apps.)</div>
   <h3>How live scores work</h3>
   <p>Final scores are pulled automatically from a football data feed on a schedule and shown here; the standings recalculate from completed matches. The bar at the top of the Schedule and Standings tabs always shows the source and when it last updated. Scores are read-only — they come straight from the feed.</p>
   <h3>About the predictions</h3>
@@ -399,7 +408,35 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 /* follow-your-team: favourites saved in the browser (localStorage); powers the ⭐ Following filter + card highlight */
 let FOLLOWS=new Set();try{FOLLOWS=new Set(JSON.parse(localStorage.getItem("wc2026_follows")||"[]"));}catch(e){}
 const isFollowed=t=>FOLLOWS.has(t);
-function toggleFollow(t){FOLLOWS.has(t)?FOLLOWS.delete(t):FOLLOWS.add(t);try{localStorage.setItem("wc2026_follows",JSON.stringify([...FOLLOWS]));}catch(e){}render();}
+function toggleFollow(t){FOLLOWS.has(t)?FOLLOWS.delete(t):FOLLOWS.add(t);try{localStorage.setItem("wc2026_follows",JSON.stringify([...FOLLOWS]));}catch(e){}render();syncFollowTags();}
+
+/* push notifications via OneSignal — opt-in goal/kickoff/full-time alerts, targeted to followed teams */
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+const tagKey=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,"_");
+function alertsOn(){try{return !!(window.OneSignal&&OneSignal.Notifications&&OneSignal.Notifications.permission);}catch(e){return false;}}
+async function syncFollowTags(){
+ if(!window.OneSignal||!OneSignal.User||!alertsOn())return;
+ try{
+  const prev=JSON.parse(localStorage.getItem("os_team_tags")||"[]");
+  const cur=[...FOLLOWS].map(tagKey);
+  for(const k of prev){if(cur.indexOf(k)<0)await OneSignal.User.removeTag("team_"+k);}
+  for(const k of cur)await OneSignal.User.addTag("team_"+k,"1");
+  await OneSignal.User.addTag("all_matches",cur.length?"0":"1");
+  localStorage.setItem("os_team_tags",JSON.stringify(cur));
+ }catch(e){}
+}
+async function enableAlerts(){
+ if(isIOS()&&!isStandalone()){const tip=document.getElementById("iostip");if(tip)tip.style.display="block";return;}
+ if(!window.OneSignal){return;}
+ try{await OneSignal.Notifications.requestPermission();await syncFollowTags();}catch(e){}
+ updateAlertUI();
+}
+function updateAlertUI(){
+ const b=document.getElementById("alertbtn");if(!b)return;
+ if(alertsOn()){b.textContent="✅ Goal alerts are ON";b.classList.add("on");}
+ else{b.textContent="🔔 Enable goal alerts";b.classList.remove("on");}
+}
 const escA=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const favBtn=t=>RANK[t]?`<button class="fav${isFollowed(t)?" on":""}" type="button" data-team="${escA(t)}" aria-pressed="${isFollowed(t)}" aria-label="${isFollowed(t)?"Unfollow ":"Follow "}${escA(t)}" title="${isFollowed(t)?"Following — tap to unfollow":"Follow this team"}">${isFollowed(t)?"★":"☆"}</button>`:"";
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".fav");if(b){e.preventDefault();toggleFollow(b.dataset.team);}});
@@ -607,5 +644,17 @@ setInterval(fetchLive,90000);
 setInterval(renderNext,60000);
 </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7271996b0f234a3981511907aaa6188b"}'></script><!-- End Cloudflare Web Analytics -->
+<!-- OneSignal push notifications (Web SDK v16) -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+window.OneSignalDeferred=window.OneSignalDeferred||[];
+OneSignalDeferred.push(async function(OneSignal){
+ try{
+  await OneSignal.init({appId:"ac62fcac-4bee-4703-a067-8cf227bd1e92",serviceWorkerPath:"worldcup2026/OneSignalSDKWorker.js",serviceWorkerParam:{scope:"/worldcup2026/"},allowLocalhostAsSecureOrigin:true});
+  if(typeof updateAlertUI==="function")updateAlertUI();
+  if(typeof syncFollowTags==="function")syncFollowTags();
+ }catch(e){}
+});
+</script>
 </body>
 </html>
