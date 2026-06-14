@@ -90,7 +90,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .livebanner .ll{display:flex;align-items:center;gap:6px;font-family:Oswald;text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:var(--live);font-weight:600}
 .livebanner .lm{font-weight:600;font-size:16px}
 .livebanner .lsc{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);white-space:nowrap}
-.livebanner .lst{font-family:Oswald;font-size:10px;letter-spacing:.06em;color:#fff;background:var(--live);border-radius:4px;padding:2px 6px}
+.livebanner .lst{font-family:Oswald;font-size:17px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--live);border-radius:7px;padding:3px 11px;min-width:62px;text-align:center;font-variant-numeric:tabular-nums}
 .livebanner .hlisten{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--live);color:var(--live);border-radius:999px;padding:5px 11px;font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap}
 .livebanner .hlisten:hover{background:var(--live);color:#fff}
 .livebanner .lst.ht{background:#C0922B}
@@ -128,7 +128,8 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .cal svg{width:13px;height:13px}
 .result{font-family:Oswald;font-size:20px;font-weight:600;color:var(--ink);background:#eef2ee;border-radius:8px;padding:3px 11px;display:inline-flex;align-items:center;gap:7px}
 .result.ongoing{background:#fdecea;color:var(--live)}
-.livepill,.htpill,.ftpill{font-family:Oswald;font-size:9.5px;letter-spacing:.08em;color:#fff;border-radius:4px;padding:1px 5px}
+.livepill,.htpill,.ftpill{font-family:Oswald;font-size:12px;letter-spacing:.04em;color:#fff;border-radius:5px;padding:2px 7px}
+.livepill{min-width:40px;text-align:center}
 .livepill{background:var(--live)}
 .htpill{background:#C0922B}
 .ftpill{background:#8a978f}
@@ -378,6 +379,7 @@ async function fetchLive(){
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
  LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:usingApi?"api-football":"football-data",ok:(apiOk||Object.keys(base).length>0)};
+ Object.keys(LIVE.scores).forEach(function(k){noteClock(k,LIVE.scores[k]);});
  render();
  if(!initialScrollDone){initialScrollDone=true;if(!userInteracted&&currentView==="schedule")requestAnimationFrame(jumpToToday);}
  clearTimeout(livePollTimer);livePollTimer=setTimeout(fetchLive,anyLive?20000:120000);  /* poll fast while live, slow otherwise */
@@ -387,10 +389,29 @@ function cardScore(n){return liveScore(n);}                          /* score to
 function tableScore(n){const l=liveScore(n);return l&&l.s==="FINISHED"?l:null;} /* counts in the table once final */
 function isOngoing(s){return s==="IN_PLAY"||s==="PAUSED";}
 /* map a score to its on-card style: in-play=red LIVE/minute+pulse, half-time=amber HT, final=muted FT */
-function liveTag(es){
+/* live match clock — the feed gives the minute; we tick seconds locally and re-sync each poll (FotMob-style approximation) */
+let clockBase={};
+function noteClock(n,es){
+ if(!es||es.s!=="IN_PLAY"||!Number.isInteger(es.min)){delete clockBase[n];return;}
+ const b=clockBase[n]; if(!b||b.min!==es.min)clockBase[n]={min:es.min,at:Date.now()};
+}
+function liveClockText(n,es){
+ if(!es)return "";
+ if(es.s==="PAUSED")return "HT";
+ if(es.s!=="IN_PLAY")return "";
+ if(!Number.isInteger(es.min))return "LIVE";
+ const b=clockBase[n]||{min:es.min,at:Date.now()};
+ const tot=b.min*60+(Date.now()-b.at)/1000;
+ let mm=Math.floor(tot/60),ss=Math.floor(tot%60);const pad=x=>(x<10?"0":"")+x;
+ if(es.raw==="1H"&&mm>=45)return "45+"+(mm-45)+":"+pad(ss);
+ if(es.raw==="2H"&&mm>=90)return "90+"+(mm-90)+":"+pad(ss);
+ return mm+":"+pad(ss);
+}
+function tickClocks(){document.querySelectorAll(".liveclock").forEach(function(el){const n=el.dataset.n;if(!n)return;const t=liveClockText(n,LIVE.scores[n]);if(t)el.textContent=t;});}
+setInterval(tickClocks,1000);
+function liveTag(es,n){
  const s=es.s;
- if(s==="IN_PLAY"){const m=Number.isInteger(es.min)?es.min+"'":"LIVE";  /* show "63'" if the feed gave a minute, else LIVE */
-                   return {cls:" ongoing",dot:true, pill:'<span class="livepill">'+m+'</span>'};}
+ if(s==="IN_PLAY")return {cls:" ongoing",dot:true, pill:'<span class="livepill liveclock" data-n="'+n+'">'+liveClockText(n,es)+'</span>'};
  if(s==="PAUSED")  return {cls:" half",   dot:false,pill:'<span class="htpill">HT</span>'};
  if(s==="FINISHED")return {cls:"",        dot:false,pill:'<span class="ftpill">FT</span>'};
  return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
@@ -579,8 +600,7 @@ function renderLive(){
   const es=cardScore(m.n);
   const tm=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
   const ht=es.s==="PAUSED";
-  const lab=ht?"HT":(Number.isInteger(es.min)?es.min+"'":"LIVE");
-  return `<div class="livebanner"><span class="ll"><span class="livedot"></span>Live now</span><span class="lm">${tm}</span><span class="lsc">${es.h}–${es.a} <span class="lst${ht?" ht":""}">${lab}</span></span><a class="hlisten" href="https://www.iheart.com/live/fifa-world-cup-2026-11554/" target="_blank" rel="noopener" aria-label="Listen to live English commentary on iHeartRadio (US, opens in a new tab)">🔊 Listen</a></div>`;
+  return `<div class="livebanner"><span class="ll"><span class="livedot"></span>Live now</span><span class="lm">${tm}</span><span class="lsc">${es.h}–${es.a} <span class="lst${ht?" ht":""} liveclock" data-n="${m.n}">${liveClockText(m.n,es)}</span></span><a class="hlisten" href="https://www.iheart.com/live/fifa-world-cup-2026-11554/" target="_blank" rel="noopener" aria-label="Listen to live English commentary on iHeartRadio (US, opens in a new tab)">🔊 Listen</a></div>`;
  }).join("");
 }
 function renderList(){
@@ -599,7 +619,7 @@ function renderList(){
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
   const es=cardScore(m.n);
   if(es){
-   const t=liveTag(es);
+   const t=liveTag(es,m.n);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
    if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
   }
