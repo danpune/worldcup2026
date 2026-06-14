@@ -66,16 +66,36 @@ export default {
     }
 
     if (url.pathname === "/scores") {
-      var c = caches.default, ck = new Request(new URL("/scores", url.origin).toString());
+      var c = caches.default;
+      var ck = new Request(new URL("/scores", url.origin).toString());          // primary, short TTL
+      var lk = new Request(new URL("/scores_lastgood", url.origin).toString());  // last-good, long TTL
       var hit = await c.match(ck); if (hit) return hit;
+      function scoresRes(obj, maxAge) { return new Response(JSON.stringify(obj, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=" + maxAge }) }); }
       var matches = [], errors = null;
       try {
         var data = await (await fetch(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json();
         if (data.errors && Object.keys(data.errors).length) errors = data.errors;
         matches = (data.response || []).map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed }; });
       } catch (e) { errors = String(e); }
-      var res = new Response(JSON.stringify({ updated: new Date().toISOString(), count: matches.length, matches: matches, errors: errors }, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=15" }) });
-      ctx.waitUntil(c.put(ck, res.clone())); return res;
+      if (matches.length && !errors) {
+        // Good data: serve it (cache 30s) and refresh the long-lived last-good copy (10 min).
+        var payload = { updated: new Date().toISOString(), count: matches.length, matches: matches, errors: null };
+        var res = scoresRes(payload, 30);
+        ctx.waitUntil(c.put(ck, res.clone()));
+        ctx.waitUntil(c.put(lk, scoresRes(payload, 600)));
+        return res;
+      }
+      // API rate-limited / errored / empty: serve the last good scores so the live layer doesn't blank out
+      // to the delayed feed. Cache the stale copy briefly to throttle retries while the limit clears.
+      var lastGood = await c.match(lk);
+      if (lastGood) {
+        var lg = await lastGood.json();
+        lg.stale = true;
+        var sres = scoresRes(lg, 10);
+        ctx.waitUntil(c.put(ck, sres.clone()));
+        return sres;
+      }
+      return scoresRes({ updated: new Date().toISOString(), count: matches.length, matches: matches, errors: errors }, 0);  // nothing cached to fall back to
     }
 
     // Client error beacon: the site posts anonymous JS-error info here for triage. We log ONLY the error
