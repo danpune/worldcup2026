@@ -102,7 +102,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .teams{min-width:0}
 .tline{font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .tline .vs{color:var(--muted);font-weight:500;font-size:12px}
-.fav{border:0;background:none;cursor:pointer;font-size:15px;line-height:1;padding:0 1px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent}
+.fav{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:6px 7px;margin:-6px -4px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent;vertical-align:middle}
 .fav.on{color:var(--gold);opacity:1}
 .fav:hover{opacity:1}
 .fav:focus-visible{outline:2px solid var(--gold);border-radius:4px;opacity:1}
@@ -388,7 +388,7 @@ function statsPanelHTML(fid){
  const H=arr[0],A=arr[1];let rows="";
  STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
   const tot=statNum(hv)+statNum(av),hp=tot>0?Math.round(statNum(hv)/tot*100):50;
-  rows+='<div class="strow"><span class="sv">'+(hv==null?"–":hv)+'</span><span class="sl">'+label+'</span><span class="sv">'+(av==null?"–":av)+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
+  rows+='<div class="strow"><span class="sv">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="sv">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
  return rows||'<div class="statload">No stats yet.</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".statsbtn");if(!b)return;
