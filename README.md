@@ -66,6 +66,15 @@ flowchart TD
 | `highlights.json` | Optional curated highlight clips for the Highlights tab | repo root |
 | `worker/wc2026-api.js` | (Live layer) Cloudflare Worker: live-score/stats proxy + push-alert detector | Cloudflare, not GitHub Pages |
 | `OneSignalSDKWorker.js` | (Live layer) OneSignal push service worker | repo root |
+| `manifest.json` | PWA manifest (name, icons, theme) so the page is installable | repo root |
+| `icon-192.png` / `icon-512.png` | PWA / home-screen app icons | repo root |
+| `apple-touch-icon.png` | iOS home-screen icon | repo root |
+| `sitemap.xml` | Sitemap for search-engine discovery | repo root |
+| `google…html` | Google Search Console verification file | repo root |
+| `preview-card.html` / `preview.jpg` | Social/link-preview card and image | repo root |
+| `qr.png` | Scannable QR code of the site URL | repo root |
+| `test_fetch_scores.py` | Unit tests for the score fetcher | repo root |
+| `LICENSE` | MIT license | repo root |
 
 ## Run your own copy (the free base, ~10 minutes)
 
