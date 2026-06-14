@@ -45,7 +45,18 @@ export default {
     var headers = { "x-apisports-key": env.APISPORTS_KEY };
     if (request.method === "OPTIONS") return new Response(null, { headers: cors() });
 
-    if (url.pathname === "/status") { var s = await fetch(API + "/status", { headers }); return json(await s.json()); }
+    if (url.pathname === "/status") {
+      var s = await fetch(API + "/status", { headers });
+      var body = await s.json();
+      // Surface API-Football's rate-limit headers so the per-minute ceiling is visible (it's not in the body).
+      body.rateLimit = {
+        perMinuteLimit: s.headers.get("x-ratelimit-limit"),
+        perMinuteRemaining: s.headers.get("x-ratelimit-remaining"),
+        dailyLimit: s.headers.get("x-ratelimit-requests-limit"),
+        dailyRemaining: s.headers.get("x-ratelimit-requests-remaining")
+      };
+      return json(body);
+    }
 
     if (url.pathname === "/match") {
       var id = url.searchParams.get("id"); if (!id) return json({ error: "missing id" });
@@ -164,8 +175,18 @@ async function runDetector(env) {
     if (live || (finished && !st.evDone)) {
       try {
         var events = (await (await fetch(API + "/fixtures/events?fixture=" + fid, { headers })).json()).response || [];
-        for (var j = (st.seen || 0); j < events.length; j++) { var m = eventMessage(events[j]); if (m) await fire(m.title, m.body, teams, m.tier); }
-        st.seen = events.length; if (finished) st.evDone = true;
+        // De-dup by a stable per-event signature (not array length), so a feed that reorders or drops an
+        // event (e.g. VAR overturns a goal) can't re-fire or skip alerts. fired[] holds signatures already seen.
+        var migrate = (st.fired == null && st.seen != null);   // legacy state: mark current events, don't re-alert on the deploy
+        if (st.fired == null) st.fired = {};
+        for (var j = 0; j < events.length; j++) {
+          var sig = eventSig(events[j]);
+          if (st.fired[sig]) continue;
+          st.fired[sig] = 1;
+          if (migrate) continue;
+          var m = eventMessage(events[j]); if (m) await fire(m.title, m.body, teams, m.tier);
+        }
+        if (finished) { st.evDone = true; st.fired = {}; }       // free memory once the match is over
       } catch (e) {}
     }
     st.short = short; st.score = score; state.fx[fid] = st;
@@ -174,6 +195,13 @@ async function runDetector(env) {
   return { ok: true, justSeeded: !sending, sent: sent, log: log.slice(0, 30) };
 }
 
+// Stable signature for de-duping alerts — uses ids/minute/detail, not array position.
+function eventSig(e) {
+  var t = e.time ? ((e.time.elapsed == null ? "" : e.time.elapsed) + "+" + (e.time.extra || 0)) : "";
+  var pid = (e.player && (e.player.id || e.player.name)) || "";
+  var team = (e.team && (e.team.id || e.team.name)) || "";
+  return [e.type || "", e.detail || "", t, team, pid].join("|");
+}
 function eventMessage(e) {
   var team = e.team && e.team.name ? e.team.name : "", player = e.player && e.player.name ? e.player.name : "";
   var t = e.time && e.time.elapsed != null ? e.time.elapsed + "'" : "", type = e.type, detail = e.detail || "";
