@@ -9,10 +9,11 @@
  *                         stats = possession/shots/xG…; events = goal/card/sub timeline;
  *                         lineups = starting XI + formation per team
  *   GET /status        -> API-Football account/key check
- *   GET /testpush[?team=X] -> send a test push (all subscribers, or one team's followers)
- *   GET /run           -> run the alert detector once (first call seeds silently)
- *   GET /reset         -> clear the detector's KV memory (re-seeds next run)
+ *   GET /testpush?key=…[&team=X] -> send a test push (admin; requires ADMIN_KEY)
+ *   GET /run?key=…     -> run the alert detector once (admin; first call seeds silently)
+ *   GET /reset?key=…   -> clear the detector's KV memory (admin; re-seeds next run)
  *   GET /              -> health check
+ *   (/testpush, /run, /reset require ?key=<ADMIN_KEY>; they fail closed with 403 otherwise.)
  *
  * Scheduled handler: a Cron trigger ("* * * * *", every minute) runs the detector,
  * which sends OneSignal pushes for kickoff / goals / cards / subs / VAR / half-time /
@@ -24,6 +25,7 @@
  * Cloudflare setup:
  *   - Secret  APISPORTS_KEY        = API-Football (api-sports.io) key
  *   - Secret  ONESIGNAL_REST_KEY   = OneSignal REST API Key (legacy format -> "Basic")
+ *   - Secret  ADMIN_KEY            = shared secret guarding /testpush /run /reset
  *   - KV binding  STATE            = namespace storing the detector's seen state
  *   - Cron trigger  * * * * *
  * No secrets are stored in this file.
@@ -32,6 +34,10 @@ var WC_LEAGUE = 1, SEASON = 2026;
 var API = "https://v3.football.api-sports.io";
 var OS_APP = "ac62fcac-4bee-4703-a067-8cf227bd1e92";
 var LIVE_S = ["1H", "2H", "ET", "BT", "P", "LIVE", "INT"], FINAL_S = ["FT", "AET", "PEN"];
+// API-Football names that differ from the site's canonical names — must mirror fetch_scores.py's ALIAS
+// so the team_<tag> we target matches the team_<tag> the front-end subscribes the user to.
+var TEAM_ALIAS = { "Cape Verde Islands": "Cape Verde", "Congo DR": "DR Congo" };
+function teamTag(name) { return tagKey(TEAM_ALIAS[name] || name); }
 
 export default {
   async fetch(request, env, ctx) {
@@ -72,6 +78,13 @@ export default {
       ctx.waitUntil(c.put(ck, res.clone())); return res;
     }
 
+    // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
+    // Fails closed: if ADMIN_KEY is unset or the ?key= doesn't match, these routes return 403. (Cron is unaffected.)
+    if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
+      if (!env.ADMIN_KEY || url.searchParams.get("key") !== env.ADMIN_KEY)
+        return new Response("forbidden", { status: 403, headers: cors() });
+    }
+
     if (url.pathname === "/testpush") {
       var team = url.searchParams.get("team");
       var tr = await sendPush(env, "⚽ Test alert", team ? ("Targeted test for " + team + " followers") : "Your World Cup alerts are working!", team ? [team] : null);
@@ -82,7 +95,11 @@ export default {
 
     return new Response("wc2026-api ok", { status: 200, headers: cors() });
   },
-  async scheduled(event, env, ctx) { ctx.waitUntil(runDetector(env)); }
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runDetector(env).then(function (r) {
+      if (r && r.error) console.log("wc2026 detector error:", JSON.stringify(r.error));
+    }));
+  }
 };
 
 async function runDetector(env) {
@@ -90,8 +107,13 @@ async function runDetector(env) {
   state.fx = state.fx || {};
   var sending = !!state.seeded, log = [], sent = 0;
   var headers = { "x-apisports-key": env.APISPORTS_KEY }, fixtures = [];
-  try { fixtures = (await (await fetch(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json()).response || []; }
-  catch (e) { return { error: String(e) }; }
+  try {
+    var fxResp = await (await fetch(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json();
+    // API-Football signals quota/param problems as a 200 with a non-empty errors object — surface it instead of
+    // silently doing nothing (which would advance no state but emit no signal during a live match).
+    if (fxResp.errors && Object.keys(fxResp.errors).length) return { error: fxResp.errors };
+    fixtures = fxResp.response || [];
+  } catch (e) { return { error: String(e) }; }
   var now = Date.now();
   // tier "core" -> everyone following the team gets it; tier "extra" -> only subscribers whose alerts="all"
   async function fire(title, body, teams, tier) { if (sending) { await sendPush(env, title, body, teams, tier); sent++; log.push(title); } }
@@ -138,13 +160,20 @@ function eventMessage(e) {
 async function sendPush(env, title, body, teams, tier) {
   var payload = { app_id: OS_APP, headings: { en: title }, contents: { en: body } };
   if (teams && teams.length) {
+    // OneSignal has no parentheses and ANDs bind tighter than ORs, so we can't write
+    // "(team_A OR team_B OR all_matches) AND alerts=all". Instead, build one OR-branch per
+    // audience and AND the alerts gate INTO each branch, giving the equivalent:
+    //   (team_A AND alerts=all) OR (team_B AND alerts=all) OR (all_matches AND alerts=all)
+    // "core" events (kickoff/goals/full-time) omit the gate so every follower gets them.
+    var extra = tier === "extra";
+    var branches = teams.map(function (t) { return { field: "tag", key: "team_" + teamTag(t), relation: "=", value: "1" }; });
+    branches.push({ field: "tag", key: "all_matches", relation: "=", value: "1" });
     var filters = [];
-    for (var i = 0; i < teams.length; i++) { if (i > 0) filters.push({ operator: "OR" }); filters.push({ field: "tag", key: "team_" + tagKey(teams[i]), relation: "=", value: "1" }); }
-    filters.push({ operator: "OR" }); filters.push({ field: "tag", key: "all_matches", relation: "=", value: "1" });
-    // "extra" events (cards, subs, VAR, half-time) only reach subscribers who opted into everything.
-    // The trailing entry has no {operator:"OR"} before it, so it ANDs against the whole team-OR group:
-    //   (team_A OR team_B OR all_matches) AND alerts="all"
-    if (tier === "extra") filters.push({ field: "tag", key: "alerts", relation: "=", value: "all" });
+    branches.forEach(function (b, i) {
+      if (i > 0) filters.push({ operator: "OR" });
+      filters.push(b);
+      if (extra) filters.push({ field: "tag", key: "alerts", relation: "=", value: "all" });
+    });
     payload.filters = filters;
   } else { payload.included_segments = ["Subscribed Users"]; }
   try { return await (await fetch("https://api.onesignal.com/notifications", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Basic " + env.ONESIGNAL_REST_KEY }, body: JSON.stringify(payload) })).json(); }
