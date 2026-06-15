@@ -593,16 +593,19 @@ function statsThin(fid){const d=statsCache[fid];return !(d&&d.stats&&d.stats.len
 function statsErr(fid){const d=statsCache[fid];if(!d||!d.errors)return false;return typeof d.errors==="object"?Object.keys(d.errors).length>0:!!d.errors;}
 async function fetchStats(fid){
  if(statsFetching.has(fid))return;statsFetching.add(fid);
- try{const r=await fetch(STATS_API+"?id="+fid);if(r.ok){const d=await r.json();d._t=Date.now();statsCache[fid]=d;if(currentView==="schedule")renderList();}}
+ try{const r=await fetch(STATS_API+"?id="+fid);if(r.ok){const d=await r.json();const prev=statsCache[fid];d._t=Date.now();
+   d._tries=(d.stats&&d.stats.length>=2)?0:(((prev&&prev._tries)||0)+1);   /* count consecutive empty/rate-limited fetches */
+   statsCache[fid]=d;if(currentView==="schedule")renderList();}}
  catch(e){}finally{statsFetching.delete(fid);}
 }
-/* stats can come back empty momentarily (just kicked off, or the feed was briefly rate-limited and cached an
-   empty result). Re-fetch a thin, open panel on each poll — at most every ~12s — so it self-heals without a reload. */
+/* stats can come back empty momentarily (just kicked off, or briefly rate-limited). Re-fetch a thin, open panel —
+   but BACK OFF exponentially (10s→20s→40s→80s) when it keeps coming back rate-limited, so we never hammer the feed. */
 function maybeRetryStats(fid){
  if(!statsThin(fid)||statsFetching.has(fid))return;
  const d=statsCache[fid];
  if(d&&!statsErr(fid))return;            /* clean empty = feed has no stats for this match → stop retrying */
- if(Date.now()-((d&&d._t)||0)>10000)fetchStats(fid);
+ const tries=(d&&d._tries)||0,wait=Math.min(10000*Math.pow(2,Math.min(tries,3)),80000);
+ if(Date.now()-((d&&d._t)||0)>=wait)fetchStats(fid);
 }
 function statsPanelHTML(fid){
  const d=statsCache[fid];
