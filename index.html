@@ -590,6 +590,7 @@ const statNum=v=>{if(v==null)return 0;if(typeof v==="string"){const m=v.match(/-
 const statGet=(team,type)=>{if(!team||!team.statistics)return null;const s=team.statistics.find(x=>x.type===type);return s?s.value:null;};
 let statsFetching=new Set();
 function statsThin(fid){const d=statsCache[fid];return !(d&&d.stats&&d.stats.length>=2);}
+function statsErr(fid){const d=statsCache[fid];if(!d||!d.errors)return false;return typeof d.errors==="object"?Object.keys(d.errors).length>0:!!d.errors;}
 async function fetchStats(fid){
  if(statsFetching.has(fid))return;statsFetching.add(fid);
  try{const r=await fetch(STATS_API+"?id="+fid);if(r.ok){const d=await r.json();d._t=Date.now();statsCache[fid]=d;if(currentView==="schedule")renderList();}}
@@ -597,12 +598,17 @@ async function fetchStats(fid){
 }
 /* stats can come back empty momentarily (just kicked off, or the feed was briefly rate-limited and cached an
    empty result). Re-fetch a thin, open panel on each poll — at most every ~12s — so it self-heals without a reload. */
-function maybeRetryStats(fid){if(statsThin(fid)&&!statsFetching.has(fid)){const d=statsCache[fid];if(Date.now()-((d&&d._t)||0)>12000)fetchStats(fid);}}
+function maybeRetryStats(fid){
+ if(!statsThin(fid)||statsFetching.has(fid))return;
+ const d=statsCache[fid];
+ if(d&&!statsErr(fid))return;            /* clean empty = feed has no stats for this match → stop retrying */
+ if(Date.now()-((d&&d._t)||0)>10000)fetchStats(fid);
+}
 function statsPanelHTML(fid){
  const d=statsCache[fid];
  if(!d)return '<div class="statload">Loading match stats…</div>';
  const arr=d.stats||[];
- if(arr.length<2)return '<div class="statload">Match stats aren’t loaded yet — they’ll appear here shortly.</div>';
+ if(arr.length<2)return '<div class="statload">'+(statsErr(fid)?'Match stats aren’t loaded yet — they’ll appear here shortly.':'Match stats aren’t available for this match.')+'</div>';
  const H=arr[0],A=arr[1];let rows="";
  STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
   const hn=statNum(hv),an=statNum(av),tot=hn+an,hp=tot>0?Math.round(hn/tot*100):50;
@@ -936,6 +942,9 @@ render();fetchLive();fetchHighlights();
 /* fun footer visit counter (free Abacus API; counts page views; fails silently if the service is down) */
 fetch("https://abacus.jasoncameron.dev/hit/danpune-worldcup2026/visits").then(r=>r.json()).then(d=>{if(d&&d.value!=null)document.getElementById("visits").textContent=" · 👀 "+d.value.toLocaleString()+" visits";}).catch(()=>{});
 setInterval(renderNext,60000);  /* fetchLive reschedules itself via livePollTimer (20s live / 120s idle) — no separate interval */
+/* fast retry for any OPEN stats panel that's still thin (transient/rate-limited), so it self-heals in ~10s
+   instead of waiting on the score poll. maybeRetryStats stops once stats load or are confirmed unavailable. */
+setInterval(function(){openStats.forEach(function(n){const es=cardScore(n);if(es&&es.fid)maybeRetryStats(es.fid);});},10000);
 </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7271996b0f234a3981511907aaa6188b"}'></script><!-- End Cloudflare Web Analytics -->
 <!-- OneSignal push notifications (Web SDK v16) -->
