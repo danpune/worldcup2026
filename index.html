@@ -360,14 +360,14 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <img class="qr" src="qr.png" width="168" height="168" alt="QR code that opens this site" loading="lazy">
   <p><a href="https://danpune.github.io/worldcup2026/" target="_blank" rel="noopener">danpune.github.io/worldcup2026</a></p>
   <h3>🔔 Goal alerts</h3>
-  <p>Get a notification when your teams play — <b>kickoff</b>, every <b>goal</b>, and the <b>full-time</b> result. Tap the ☆ next to a team to follow them (alerts target your teams; follow none and you'll get every match).</p>
+  <p>Get a notification when your teams play — a <b>15-min heads-up</b>, <b>kick-off</b>, every <b>goal</b>, <b>half-time</b> and the <b>full-time</b> result. Tap the ☆ next to a team to follow them (alerts target your teams; follow none and you'll get every match).</p>
   <button id="alertbtn" class="alertbtn" type="button" onclick="enableAlerts()">🔔 Enable goal alerts</button>
   <div id="iostip" class="iostip" style="display:none">📱 On iPhone: first tap <b>Share</b> → <b>Add to Home Screen</b>, then open it from your home screen and tap “Enable” there. (Apple only allows alerts for installed web apps.)</div>
   <div class="alertpref">
    <span class="aplabel">Notify me about</span>
    <div class="apseg" role="radiogroup" aria-label="Alert detail level">
     <button type="button" class="apbtn" role="radio" aria-checked="true" data-pref="all" onclick="setAlertPref('all')">Everything</button>
-    <button type="button" class="apbtn" role="radio" aria-checked="false" data-pref="goals" onclick="setAlertPref('goals')">Goals only</button>
+    <button type="button" class="apbtn" role="radio" aria-checked="false" data-pref="goals" onclick="setAlertPref('goals')">Key moments</button>
    </div>
    <p class="aphint" id="aphint"></p>
   </div>
@@ -659,7 +659,7 @@ let alertPref="all";try{alertPref=localStorage.getItem("wc2026_alertpref")||"all
 function updateAlertPrefUI(){
  document.querySelectorAll(".apbtn").forEach(b=>{const on=b.dataset.pref===alertPref;b.classList.toggle("on",on);b.setAttribute("aria-checked",on);});
  const h=document.getElementById("aphint");
- if(h)h.textContent=alertPref==="goals"?"Just the essentials: kickoff, every goal, and the full-time result.":"All key events: goals, yellow/red cards, substitutions, VAR calls and half-time.";
+ if(h)h.textContent=alertPref==="goals"?"15-min heads-up, kick-off, every goal, half-time and full-time.":"Everything in Key moments, plus yellow/red cards, substitutions and VAR.";
 }
 function setAlertPref(p){alertPref=p;try{localStorage.setItem("wc2026_alertpref",p);}catch(e){}updateAlertPrefUI();syncFollowTags();}
 async function syncFollowTags(){

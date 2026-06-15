@@ -90,8 +90,9 @@ export default {
         stats = r[0].response || []; events = r[1].response || []; lineups = r[2].response || [];
         if (r[0].errors && Object.keys(r[0].errors).length) me = r[0].errors;
       } catch (e) { me = String(e); }
-      var mr = new Response(JSON.stringify({ id: id, stats: stats, events: events, lineups: lineups, errors: me }, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=30" }) });
-      ctx.waitUntil(mc.put(mk, mr.clone())); return mr;
+      var mr = new Response(JSON.stringify({ id: id, stats: stats, events: events, lineups: lineups, errors: me }, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": me ? "max-age=0" : "max-age=30" }) });
+      if (!me) ctx.waitUntil(mc.put(mk, mr.clone()));   // don't cache an errored/rate-limited result — let the next request retry fresh
+      return mr;
     }
 
     if (url.pathname === "/scores") {
@@ -207,8 +208,9 @@ async function runDetector(env) {
     var gh = f.goals.home == null ? 0 : f.goals.home, ga = f.goals.away == null ? 0 : f.goals.away, score = gh + "–" + ga;
     var ko = Date.parse(f.fixture.date), st = state.fx[fid] || {};
     var live = LIVE_S.indexOf(short) >= 0, finished = FINAL_S.indexOf(short) >= 0;
-    if (short === "NS" && !st.ko && ko - now > 0 && ko - now <= 11 * 60000) { await fire("🔜 Kicking off soon", home + " vs " + away + " starts in ~10 min", teams, "core"); st.ko = true; }
-    if (short === "HT" && st.short !== "HT") await fire("⏸️ Half-time", home + " " + score + " " + away, teams, "extra");
+    if (short === "NS" && !st.ko && ko - now > 0 && ko - now <= 16 * 60000) { await fire("🔜 Kicking off soon", home + " vs " + away + " starts in ~15 min", teams, "core"); st.ko = true; }
+    if (live && !st.started) { await fire("🟢 Kick-off — " + home + " vs " + away, "The match is underway", teams, "core"); st.started = true; }
+    if (short === "HT" && st.short !== "HT") await fire("⏸️ Half-time", home + " " + score + " " + away, teams, "core");
     if (finished && !st.ft) { await fire("🏁 Full-time", home + " " + score + " " + away, teams, "core"); st.ft = true; }
     if (live || (finished && !st.evDone)) {
       try {
