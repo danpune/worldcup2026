@@ -169,6 +169,23 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .luc ul{list-style:none;margin:0;padding:0}
 .luc li{font-size:12.5px;line-height:1.7;color:var(--text)}
 .luc li b{display:inline-block;min-width:18px;color:var(--muted);font-weight:700}
+/* tap-a-team squad/roster modal */
+.teamlink{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;border-bottom:1px dotted var(--muted)}
+.teamlink:hover{color:var(--pitch2);border-bottom-color:var(--pitch2)}
+.sqoverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:60}
+.sqmodal{background:var(--card);width:100%;max-width:560px;max-height:86vh;overflow:auto;border-radius:16px 16px 0 0}
+@media(min-width:560px){.sqoverlay{align-items:center}.sqmodal{border-radius:16px}}
+.sqhead{position:sticky;top:0;background:var(--pitch);color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Oswald;font-size:18px;letter-spacing:.02em}
+.sqhead button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer;padding:0 2px}
+.sqsub{padding:8px 16px 0;color:var(--muted);font-size:12.5px}
+.sqbody{padding:6px 16px 22px}
+.sqgrp{font-family:Oswald;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);margin:13px 0 5px;border-top:1px solid var(--line);padding-top:10px}
+.sqgrp:first-child{border-top:0}
+.sqrow{display:flex;align-items:baseline;gap:11px;font-size:14px;padding:4px 0}
+.sqrow .num{min-width:24px;text-align:right;color:var(--muted);font-weight:700;font-size:13px}
+.sqrow .nm{flex:1}
+.sqrow .ag{color:var(--muted);font-size:12px}
+.sqload{color:var(--muted);padding:20px 4px;text-align:center;font-size:13.5px}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -391,6 +408,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  <span>🔔 Get goal alerts for your teams?</span>
  <div class="npbtns"><button type="button" onclick="enableFromPrompt()">Enable</button><button type="button" class="np-no" onclick="dismissPrompt()">Not now</button></div>
 </div>
+<div id="sqoverlay" class="sqoverlay"></div>
 <footer><div class="wrap">Personal World Cup 2026 companion · times convert to your selected zone · live scores via API-Football &amp; football-data.org, schedule per FIFA · not affiliated with FIFA or Polymarket · prediction figures are informational only, not betting advice · <a href="#" onclick="sendFeedback();return false;">feedback</a><span id="visits"></span></div></footer>
 
 <script>
@@ -508,6 +526,35 @@ function statHeaderHTML(m,es){
 /* tap-to-expand match stats (possession, shots, etc.) — API-Football /fixtures/statistics via the Worker */
 const STATS_API="https://wc2026-api.footy26.workers.dev/match";
 let openStats=new Set(),statsCache={};
+
+/* tap a team name anywhere → its full World Cup squad (via the Worker /squad route), grouped by position */
+const SQUAD_API="https://wc2026-api.footy26.workers.dev/squad";
+let squadCache={};
+const POS_ORDER=["Goalkeeper","Defender","Midfielder","Attacker"];
+const POS_LABEL={Goalkeeper:"Goalkeepers",Defender:"Defenders",Midfielder:"Midfielders",Attacker:"Forwards"};
+function openSquad(team){
+ const ov=document.getElementById("sqoverlay");if(!ov)return;
+ ov.innerHTML='<div class="sqmodal" role="dialog" aria-label="'+escA(team)+' squad" aria-modal="true"><div class="sqhead"><span>'+(FLAGMAP[team]||"")+' '+escA(team)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">Full World Cup squad. The matchday starting XI is announced ~40 min before kickoff — see it in a match’s stats panel.</div><div class="sqbody" id="sqbody"><div class="sqload">Loading squad…</div></div></div>';
+ ov.style.display="flex";document.body.style.overflow="hidden";
+ renderSquad(team);
+}
+function closeSquad(){const ov=document.getElementById("sqoverlay");if(!ov)return;ov.style.display="none";ov.innerHTML="";document.body.style.overflow="";}
+async function renderSquad(team){
+ let d=squadCache[team];
+ if(!d){try{const r=await fetch(SQUAD_API+"?team="+encodeURIComponent(team));if(r.ok){d=await r.json();if(d&&d.players&&d.players.length)squadCache[team]=d;}}catch(e){}}
+ const body=document.getElementById("sqbody");if(!body)return;
+ if(!d||!d.players||!d.players.length){body.innerHTML='<div class="sqload">Squad isn’t available yet'+(d&&d.errors?' (the feed is busy — try again in a moment)':'')+'.</div>';return;}
+ let html="",used=0;
+ const row=p=>'<div class="sqrow"><span class="num">'+(p.number!=null?p.number:"–")+'</span><span class="nm">'+escA(p.name||"")+'</span>'+(p.age?'<span class="ag">age '+p.age+'</span>':"")+'</div>';
+ POS_ORDER.forEach(pos=>{const grp=d.players.filter(p=>p.pos===pos);if(!grp.length)return;used+=grp.length;
+  grp.sort((a,b)=>(a.number||99)-(b.number||99));
+  html+='<div class="sqgrp">'+POS_LABEL[pos]+' ('+grp.length+')</div>'+grp.map(row).join("");});
+ const other=d.players.filter(p=>POS_ORDER.indexOf(p.pos)<0);
+ if(other.length)html+='<div class="sqgrp">Other</div>'+other.map(row).join("");
+ body.innerHTML='<div class="sqsub" style="padding:6px 0 2px">'+d.players.length+' players</div>'+html;
+}
+document.addEventListener("click",e=>{const tl=e.target.closest&&e.target.closest(".teamlink");if(tl){e.preventDefault();openSquad(tl.dataset.squad);}else if(e.target.id==="sqoverlay")closeSquad();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSquad();});
 const STAT_ROWS=[["Ball Possession","Possession"],["Total Shots","Shots"],["Shots on Goal","On target"],["expected_goals","Expected goals (xG)"],["Total passes","Passes"],["Passes %","Pass accuracy"],["Corner Kicks","Corners"],["Fouls","Fouls"],["Offsides","Offsides"],["Yellow Cards","Yellow cards"],["Red Cards","Red cards"]];
 const statNum=v=>{if(v==null)return 0;if(typeof v==="string"){const m=v.match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):0;}return v;};
 const statGet=(team,type)=>{if(!team||!team.statistics)return null;const s=team.statistics.find(x=>x.type===type);return s?s.value:null;};
@@ -818,7 +865,7 @@ function renderStandings(){
  ["A","B","C","D","E","F","G","H","I","J","K","L"].forEach(g=>{
   const arr=computeGroup(g);const any=arr.some(t=>t.P>0);
   const card=document.createElement("div");card.className="gcard";
-  const rows=arr.map((t,i)=>{const isAdv=(i<2&&any);const adv=isAdv?' class="adv"':"";const pm=PM[pmKey(t.t)];return `<tr${adv}><td class="pos"><b>${i+1}</b>${isAdv?' <span class="qb" title="Advancing" aria-label="advancing">▲</span>':''}</td><td class="tm">${FLAGMAP[t.t]||""} ${t.t}${RANK[t.t]?` <span class="rk">#${RANK[t.t]}</span>`:""}${pm!=null?` <span class="pm" title="Polymarket: chance to win the group">${Math.round(pm*100)}%</span>`:""}</td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${t.GD>0?"+":""}${t.GD}</td><td class="pts">${t.Pts}</td></tr>`;}).join("");
+  const rows=arr.map((t,i)=>{const isAdv=(i<2&&any);const adv=isAdv?' class="adv"':"";const pm=PM[pmKey(t.t)];return `<tr${adv}><td class="pos"><b>${i+1}</b>${isAdv?' <span class="qb" title="Advancing" aria-label="advancing">▲</span>':''}</td><td class="tm">${FLAGMAP[t.t]||""} <button type="button" class="teamlink" data-squad="${escA(t.t)}" title="View ${escA(t.t)} squad">${t.t}</button>${RANK[t.t]?` <span class="rk">#${RANK[t.t]}</span>`:""}${pm!=null?` <span class="pm" title="Polymarket: chance to win the group">${Math.round(pm*100)}%</span>`:""}</td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${t.GD>0?"+":""}${t.GD}</td><td class="pts">${t.Pts}</td></tr>`;}).join("");
   card.innerHTML=`<div class="ghead">Group ${g}<span class="gp">${any?"":"awaiting results"}</span></div><table class="st"><thead><tr><th></th><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>${rows}</tbody></table>`;
   box.appendChild(card);
  });
