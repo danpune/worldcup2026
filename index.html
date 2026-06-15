@@ -102,6 +102,9 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .teams{min-width:0}
 .tline{font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .tline .vs{color:var(--muted);font-weight:500;font-size:12px}
+/* schedule cards: stack the two teams on their own rows so the matchup never wraps awkwardly on phones */
+.tcol{flex-direction:column;align-items:stretch;gap:5px}
+.tcol .trow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
 .fav{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:6px 7px;margin:-6px -4px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent;vertical-align:middle}
 .fav.on{color:var(--gold);opacity:1}
 .fav:hover{opacity:1}
@@ -813,7 +816,10 @@ function renderList(){
   if(p.day!==lastDay){lastDay=p.day;days.push(p.day);const d=document.createElement("div");d.className="daydiv";d.dataset.day=p.day;d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
   const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
-  const teams=m.group_game?`${m.hf} <button type="button" class="teamlink" data-squad="${escA(m.home)}" title="View ${escA(m.home)} squad">${m.home}</button>${rkx(m.home)}${favBtn(m.home)} <span class="vs">v</span> ${m.af} <button type="button" class="teamlink" data-squad="${escA(m.away)}" title="View ${escA(m.away)} squad">${m.away}</button>${rkx(m.away)}${favBtn(m.away)}`:`${m.home}${favBtn(m.home)} <span class="vs">v</span> ${m.away}${favBtn(m.away)}`;
+  const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
+  const teams=m.group_game
+   ?`<div class="trow">${m.hf} ${tk(m.home)}${rkx(m.home)}${favBtn(m.home)}</div><div class="trow">${m.af} ${tk(m.away)}${rkx(m.away)}${favBtn(m.away)}</div>`
+   :`<div class="trow">${m.home}${favBtn(m.home)}</div><div class="trow">${m.away}${favBtn(m.away)}</div>`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
@@ -825,7 +831,7 @@ function renderList(){
   }
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
   const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
-  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
+  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
   if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid);list.appendChild(sp);maybeRetryStats(es.fid);}
  });
