@@ -782,7 +782,7 @@ function renderList(){
   if(p.day!==lastDay){lastDay=p.day;days.push(p.day);const d=document.createElement("div");d.className="daydiv";d.dataset.day=p.day;d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
   const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
-  const teams=m.group_game?`${m.hf} ${m.home}${rkx(m.home)}${favBtn(m.home)} <span class="vs">v</span> ${m.af} ${m.away}${rkx(m.away)}${favBtn(m.away)}`:`${m.home}${favBtn(m.home)} <span class="vs">v</span> ${m.away}${favBtn(m.away)}`;
+  const teams=m.group_game?`${m.hf} <button type="button" class="teamlink" data-squad="${escA(m.home)}" title="View ${escA(m.home)} squad">${m.home}</button>${rkx(m.home)}${favBtn(m.home)} <span class="vs">v</span> ${m.af} <button type="button" class="teamlink" data-squad="${escA(m.away)}" title="View ${escA(m.away)} squad">${m.away}</button>${rkx(m.away)}${favBtn(m.away)}`:`${m.home}${favBtn(m.home)} <span class="vs">v</span> ${m.away}${favBtn(m.away)}`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
