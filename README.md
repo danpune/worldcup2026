@@ -12,6 +12,7 @@ A single web page — no build step, no framework, just `index.html` — that yo
 - 📊 **Standings** that recalculate automatically as results come in.
 - 🔴 **Live scores** — minute-by-minute during matches, with a LIVE badge and a ticking match clock.
 - 📋 **Match detail** — possession, shots, xG and more, plus a **goal/card timeline** and both teams' **starting line-ups**.
+- 👥 **Squads** — tap any team (in Standings or on a fixture) to see their full **World Cup roster** grouped by position; upcoming matches have a **Squads** button showing both teams — useful before kickoff, when the official XI isn't out yet.
 - ⭐ **Follow your team** — star teams to filter to them and target your alerts.
 - 🔔 **Goal alerts** — opt-in push notifications for your teams, with an **Everything / Goals-only** preference.
 - 🎬 **Highlights** — every finished match, with an official clip where one's been added or a YouTube search link otherwise.
@@ -22,7 +23,7 @@ A single web page — no build step, no framework, just `index.html` — that yo
 The site is split into a free base anyone can run, and a live layer that runs on the maintainer's own keys.
 
 - **Free base — this repo, fully reproducible.** `index.html` + a small GitHub Action that pulls final & in-play **group** scores from [football-data.org](https://www.football-data.org/) (free tier) into `scores.json`. This is what the setup steps below get you: schedule, your-timezone times, calendar buttons, standings, and finished/in-play scores.
-- **Live layer — optional, runs on 3rd-party accounts.** A **Cloudflare Worker** ([`worker/wc2026-api.js`](worker/wc2026-api.js)) proxies [API-Football](https://www.api-football.com/) for minute-by-minute scores, match stats, the event timeline and line-ups, and runs a cron job that sends **OneSignal** push alerts. This needs paid/third-party accounts (API-Football, Cloudflare, OneSignal), so it isn't part of the basic clone — see [The live layer](#the-live-layer-optional-advanced).
+- **Live layer — optional, runs on 3rd-party accounts.** A **Cloudflare Worker** ([`worker/wc2026-api.js`](worker/wc2026-api.js)) proxies [API-Football](https://www.api-football.com/) for minute-by-minute scores, match stats, the event timeline, line-ups and team squads, and runs a cron job that sends **OneSignal** push alerts. This needs paid/third-party accounts (API-Football, Cloudflare, OneSignal), so it isn't part of the basic clone — see [The live layer](#the-live-layer-optional-advanced).
 
 ### Architecture at a glance
 
