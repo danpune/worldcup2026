@@ -112,6 +112,36 @@ try:
 except Exception as e:
     warns.append("scores.json freshness check failed: %s" % e)
 
+# 7) Cloudflare Workers KV usage — only runs if CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID are set
+# (read-only token). A self-controlled, spoof-proof read of the REAL number the phishing email lied about.
+_cf_token = os.environ.get("CLOUDFLARE_API_TOKEN")
+_cf_acct = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+if _cf_token and _cf_acct:
+    try:
+        _now = datetime.datetime.now(datetime.timezone.utc)
+        _since = _now.replace(hour=0, minute=0, second=0, microsecond=0)
+        _q = {"query": "query($a:String!,$s:Time!,$u:Time!){viewer{accounts(filter:{accountTag:$a}){"
+                       "kvOperationsAdaptiveGroups(limit:100,filter:{datetime_geq:$s,datetime_leq:$u}){"
+                       "count dimensions{actionType}}}}}",
+              "variables": {"a": _cf_acct,
+                            "s": _since.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "u": _now.strftime("%Y-%m-%dT%H:%M:%SZ")}}
+        _req = urllib.request.Request("https://api.cloudflare.com/client/v4/graphql",
+                                      data=json.dumps(_q).encode(),
+                                      headers={"Authorization": "Bearer " + _cf_token, "Content-Type": "application/json"})
+        _resp = json.loads(urllib.request.urlopen(_req, timeout=25).read().decode())
+        if _resp.get("errors"):
+            warns.append("Cloudflare KV check: API returned errors (query may need tuning): %s" % str(_resp["errors"])[:200])
+        else:
+            _g = _resp["data"]["viewer"]["accounts"][0]["kvOperationsAdaptiveGroups"]
+            _writes = sum(x["count"] for x in _g if x["dimensions"]["actionType"] in ("write", "delete", "list"))
+            _reads = sum(x["count"] for x in _g if x["dimensions"]["actionType"] == "read")
+            _pct = _writes / 1000.0 * 100
+            _msg = "Cloudflare KV today: %d writes (%.0f%% of 1000 free) · %d reads" % (_writes, _pct, _reads)
+            (fails if _pct > 97 else warns if _pct > 80 else oks).append(_msg)
+    except Exception as e:
+        warns.append("Cloudflare KV check failed (query may need tuning): %s" % e)
+
 # Report
 status = "FAIL" if fails else ("WARN" if warns else "OK")
 lines = ["## Health check: **%s** — %sZ" % (status, datetime.datetime.utcnow().isoformat(timespec="seconds")), ""]
