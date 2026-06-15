@@ -149,7 +149,7 @@ export default {
 };
 
 async function runDetector(env) {
-  var state = {}; try { state = JSON.parse(await env.STATE.get("state")) || {}; } catch (e) {}
+  var raw = null, state = {}; try { raw = await env.STATE.get("state"); state = JSON.parse(raw) || {}; } catch (e) {}
   state.fx = state.fx || {};
   var sending = !!state.seeded, log = [], sent = 0;
   var headers = { "x-apisports-key": env.APISPORTS_KEY }, fixtures = [];
@@ -191,8 +191,13 @@ async function runDetector(env) {
     }
     st.short = short; st.score = score; state.fx[fid] = st;
   }
-  state.seeded = true; await env.STATE.put("state", JSON.stringify(state));
-  return { ok: true, justSeeded: !sending, sent: sent, log: log.slice(0, 30) };
+  state.seeded = true;
+  // Only write KV when the state actually changed — a no-op minute (no live match, no new event) writes
+  // nothing, keeping us under the Workers KV free-tier write limit (~1000/day) instead of 1440/day.
+  var next = JSON.stringify(state);
+  var wrote = next !== raw;
+  if (wrote) await env.STATE.put("state", next);
+  return { ok: true, justSeeded: !sending, sent: sent, wrote: wrote, log: log.slice(0, 30) };
 }
 
 // Stable signature for de-duping alerts — uses ids/minute/detail, not array position.
