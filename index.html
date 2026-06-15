@@ -105,6 +105,9 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 /* schedule cards: stack the two teams on their own rows so the matchup never wraps awkwardly on phones */
 .tcol{flex-direction:column;align-items:stretch;gap:5px}
 .tcol .trow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.vsep{display:none;color:var(--muted);font-weight:500;font-size:12px}
+/* wide screens: put the matchup back on one line ("Home v Away"); phones stay stacked */
+@media(min-width:640px){.tcol{flex-direction:row;align-items:center;gap:9px}.tcol .trow{flex:0 1 auto}.vsep{display:inline}}
 .fav{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:6px 7px;margin:-6px -4px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent;vertical-align:middle}
 .fav.on{color:var(--gold);opacity:1}
 .fav:hover{opacity:1}
@@ -818,8 +821,8 @@ function renderList(){
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
   const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
   const teams=m.group_game
-   ?`<div class="trow">${m.hf} ${tk(m.home)}${rkx(m.home)}${favBtn(m.home)}</div><div class="trow">${m.af} ${tk(m.away)}${rkx(m.away)}${favBtn(m.away)}</div>`
-   :`<div class="trow">${m.home}${favBtn(m.home)}</div><div class="trow">${m.away}${favBtn(m.away)}</div>`;
+   ?`<div class="trow">${m.hf} ${tk(m.home)}${rkx(m.home)}${favBtn(m.home)}</div><span class="vsep">v</span><div class="trow">${m.af} ${tk(m.away)}${rkx(m.away)}${favBtn(m.away)}</div>`
+   :`<div class="trow">${m.home}${favBtn(m.home)}</div><span class="vsep">v</span><div class="trow">${m.away}${favBtn(m.away)}</div>`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
