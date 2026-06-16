@@ -58,6 +58,22 @@ flowchart TD
 
 **Reading it (decoupled reads):** visitors load the static page from GitHub Pages. Live scores and match detail are served by the Cloudflare Worker **out of KV** — so visitor traffic never calls the upstream API. The Worker's once-a-minute **cron** is the *only* thing that calls the paid API-Football: it writes the latest scores/stats into KV and fires goal alerts via OneSignal. Because reads are decoupled from the paid API, the site can't be rate-limited no matter how many people are watching. If the Worker is ever unavailable, the page falls back to the cached `scores.json` (kept fresh by a GitHub Action).
 
+## Built with
+
+A deliberately lean, **no-framework, no-build-step** stack — and one language (JavaScript) front to back:
+
+| Language | ~Lines | What it builds |
+|---|---|---|
+| **JavaScript** | ~860 | The entire front-end **and** the Cloudflare Worker backend — vanilla, no framework |
+| **CSS** | ~250 | Styling, the green theme, dark mode, responsive layout (inline in `index.html`) |
+| **HTML** | ~180 | Page structure — tabs, cards, modals (`index.html`) |
+| **Python** | ~390 | Automation: the score fetcher, the health-check monitor, and tests (run by GitHub Actions) |
+| **JSON** | — | Data & config: `scores.json`, `highlights.json`, `manifest.json` |
+| **YAML** | — | CI/CD workflows + issue templates (`.github/`) |
+| **Markdown** | — | Docs (this README, including the diagrams) |
+
+**Stack at a glance:** static HTML/CSS/JS on **GitHub Pages** · a serverless **JavaScript Cloudflare Worker** (cron + KV) · **Python** automation via **GitHub Actions** · **OneSignal** for web push. No frameworks, no build step, no database server — which is what keeps it fast, cheap, and easy to maintain.
+
 ## What each file is
 
 | File | What it does | Where it goes |
