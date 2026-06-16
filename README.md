@@ -38,23 +38,25 @@ flowchart TD
     end
 
     subgraph CF["☁️ Cloudflare Worker · wc2026-api — live layer (optional)"]
-        Proxy["/scores · /match<br/>cached 15–30s"]
-        Cron["cron · every 1 min<br/>goal-alert detector"]
+        Read["/scores · /match<br/>read from KV"]
+        KV[("KV store<br/>scores + match snapshots")]
+        Cron["cron · every 1 min<br/>writer + alert detector"]
     end
 
     FD["⚽ football-data.org<br/>free · delayed"]
-    AF["⚡ API-Football<br/>paid · real-time"]
+    AF["⚡ API-Football<br/>paid · cron-only"]
     OS["🔔 OneSignal<br/>web push"]
 
     Pages --> UI
     FD --> Action --> JSON
-    UI -- "base scores (fallback)" --> JSON
-    UI -- "live scores · stats · line-ups" --> Proxy --> AF
-    Cron --> AF
-    Cron -- "goal · card · full-time" --> OS -- "push notification" --> UI
+    UI -- "fallback scores" --> JSON
+    UI -- "live scores · stats" --> Read --> KV
+    Cron -- "fetch 1×/min" --> AF
+    Cron -- "write" --> KV
+    Cron -- "kick-off · goal · full-time" --> OS -- "push" --> UI
 ```
 
-**Reading it:** the page always loads from GitHub Pages and reads `scores.json` (kept fresh by the Action). When the optional Worker is configured, the page overlays real-time scores/stats/line-ups from it, and the Worker's once-a-minute cron sends goal alerts via OneSignal. No Worker? The page falls back to `scores.json` and works fine.
+**Reading it (decoupled reads):** visitors load the static page from GitHub Pages. Live scores and match detail are served by the Cloudflare Worker **out of KV** — so visitor traffic never calls the upstream API. The Worker's once-a-minute **cron** is the *only* thing that calls the paid API-Football: it writes the latest scores/stats into KV and fires goal alerts via OneSignal. Because reads are decoupled from the paid API, the site can't be rate-limited no matter how many people are watching. If the Worker is ever unavailable, the page falls back to the cached `scores.json` (kept fresh by a GitHub Action).
 
 ## What each file is
 
