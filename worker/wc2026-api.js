@@ -4,8 +4,13 @@
  * Backup/documentation copy of the deployed Worker.
  *
  * HTTP routes (fetch handler):
- *   GET /scores        -> all World Cup 2026 fixtures (live + finished + scheduled)
- *   GET /match?id=     -> {stats, events, lineups} for one fixture
+ *   GET /scores        -> all WC2026 fixtures (live+finished+scheduled), read from KV (cron-written)
+ *   GET /match?id=     -> {stats, events, lineups} for one fixture, read from KV (cron-written; lazy-fetch on miss)
+ *
+ * DECOUPLED READS: the once-a-minute cron is the ONLY thing that calls API-Football for scores/match data.
+ * It writes a `scores` snapshot and `match:<fid>` detail into KV; the public /scores and /match routes read
+ * from KV, so visitor traffic never hits the upstream API (no per-minute rate-limit risk at any scale).
+ * Live data is therefore at most ~60s old (the cron cadence). /squad still fetches on demand (cached 6h).
  *                         stats = possession/shots/xG…; events = goal/card/sub timeline;
  *                         lineups = starting XI + formation per team
  *   GET /squad?team=   -> full squad/roster for a team (name -> id -> /players/squads), cached 6h
@@ -27,7 +32,8 @@
  *   - Secret  APISPORTS_KEY        = API-Football (api-sports.io) key
  *   - Secret  ONESIGNAL_REST_KEY   = OneSignal REST API Key (legacy format -> "Basic")
  *   - Secret  ADMIN_KEY            = shared secret guarding /testpush /run /reset
- *   - KV binding  STATE            = namespace storing the detector's seen state
+ *   - KV binding  STATE            = stores detector `state`, the `scores` snapshot, and `match:<fid>` detail
+ *   - Workers Paid plan recommended (the cron writes KV every minute — above the free KV write limit)
  *   - Cron trigger  * * * * *
  * No secrets are stored in this file.
  */
@@ -78,6 +84,10 @@ export default {
 
     if (url.pathname === "/match") {
       var id = url.searchParams.get("id"); if (!id) return json({ error: "missing id" });
+      // Decoupled: live & finished matches are written to KV by the cron — read those, no API call.
+      var kvMatch = await env.STATE.get("match:" + id);
+      if (kvMatch) return new Response(kvMatch, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=20" }) });
+      // Not in KV (e.g. a match that finished before this was deployed) — fetch once and store it.
       var mc = caches.default, mk = new Request(new URL("/match?id=" + id, url.origin).toString());
       var mh = await mc.match(mk); if (mh) return mh;
       var stats = [], events = [], lineups = [], me = null;
@@ -90,12 +100,20 @@ export default {
         stats = r[0].response || []; events = r[1].response || []; lineups = r[2].response || [];
         if (r[0].errors && Object.keys(r[0].errors).length) me = r[0].errors;
       } catch (e) { me = String(e); }
-      var mr = new Response(JSON.stringify({ id: id, stats: stats, events: events, lineups: lineups, errors: me }, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": me ? "max-age=0" : "max-age=30" }) });
-      if (!me) ctx.waitUntil(mc.put(mk, mr.clone()));   // don't cache an errored/rate-limited result — let the next request retry fresh
+      var payloadM = { id: id, stats: stats, events: events, lineups: lineups, errors: me };
+      var mr = new Response(JSON.stringify(payloadM, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": me ? "max-age=0" : "max-age=30" }) });
+      if (!me && (stats.length || events.length || lineups.length)) {
+        ctx.waitUntil(mc.put(mk, mr.clone()));
+        ctx.waitUntil(env.STATE.put("match:" + id, JSON.stringify(payloadM), { expirationTtl: 86400 }));  // serve from KV next time
+      }
       return mr;
     }
 
     if (url.pathname === "/scores") {
+      // Decoupled: serve the snapshot the cron wrote to KV — visitor traffic never calls API-Football.
+      var kvScores = await env.STATE.get("scores");
+      if (kvScores) return new Response(kvScores, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=15" }) });
+      // KV not warmed yet (first minute after deploy) — fall back to a direct fetch this once.
       var c = caches.default;
       var ck = new Request(new URL("/scores", url.origin).toString());          // primary, short TTL
       var lk = new Request(new URL("/scores_lastgood", url.origin).toString());  // last-good, long TTL
@@ -198,6 +216,9 @@ async function runDetector(env) {
     // silently doing nothing (which would advance no state but emit no signal during a live match).
     if (fxResp.errors && Object.keys(fxResp.errors).length) return { error: fxResp.errors };
     fixtures = fxResp.response || [];
+    // Decoupled reads: write the public scores snapshot to KV so visitor /scores reads never touch the API.
+    var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed }; });
+    if (snap.length) await env.STATE.put("scores", JSON.stringify({ updated: new Date().toISOString(), count: snap.length, matches: snap, errors: null }));
   } catch (e) { return { error: String(e) }; }
   var now = Date.now();
   // tier "core" -> everyone following the team gets it; tier "extra" -> only subscribers whose alerts="all"
@@ -227,6 +248,14 @@ async function runDetector(env) {
           var m = eventMessage(events[j]); if (m) await fire(m.title, m.body, teams, m.tier);
         }
         if (finished) { st.evDone = true; st.fired = {}; }       // free memory once the match is over
+        // Decoupled reads: write match detail to KV so visitor /match reads never touch the API for this match.
+        try {
+          var md = await Promise.all([
+            fetch(API + "/fixtures/statistics?fixture=" + fid, { headers }).then(function (x) { return x.json(); }),
+            fetch(API + "/fixtures/lineups?fixture=" + fid, { headers }).then(function (x) { return x.json(); })
+          ]);
+          await env.STATE.put("match:" + fid, JSON.stringify({ id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], errors: null }), { expirationTtl: 604800 });
+        } catch (e) {}
       } catch (e) {}
     }
     st.short = short; st.score = score; state.fx[fid] = st;
