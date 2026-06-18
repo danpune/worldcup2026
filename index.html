@@ -892,15 +892,20 @@ async function fetchPolymarket(){
    so the page stays tracker-free). Lazy-loaded on first Buzz-tab open; links open the article in a new tab. */
 const NEWS_API="https://wc2026-api.footy26.workers.dev/news";
 let _newsLoaded=false;
-async function loadNews(){
- if(_newsLoaded)return; _newsLoaded=true;
+async function loadNews(attempt){
+ attempt=attempt||0;
+ if(_newsLoaded)return;
  const box=document.getElementById("newswrap"); if(!box)return;
  try{
   const r=await fetch(NEWS_API); const d=r.ok?await r.json():null;
   if(d&&d.items&&d.items.length){
+   _newsLoaded=true;
    box.innerHTML=d.items.map(n=>'<a class="newsrow" href="'+escA(n.link)+'" target="_blank" rel="noopener"><span class="nt">'+escA(n.title)+'</span><span class="nm">'+escA(n.source||"")+(n.pub&&relTime(n.pub)?' · '+relTime(n.pub):'')+'</span></a>').join("");
-  }else{ box.innerHTML='<div class="newsload">Headlines are taking a break — try the live feeds below.</div>'; _newsLoaded=false; }
- }catch(e){ box.innerHTML='<div class="newsload">Couldn’t load headlines right now — the live feeds below still work.</div>'; _newsLoaded=false; }
+   return;
+  }
+ }catch(e){}
+ if(attempt<1){ setTimeout(function(){loadNews(attempt+1);},2500); return; }   /* one quiet retry before the soft message */
+ box.innerHTML='<div class="newsload">Headlines are taking a break — try the live feeds below.</div>';
 }
 let HL={};
 async function fetchHighlights(){

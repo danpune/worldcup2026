@@ -201,10 +201,18 @@ export default {
           if (title && link.indexOf("http") === 0) nitems.push({ title: title, link: link, source: src, pub: pub });
         }
       } catch (e) { nerr = String(e); }
-      var newr = new Response(JSON.stringify({ updated: new Date().toISOString(), count: nitems.length, items: nitems, errors: nerr }, null, 2),
-        { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=900" }) }); // 15 min
-      if (!nerr && nitems.length) ctx.waitUntil(newc.put(newk, newr.clone()));
-      return newr;
+      if (nitems.length) {
+        var good = JSON.stringify({ updated: new Date().toISOString(), count: nitems.length, items: nitems, errors: null }, null, 2);
+        ctx.waitUntil(env.STATE.put("news:last", good, { expirationTtl: 86400 }));   // remember the last good set (24h)
+        var newr = new Response(good, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=900" }) }); // 15 min
+        ctx.waitUntil(newc.put(newk, newr.clone()));
+        return newr;
+      }
+      // Google occasionally serves a consent/non-RSS page (0 items parsed) — serve the last good set so the feed never goes blank.
+      var lastNews = await env.STATE.get("news:last");
+      if (lastNews) return new Response(lastNews, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=300" }) });
+      return new Response(JSON.stringify({ updated: new Date().toISOString(), count: 0, items: [], errors: nerr || "no items" }, null, 2),
+        { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=0" }) });
     }
 
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
