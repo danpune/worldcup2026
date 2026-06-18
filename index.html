@@ -58,6 +58,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .tabs-in{max-width:980px;margin:0 auto;display:flex;gap:2px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs-in::-webkit-scrollbar{display:none}
 .tab{flex:1 0 auto;border:0;background:transparent;color:#9fbcb0;font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;padding:13px 12px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+@media(max-width:400px){.tab{padding:13px 8px;letter-spacing:.02em}}
 .tab[aria-selected="true"]{color:#fff;border-bottom-color:var(--gold)}
 .tab:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
 .prov{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);background:#f3f6f3;border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin:12px 0 2px}
@@ -148,7 +149,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .ftpill{background:#8a978f}
 .result.half{background:#fdf4e0;color:#7d6314}
 .livedot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
-.statsbtn{border:1px solid var(--line);background:var(--card);color:var(--pitch);border-radius:8px;padding:7px 10px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.statsbtn{border:1px solid var(--line);background:var(--card);color:var(--pitch);border-radius:8px;padding:8px 11px;min-height:40px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .statsbtn:hover{border-color:var(--pitch2);background:#f3f8f5}
 .statswrap{margin:-2px 0 10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px 13px}
 .stathead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-bottom:9px;margin-bottom:2px;border-bottom:1px solid var(--line)}
@@ -182,7 +183,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .sqmodal{background:var(--card);width:100%;max-width:560px;max-height:86vh;overflow:auto;border-radius:16px 16px 0 0}
 @media(min-width:560px){.sqoverlay{align-items:center}.sqmodal{border-radius:16px}}
 .sqhead{position:sticky;top:0;background:var(--pitch);color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Oswald;font-size:18px;letter-spacing:.02em}
-.sqhead button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer;padding:0 2px}
+.sqhead button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center;margin:-8px -8px -8px 0}
 .sqsub{padding:8px 16px 0;color:var(--muted);font-size:12.5px}
 .sqbody{padding:6px 16px 22px}
 .sqgrp{font-family:Oswald;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);margin:13px 0 5px;border-top:1px solid var(--line);padding-top:10px}
@@ -295,6 +296,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  .time{color:#7fcfa2}
  .cal{background:#1d2922;color:#cfe3d8}
  .statsbtn{color:#cfe3d8}
+ .w2wch .free{color:#7fcfa2;background:#163524;border-color:#2f7a48}
  .hlsearch{color:#cfe3d8}
  .cal:hover{background:#243029}
  .statsbtn:hover{background:#243029}
@@ -330,7 +332,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Standings</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">Buzz</button>
- <button class="tab" role="tab" id="tab-watch" aria-controls="view-watch" aria-selected="false" tabindex="-1" data-view="watch">📺 Watch</button>
+ <button class="tab" role="tab" id="tab-watch" aria-controls="view-watch" aria-selected="false" tabindex="-1" data-view="watch"><span aria-hidden="true">📺</span> Watch</button>
  <button class="tab" role="tab" id="tab-info" aria-controls="view-info" aria-selected="false" tabindex="-1" data-view="info">Info</button>
 </div></nav>
 
@@ -592,11 +594,26 @@ const POS_LABEL={Goalkeeper:"Goalkeepers",Defender:"Defenders",Midfielder:"Midfi
 function openSquad(team){
  const ov=document.getElementById("sqoverlay");if(!ov)return;
  ov.innerHTML='<div class="sqmodal" role="dialog" aria-label="'+escA(team)+' squad" aria-modal="true"><div class="sqhead"><span>'+(FLAGMAP[team]||"")+' '+escA(team)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">Full World Cup squad. The matchday starting XI is announced ~40 min before kickoff — see it in a match’s stats panel.</div><div class="sqhist" id="sqhist"></div><div class="sqbody" id="sqbody"><div class="sqload">Loading squad…</div></div></div>';
- ov.style.display="flex";document.body.style.overflow="hidden";
+ ov.style.display="flex";document.body.style.overflow="hidden";lockModal();
  renderSquad(team);
  loadHistory().then(()=>{const h=document.getElementById("sqhist");if(h)h.innerHTML=teamHistLine(team);});
 }
-function closeSquad(){const ov=document.getElementById("sqoverlay");if(!ov)return;ov.style.display="none";ov.innerHTML="";document.body.style.overflow="";}
+/* modal a11y: move focus into the dialog, make the rest of the page inert (focus trap +
+   hidden from screen readers), and restore focus to the trigger on close. */
+let _modalReturn=null;
+const _bgSel=["header","nav.tabs","main.wrap","footer"];
+function lockModal(){
+ _modalReturn=document.activeElement;
+ _bgSel.forEach(s=>{const el=document.querySelector(s);if(el)el.inert=true;});
+ const m=document.querySelector("#sqoverlay .sqmodal");
+ if(m){m.tabIndex=-1;try{m.focus();}catch(e){}}
+}
+function unlockModal(){
+ _bgSel.forEach(s=>{const el=document.querySelector(s);if(el)el.inert=false;});
+ if(_modalReturn&&_modalReturn.focus){try{_modalReturn.focus();}catch(e){}}
+ _modalReturn=null;
+}
+function closeSquad(){const ov=document.getElementById("sqoverlay");if(!ov)return;ov.style.display="none";ov.innerHTML="";document.body.style.overflow="";unlockModal();}
 async function fetchSquad(team){
  if(squadCache[team])return squadCache[team];
  try{const r=await fetch(SQUAD_API+"?team="+encodeURIComponent(team));if(r.ok){const d=await r.json();if(d&&d.players&&d.players.length)squadCache[team]=d;return d;}}catch(e){}
@@ -621,7 +638,7 @@ async function renderSquad(team){
 function openMatchSquads(home,away){
  const ov=document.getElementById("sqoverlay");if(!ov)return;
  ov.innerHTML='<div class="sqmodal" role="dialog" aria-modal="true" aria-label="'+escA(home)+' and '+escA(away)+' squads"><div class="sqhead"><span>'+(FLAGMAP[home]||"")+' '+escA(home)+' <span style="opacity:.65;font-weight:400">v</span> '+(FLAGMAP[away]||"")+' '+escA(away)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">Full squads. The starting XI is announced ~40 min before kickoff — it then appears in the match stats panel.</div><div class="sqbody" id="sqbody"><div class="sqload">Loading squads…</div></div></div>';
- ov.style.display="flex";document.body.style.overflow="hidden";
+ ov.style.display="flex";document.body.style.overflow="hidden";lockModal();
  renderMatchSquads(home,away);
 }
 async function renderMatchSquads(home,away){
@@ -1018,8 +1035,10 @@ async function fillWx(el){
  if(i<0)i=h.time.findIndex(t=>t.slice(0,13)>hr);
  if(i<0||h.temperature_2m[i]==null)return;
  const w=WMO[h.weather_code[i]]||{i:"🌡️",t:"Forecast"};
- el.textContent=w.i+" "+Math.round(h.temperature_2m[i])+(wxUnit()==="fahrenheit"?"°F":"°C");
+ const temp=Math.round(h.temperature_2m[i]),unit=wxUnit()==="fahrenheit"?"°F":"°C";
+ el.textContent=w.i+" "+temp+unit;
  el.title=w.t+" forecast at kickoff";
+ el.setAttribute("aria-label",w.t+", "+temp+unit+" at kickoff");
 }
 function observeWx(){
  const els=document.querySelectorAll(".wx:not(.wxdone)");
@@ -1102,7 +1121,7 @@ function historyHTML(home,away){
 function openHistory(home,away){
  const ov=document.getElementById("sqoverlay");if(!ov)return;
  ov.innerHTML='<div class="sqmodal" role="dialog" aria-modal="true" aria-label="'+escA(home)+' versus '+escA(away)+' World Cup history"><div class="sqhead"><span>'+(FLAGMAP[home]||"")+' '+escA(home)+' <span style="opacity:.65;font-weight:400">v</span> '+(FLAGMAP[away]||"")+' '+escA(away)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">All-time World Cup head-to-head &amp; each team’s tournament record.</div><div class="sqbody" id="sqbody"><div class="sqload">Loading World Cup history…</div></div></div>';
- ov.style.display="flex";document.body.style.overflow="hidden";
+ ov.style.display="flex";document.body.style.overflow="hidden";lockModal();
  loadHistory().then(()=>{const b=document.getElementById("sqbody");if(b)b.innerHTML=historyHTML(home,away);});
 }
 
