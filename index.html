@@ -220,6 +220,17 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .hmuted{font-size:13px;color:var(--muted);margin-top:6px}
 .hactions{display:flex;justify-content:center;margin:18px 0 4px}
 .credit{font-size:10.5px;color:var(--muted);text-align:center;margin:15px 0 2px;line-height:1.4}
+/* Where to watch (TV) */
+.w2w select{font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--text);max-width:100%;cursor:pointer}
+.w2wout{margin:13px 0 2px}
+.w2wch{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.w2wch:last-child{border-bottom:0}
+.w2wch .ch{font-weight:600;color:var(--text)}
+.w2wch .lg{color:var(--muted);font-size:12.5px}
+.w2wch .free{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--pitch);background:var(--advance);border:1px solid var(--advance-line);border-radius:6px;padding:2px 7px;letter-spacing:.03em;white-space:nowrap}
+.w2wch .pay{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
+.w2wnote{font-size:12.5px;color:var(--muted);margin:9px 0 0;line-height:1.45}
+.w2wdis{font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.45}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -411,8 +422,13 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p>Tap <b>Add</b> on any match for a Google Calendar event pre-filled with teams, time and venue. On iPhone the same button works with Apple Calendar.</p>
   <h3>Find your team</h3>
   <p>Use the search box or the team chips. Every kickoff follows the <b>Show times in</b> picker at the top — set it to your zone once and the whole page converts.</p>
-  <h3>Where to watch (USA)</h3>
-  <p>English on FOX &amp; FS1 (streams on the FOX apps; Round of 16 onward all on FOX). Spanish on Telemundo / Universo and Peacock.</p>
+  <h3>📺 Where to watch</h3>
+  <p>Official World Cup 2026 broadcasters. Pick your country — we've guessed it from your time zone:</p>
+  <div class="w2w">
+   <select id="w2wsel" aria-label="Your country" onchange="renderW2W(this.value)"></select>
+   <div class="w2wout" id="w2wout"></div>
+   <p class="w2wdis">A guide only — <b>check local listings</b>, as channels and match allocations can change. Full official list: <a href="https://digitalhub.fifa.com/m/af2cdbbd380d70c/original/FWC26-Media-Rights-Licensees-Overview.pdf" target="_blank" rel="noopener">FIFA's media-rights licensees</a>. Not affiliated with any broadcaster.</p>
+  </div>
   <h3>Drivable from Austin</h3>
   <p>🚗 Dallas — AT&amp;T Stadium (~3 hrs, 9 games incl. a semifinal) and Houston — NRG (~2.5 hrs). Both air-conditioned.</p>
   <h3>Sources — where every number comes from</h3>
@@ -1092,6 +1108,64 @@ async function shareCard(o){
  finally{node.remove();}
 }
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".sharebtn");if(!b)return;e.preventDefault();shareCard({home:b.dataset.home,away:b.dataset.away,score:b.dataset.score||"",sub:b.dataset.sub||""});});
+
+/* ===== Where to watch (TV): official WC2026 broadcasters per country =====
+   Curated from FIFA's media-rights licensee list + broadcaster releases (June 2026).
+   Only confirmed holders are listed; free-to-air channels are flagged "Free". Country is
+   guessed from the device time zone, and is user-overridable. A guide only — listings change. */
+const W2W={
+ US:{n:"United States",c:[["FOX","English",1],["FS1","English",0],["Telemundo","Spanish",1],["Universo","Spanish",0],["Peacock","Spanish stream",0]]},
+ CA:{n:"Canada",c:[["CTV","English",1],["TSN","English",0],["Noovo","French",1],["RDS","French",0]]},
+ MX:{n:"Mexico",c:[["Canal 5 / Las Estrellas","Spanish",1],["Azteca 7","Spanish",1],["TUDN","Spanish",0],["ViX","Spanish stream",0]]},
+ GB:{n:"United Kingdom",c:[["BBC","English",1],["ITV","English",1]]},
+ IE:{n:"Ireland",c:[["RTÉ","English",1],["Virgin Media","English",1]]},
+ AU:{n:"Australia",c:[["SBS","English",1]]},
+ NZ:{n:"New Zealand",c:[["TVNZ","English",1],["TVNZ+","English stream",0]],note:"Most matches are on the paid TVNZ+ pass; only a handful are free-to-air."},
+ IN:{n:"India",c:[["DD Sports","Hindi",1],["ZEE5","Hindi/English stream",0],["Unite8 Sports","Hindi/English",0]],note:"Free coverage on DD Sports is limited (opener + quarter-finals onward)."},
+ FR:{n:"France",c:[["M6","French",1],["W9","French",1],["beIN Sports","French",0]]},
+ ES:{n:"Spain",c:[["RTVE (La 1)","Spanish",1],["DAZN","Spanish",0]]},
+ PT:{n:"Portugal",c:[["RTP","Portuguese",1],["SIC","Portuguese",1],["TVI","Portuguese",1],["Sport TV","Portuguese",0]]},
+ DE:{n:"Germany",c:[["ARD","German",1],["ZDF","German",1],["MagentaTV","German",0]]},
+ NL:{n:"Netherlands",c:[["NOS","Dutch",1]]},
+ IT:{n:"Italy",c:[["RAI","Italian",1],["DAZN","Italian",0]]},
+ BE:{n:"Belgium",c:[["RTBF","French",1],["VRT","Dutch",1]]},
+ HR:{n:"Croatia",c:[["HRT","Croatian",1]]},
+ JP:{n:"Japan",c:[["NHK","Japanese",1],["Nippon TV","Japanese",1],["Fuji TV","Japanese",1],["DAZN","Japanese",0]]},
+ KR:{n:"South Korea",c:[["KBS","Korean",1],["JTBC","Korean",0],["Naver Sports","Korean stream",1]]},
+ IR:{n:"Iran",c:[["IRIB (TV3 / Varzesh)","Persian",1]],note:"Iran's national-team and selected matches air on IRIB."},
+ MA:{n:"Morocco",c:[["SNRT (Al Aoula / Arryadia)","Arabic",1],["beIN Sports","Arabic/French",0]],note:"Morocco matches + broad free coverage on SNRT; the full slate is on beIN."},
+ NG:{n:"Nigeria",c:[["SportyTV","English",1],["SuperSport (DStv)","English",0]]},
+ GH:{n:"Ghana",c:[["GBC","English",1],["SportyTV","English",1],["SuperSport (DStv)","English",0]]},
+ SN:{n:"Senegal",c:[["RTS","French",1],["New World TV","French",0]]},
+ CI:{n:"Ivory Coast",c:[["RTI","French",1],["NCI","French",1],["New World TV","French",0]]},
+ BR:{n:"Brazil",c:[["TV Globo","Portuguese",1],["SBT","Portuguese",1],["CazéTV (YouTube)","Portuguese stream",1],["SporTV","Portuguese",0]]},
+ AR:{n:"Argentina",c:[["Telefe","Spanish",1],["TV Pública","Spanish",1],["DSports","Spanish",0],["TyC Sports","Spanish",0]]},
+ CO:{n:"Colombia",c:[["Caracol","Spanish",1],["RCN","Spanish",1],["DSports","Spanish",0]]},
+ UY:{n:"Uruguay",c:[["Canal 5 (TNU)","Spanish",1],["DSports","Spanish",0]]},
+ EC:{n:"Ecuador",c:[["Teleamazonas","Spanish",1],["DSports","Spanish",0]]}
+};
+/* MENA: beIN holds exclusive rights, pay-only, no free-to-air */
+[["AE","United Arab Emirates"],["QA","Qatar"],["KW","Kuwait"],["BH","Bahrain"],["OM","Oman"],["IQ","Iraq"],["JO","Jordan"],["LB","Lebanon"],["SY","Syria"],["PS","Palestine"],["LY","Libya"],["TN","Tunisia"],["DZ","Algeria"],["SD","Sudan"],["YE","Yemen"],["EG","Egypt"],["SA","Saudi Arabia"]].forEach(([cc,nm])=>{if(!W2W[cc])W2W[cc]={n:nm,c:[["beIN Sports / TOD","Arabic/English/French",0]],note:"beIN holds exclusive rights in the region — pay TV / TOD streaming, no free-to-air."};});
+const TZCC={"America/New_York":"US","America/Detroit":"US","America/Chicago":"US","America/Denver":"US","America/Phoenix":"US","America/Los_Angeles":"US","America/Anchorage":"US","America/Indiana/Indianapolis":"US","Pacific/Honolulu":"US","America/Toronto":"CA","America/Vancouver":"CA","America/Edmonton":"CA","America/Winnipeg":"CA","America/Halifax":"CA","America/St_Johns":"CA","America/Mexico_City":"MX","America/Tijuana":"MX","America/Monterrey":"MX","America/Cancun":"MX","America/Merida":"MX","Europe/London":"GB","Europe/Dublin":"IE","Australia/Sydney":"AU","Australia/Melbourne":"AU","Australia/Brisbane":"AU","Australia/Perth":"AU","Australia/Adelaide":"AU","Pacific/Auckland":"NZ","Asia/Kolkata":"IN","Asia/Calcutta":"IN","Europe/Paris":"FR","Europe/Madrid":"ES","Europe/Lisbon":"PT","Europe/Berlin":"DE","Europe/Amsterdam":"NL","Europe/Rome":"IT","Europe/Brussels":"BE","Europe/Zagreb":"HR","Asia/Tokyo":"JP","Asia/Seoul":"KR","Asia/Riyadh":"SA","Asia/Tehran":"IR","Africa/Casablanca":"MA","Africa/Cairo":"EG","Africa/Lagos":"NG","Africa/Accra":"GH","Africa/Dakar":"SN","Africa/Abidjan":"CI","America/Sao_Paulo":"BR","America/Bahia":"BR","America/Fortaleza":"BR","America/Bogota":"CO","America/Montevideo":"UY","America/Guayaquil":"EC","America/Argentina/Buenos_Aires":"AR","America/Argentina/Cordoba":"AR","Asia/Dubai":"AE","Asia/Qatar":"QA","Asia/Kuwait":"KW","Asia/Bahrain":"BH","Asia/Muscat":"OM","Asia/Baghdad":"IQ","Asia/Amman":"JO","Asia/Beirut":"LB","Asia/Damascus":"SY","Asia/Hebron":"PS","Africa/Tripoli":"LY","Africa/Tunis":"TN","Africa/Algiers":"DZ","Africa/Khartoum":"SD","Asia/Aden":"YE"};
+function detectCountry(){try{return TZCC[Intl.DateTimeFormat().resolvedOptions().timeZone]||"";}catch(e){return"";}}
+function renderW2W(cc){
+ const out=document.getElementById("w2wout");if(!out)return;
+ const d=W2W[cc];
+ if(!d){out.innerHTML='<p class="w2wnote">Pick your country above, or <a href="https://www.google.com/search?q='+encodeURIComponent("FIFA World Cup 2026 TV broadcast")+'" target="_blank" rel="noopener">search local listings</a>.</p>';return;}
+ const free=d.c.filter(x=>x[2]),pay=d.c.filter(x=>!x[2]);
+ const row=x=>'<div class="w2wch"><span class="ch">'+escA(x[0])+'</span><span class="lg">'+escA(x[1])+'</span>'+(x[2]?'<span class="free">FREE</span>':'<span class="pay">pay / stream</span>')+'</div>';
+ out.innerHTML=free.concat(pay).map(row).join("")
+  +(d.note?'<p class="w2wnote">'+escA(d.note)+'</p>':'')
+  +'<p class="w2wnote">Not your country? <a href="https://www.google.com/search?q='+encodeURIComponent("FIFA World Cup 2026 TV "+d.n)+'" target="_blank" rel="noopener">Search '+escA(d.n)+' listings</a>.</p>';
+}
+function initW2W(){
+ const sel=document.getElementById("w2wsel");if(!sel)return;
+ const det=detectCountry();
+ const opts=Object.keys(W2W).map(cc=>[cc,W2W[cc].n]).sort((a,b)=>a[1].localeCompare(b[1]));
+ sel.innerHTML='<option value="">🌍 Choose your country…</option>'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===det?" selected":"")+'>'+escA(o[1])+'</option>').join("");
+ renderW2W(det);
+}
+initW2W();
 </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7271996b0f234a3981511907aaa6188b"}'></script><!-- End Cloudflare Web Analytics -->
 <!-- OneSignal push notifications (Web SDK v16) -->
