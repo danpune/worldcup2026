@@ -163,6 +163,15 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .ststatus.live{color:var(--live);font-weight:600}
 .statload{color:var(--muted);font-size:13px;padding:5px 0}
 .statnote{color:var(--muted);font-size:12px;padding:8px 0 2px;font-style:italic}
+.buzzh{font-family:Oswald;font-size:16px;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 6px;color:var(--text)}
+.buzzh:first-child{margin-top:4px}
+#newswrap{margin-bottom:6px}
+.newsrow{display:block;padding:11px 2px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.newsrow:last-child{border-bottom:0}
+.newsrow .nt{display:block;font-size:14.5px;font-weight:600;color:var(--text);line-height:1.35}
+.newsrow:hover .nt{color:var(--pitch2);text-decoration:underline}
+.newsrow .nm{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.newsload{color:var(--muted);font-size:13.5px;padding:14px 2px}
 .strow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:10px}
 .strow .sv{font-weight:600;color:var(--muted);min-width:42px}
 .strow .sv.lead{font-weight:800;color:var(--text)}
@@ -366,6 +375,9 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  </section>
 
  <section id="view-buzz" class="hide" role="tabpanel" aria-labelledby="tab-buzz" tabindex="0">
+  <h3 class="buzzh">📰 World Cup news</h3>
+  <div id="newswrap"><div class="newsload">Loading the latest headlines…</div></div>
+  <h3 class="buzzh">💬 Live chatter</h3>
   <p class="note">Live World Cup chatter on X (Twitter) — tap any button to open the latest posts in a new tab.</p>
   <div class="buzzgrid">
    <a class="buzzbtn lead" href="https://x.com/search?q=%23FIFAWorldCup&f=live" target="_blank" rel="noopener">🔴 Live #FIFAWorldCup feed <span class="ext">↗</span></a>
@@ -867,6 +879,20 @@ async function fetchPolymarket(){
  if(currentView==="standings")renderStandings();
 }
 /* highlights — official FIFA clips, manually curated in highlights.json (match number -> {yt: videoId}) */
+/* World Cup news headlines — pulled from the Worker's /news route (Google News RSS, fetched server-side
+   so the page stays tracker-free). Lazy-loaded on first Buzz-tab open; links open the article in a new tab. */
+const NEWS_API="https://wc2026-api.footy26.workers.dev/news";
+let _newsLoaded=false;
+async function loadNews(){
+ if(_newsLoaded)return; _newsLoaded=true;
+ const box=document.getElementById("newswrap"); if(!box)return;
+ try{
+  const r=await fetch(NEWS_API); const d=r.ok?await r.json():null;
+  if(d&&d.items&&d.items.length){
+   box.innerHTML=d.items.map(n=>'<a class="newsrow" href="'+escA(n.link)+'" target="_blank" rel="noopener"><span class="nt">'+escA(n.title)+'</span><span class="nm">'+escA(n.source||"")+(n.pub&&relTime(n.pub)?' · '+relTime(n.pub):'')+'</span></a>').join("");
+  }else{ box.innerHTML='<div class="newsload">Headlines are taking a break — try the live feeds below.</div>'; _newsLoaded=false; }
+ }catch(e){ box.innerHTML='<div class="newsload">Couldn’t load headlines right now — the live feeds below still work.</div>'; _newsLoaded=false; }
+}
 let HL={};
 async function fetchHighlights(){
  try{const r=await fetch("highlights.json?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();HL=j.highlights||{};}}catch(e){}
@@ -1029,6 +1055,7 @@ function activateTab(t){
  document.querySelectorAll("main section").forEach(s=>s.classList.add("hide"));
  document.getElementById("view-"+currentView).classList.remove("hide");
  render();
+ if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
 }
 tabEls.forEach((t,i)=>{
  t.addEventListener("click",()=>activateTab(t));

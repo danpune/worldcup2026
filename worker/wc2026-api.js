@@ -181,6 +181,32 @@ export default {
       ctx.waitUntil(qc.put(qk, qr.clone())); return qr;
     }
 
+    // World Cup news headlines — fetched server-side from Google News RSS (free, no key) and cached 15 min,
+    // so the page stays tracker-free (the visitor's browser never calls Google). Returns clean {title, link, source, pub}.
+    if (url.pathname === "/news") {
+      var newc = caches.default, newk = new Request(new URL("/news", url.origin).toString());
+      var newh = await newc.match(newk); if (newh) return newh;
+      var nitems = [], nerr = null;
+      try {
+        var rss = await (await fetch("https://news.google.com/rss/search?q=" + encodeURIComponent("FIFA World Cup 2026") + "&hl=en-US&gl=US&ceid=US:en",
+          { headers: { "User-Agent": "Mozilla/5.0 (compatible; wc2026-news/1.0)" } })).text();
+        var parts = rss.split("<item>").slice(1);
+        for (var i = 0; i < parts.length && nitems.length < 24; i++) {
+          var b = parts[i];
+          var title = decodeEntities(stripCdata((b.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "")).trim();
+          var link = stripCdata((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || "").trim();
+          var src = decodeEntities(stripCdata((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || "")).trim();
+          var pub = ((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || "").trim();
+          if (src && title.length > src.length + 3 && title.slice(-(src.length + 3)) === " - " + src) title = title.slice(0, -(src.length + 3)).trim();
+          if (title && link.indexOf("http") === 0) nitems.push({ title: title, link: link, source: src, pub: pub });
+        }
+      } catch (e) { nerr = String(e); }
+      var newr = new Response(JSON.stringify({ updated: new Date().toISOString(), count: nitems.length, items: nitems, errors: nerr }, null, 2),
+        { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=900" }) }); // 15 min
+      if (!nerr && nitems.length) ctx.waitUntil(newc.put(newk, newr.clone()));
+      return newr;
+    }
+
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
     // Fails closed: if ADMIN_KEY is unset or the ?key= doesn't match, these routes return 403. (Cron is unaffected.)
     if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
@@ -319,3 +345,5 @@ async function sendPush(env, title, body, teams, tier) {
 function tagKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, "_"); }
 function cors() { return { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "*" }; }
 function json(obj) { return new Response(JSON.stringify(obj, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json" }) }); }
+function stripCdata(s) { return String(s).replace(/^\s*<!\[CDATA\[/, "").replace(/\]\]>\s*$/, ""); }
+function decodeEntities(s) { return String(s).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&apos;/g, "'").replace(/&amp;/g, "&"); }
