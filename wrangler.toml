@@ -1,0 +1,30 @@
+# wrangler.toml — config for the wc2026-api Cloudflare Worker.
+#
+# Used by the GitHub Actions deploy workflow (.github/workflows/deploy-worker.yml):
+# a push that touches worker/wc2026-api.js (or this file) auto-deploys the Worker.
+#
+# What is NOT here, on purpose:
+#   - Account ID + API token  -> passed in as CI secrets (CLOUDFLARE_ACCOUNT_ID /
+#     CLOUDFLARE_DEPLOY_TOKEN), never committed.
+#   - Secrets (APISPORTS_KEY, ONESIGNAL_REST_KEY, ADMIN_KEY) -> set in the Cloudflare
+#     dashboard; `wrangler deploy` preserves them, so they are deliberately not declared.
+#
+# The KV id below is an identifier, not a credential (useless without the API token).
+
+name = "wc2026-api"
+main = "worker/wc2026-api.js"
+compatibility_date = "2025-01-01"
+
+# Every-minute cron: runs the alert detector AND writes the scores / match:<fid> KV
+# snapshots (the decoupled-reads architecture). Declared here so deploys preserve it.
+[triggers]
+crons = ["* * * * *"]
+
+# KV namespace: detector `state` + `scores` snapshot + per-fixture `match:<fid>` detail.
+[[kv_namespaces]]
+binding = "STATE"
+id = "9fef2fcad7694bb7a61e358bd58594c3"
+
+# Keep Workers Logs on (the /log client-error beacon + runtime errors) across deploys.
+[observability]
+enabled = true

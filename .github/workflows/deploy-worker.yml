@@ -1,0 +1,31 @@
+name: Deploy Worker
+
+# Auto-deploys the wc2026-api Cloudflare Worker when its code or config changes.
+# Path filter keeps it from running on every scores.json auto-commit.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/wc2026-api.js"
+      - "wrangler.toml"
+      - ".github/workflows/deploy-worker.yml"
+  workflow_dispatch:            # lets you deploy on demand from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6 (SHA-pinned)
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd  # v3 (SHA-pinned)
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_DEPLOY_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
