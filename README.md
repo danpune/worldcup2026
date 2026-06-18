@@ -16,6 +16,8 @@ A single web page — no build step, no framework, just `index.html` — that yo
 - ⭐ **Follow your team** — star teams to filter to them and target your alerts.
 - 🔔 **Goal alerts** — opt-in push notifications for your teams, with an **Everything / Goals-only** preference.
 - 🎬 **Highlights** — every finished match, with an official clip where one's been added or a YouTube search link otherwise.
+- 📜 **All-time head-to-head & history** — tap **H2H** on any group fixture for the teams' past World Cup meetings plus each side's record (appearances, titles, best finish). Pre-baked from a historical dataset, so it adds zero live-API load.
+- ↗ **Share cards** — turn a result or matchup into a clean image (Web Share on mobile, download on desktop). Generated in your browser; nothing is uploaded.
 - **Ad-free, no tracking, no accounts, no money handled.**
 
 ## How it's built (two layers)
@@ -93,6 +95,10 @@ A deliberately lean, **no-framework, no-build-step** stack — and one language 
 | `preview-card.html` / `preview.jpg` | Social/link-preview card and image | repo root |
 | `qr.png` | Scannable QR code of the site URL | repo root |
 | `test_fetch_scores.py` | Unit tests for the score fetcher | repo root |
+| `wc-history.json` | Pre-baked all-time World Cup head-to-head & per-team records (powers the H2H feature) | repo root |
+| `build_history.py` | Regenerates `wc-history.json` from the Fjelstul dataset (reproducible, documents provenance) | repo root |
+| `html2canvas.min.js` | Vendored library for the in-browser share-card images (loaded only when you tap Share) | repo root |
+| `wrangler.toml` / `deploy-worker.yml` | Worker config + GitHub Action that auto-deploys the Worker on push | repo root / **`.github/workflows/`** |
 | `healthcheck.py` | Pings the site/Worker/feed and checks API quota — used by the monitoring Action, runnable locally | repo root |
 | `healthcheck.yml` | Hourly health-check workflow (alerts + tracking issue on failure) | **`.github/workflows/healthcheck.yml`** |
 | `LICENSE` | MIT license | repo root |
@@ -173,5 +179,7 @@ Commit/push and that match shows the embedded clip instead of the search link. A
 - **Live scores & stats:** [API-Football](https://www.api-football.com/) (live layer) and [football-data.org](https://www.football-data.org/) (free base).
 - **Schedule curated from:** NBC Sports, cross-checked against World Cup Wiki and FIFA host-city sites (Dallas, NY/NJ, Atlanta).
 - **TV (USA):** FOX Sports — https://www.foxsports.com/soccer/fifa-world-cup
+- **Historical World Cup data (head-to-head & records):** The Fjelstul World Cup Database — [github.com/jfjelstul/worldcup](https://github.com/jfjelstul/worldcup), © Joshua C. Fjelstul, Ph.D., licensed [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The derived `wc-history.json` is likewise CC-BY-SA 4.0.
+- **Share-card rendering:** [html2canvas](https://html2canvas.hertzen.com/) (MIT), vendored locally.
 
 Not affiliated with FIFA. For official confirmation of any result, check fifa.com.

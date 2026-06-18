@@ -194,6 +194,32 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .sqload{color:var(--muted);padding:20px 4px;text-align:center;font-size:13.5px}
 .sqteam{font-family:Oswald;font-size:16px;font-weight:600;margin:16px 0 0;padding:9px 0 2px;border-top:2px solid var(--pitch);color:var(--text)}
 .sqteam:first-child{margin-top:2px;border-top:0}
+/* World Cup history modal (all-time head-to-head + per-team record) */
+.sqhist{font-size:12.5px;color:var(--muted);padding:0 16px 2px;line-height:1.45}
+.h2hsum{font-family:Oswald;font-size:16px;text-align:center;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 12px}
+.h2hwdl{display:flex;justify-content:space-around;text-align:center;gap:8px}
+.h2hwdl span{display:flex;flex-direction:column;flex:1}
+.h2hwdl b{font-family:Oswald;font-size:30px;line-height:1;color:var(--text)}
+.h2hwdl small{font-size:11px;color:var(--muted);margin-top:5px}
+.h2hbar{display:flex;height:9px;border-radius:5px;overflow:hidden;margin:13px 0 4px;background:var(--line)}
+.h2hbar span{display:block}.h2hbar .ha{background:var(--pitch)}.h2hbar .hd{background:#c9b15a}.h2hbar .hb{background:#9a6b4a}
+.h2hmeet{margin:16px 0 2px;border-top:1px solid var(--line)}
+.meetrow{display:flex;align-items:center;gap:12px;padding:7px 2px;font-size:14px;border-bottom:1px solid var(--line)}
+.meetrow .my{min-width:42px;color:var(--muted);font-weight:700}
+.meetrow .ms{flex:1;color:var(--muted)}
+.meetrow .msc{font-weight:700;font-variant-numeric:tabular-nums}
+.meetrow .msc em{font-style:normal;font-size:11px;color:var(--muted);font-weight:400;margin-left:3px}
+.histcards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 4px}
+@media(max-width:460px){.histcards{grid-template-columns:1fr}}
+.histcard{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px}
+.histcard>b{font-family:Oswald;font-size:16px}
+.hstats{display:flex;gap:16px;margin:9px 0 7px}
+.hstat{display:flex;flex-direction:column;font-size:11px;color:var(--muted);line-height:1.2}
+.hstat span{font-family:Oswald;font-size:22px;color:var(--text)}
+.hbest{font-size:12.5px;color:var(--muted)}
+.hmuted{font-size:13px;color:var(--muted);margin-top:6px}
+.hactions{display:flex;justify-content:center;margin:18px 0 4px}
+.credit{font-size:10.5px;color:var(--muted);text-align:center;margin:15px 0 2px;line-height:1.4}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -529,7 +555,7 @@ function statusLabel(es){
 function statHeaderHTML(m,es){
  const st=statusLabel(es);
  const hf=m.group_game?m.hf+" ":"",af=m.group_game?m.af+" ":"";
- return '<div class="stathead"><span class="sht">'+hf+m.home+' <b>'+es.h+'–'+es.a+'</b> '+af+m.away+'</span>'+(st.text?'<span class="ststatus'+(st.live?" live":"")+'">'+(st.live?'<span class="livedot"></span>':"")+st.text+'</span>':"")+'</div>';
+ return '<div class="stathead"><span class="sht">'+hf+m.home+' <b>'+es.h+'–'+es.a+'</b> '+af+m.away+'</span>'+(st.text?'<span class="ststatus'+(st.live?" live":"")+'">'+(st.live?'<span class="livedot"></span>':"")+st.text+'</span>':"")+'<button class="statsbtn sharebtn" type="button" data-home="'+escA(m.home)+'" data-away="'+escA(m.away)+'" data-score="'+es.h+'–'+es.a+'" data-sub="'+escA((m.group_game?("Group "+m.grp):m.stage)+(st.text?(" · "+st.text):""))+'">↗ Share</button></div>';
 }
 /* tap-to-expand match stats (possession, shots, etc.) — API-Football /fixtures/statistics via the Worker */
 const STATS_API="https://wc2026-api.footy26.workers.dev/match";
@@ -542,9 +568,10 @@ const POS_ORDER=["Goalkeeper","Defender","Midfielder","Attacker"];
 const POS_LABEL={Goalkeeper:"Goalkeepers",Defender:"Defenders",Midfielder:"Midfielders",Attacker:"Forwards"};
 function openSquad(team){
  const ov=document.getElementById("sqoverlay");if(!ov)return;
- ov.innerHTML='<div class="sqmodal" role="dialog" aria-label="'+escA(team)+' squad" aria-modal="true"><div class="sqhead"><span>'+(FLAGMAP[team]||"")+' '+escA(team)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">Full World Cup squad. The matchday starting XI is announced ~40 min before kickoff — see it in a match’s stats panel.</div><div class="sqbody" id="sqbody"><div class="sqload">Loading squad…</div></div></div>';
+ ov.innerHTML='<div class="sqmodal" role="dialog" aria-label="'+escA(team)+' squad" aria-modal="true"><div class="sqhead"><span>'+(FLAGMAP[team]||"")+' '+escA(team)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">Full World Cup squad. The matchday starting XI is announced ~40 min before kickoff — see it in a match’s stats panel.</div><div class="sqhist" id="sqhist"></div><div class="sqbody" id="sqbody"><div class="sqload">Loading squad…</div></div></div>';
  ov.style.display="flex";document.body.style.overflow="hidden";
  renderSquad(team);
+ loadHistory().then(()=>{const h=document.getElementById("sqhist");if(h)h.innerHTML=teamHistLine(team);});
 }
 function closeSquad(){const ov=document.getElementById("sqoverlay");if(!ov)return;ov.style.display="none";ov.innerHTML="";document.body.style.overflow="";}
 async function fetchSquad(team){
@@ -582,6 +609,7 @@ async function renderMatchSquads(home,away){
 document.addEventListener("click",e=>{
  const tl=e.target.closest&&e.target.closest(".teamlink");if(tl){e.preventDefault();openSquad(tl.dataset.squad);return;}
  const sb=e.target.closest&&e.target.closest(".sqbtn");if(sb){openMatchSquads(sb.dataset.h,sb.dataset.a);return;}
+ const hb=e.target.closest&&e.target.closest(".histbtn");if(hb){e.preventDefault();openHistory(hb.dataset.h,hb.dataset.a);return;}
  if(e.target.id==="sqoverlay")closeSquad();
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSquad();});
@@ -842,6 +870,7 @@ function renderList(){
    if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
   }
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
+  if(m.group_game)right+=`<button class="statsbtn histbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">📜 H2H</button>`;
   const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
@@ -948,6 +977,121 @@ setInterval(renderNext,60000);  /* fetchLive reschedules itself via livePollTime
 /* fast retry for any OPEN stats panel that's still thin (transient/rate-limited), so it self-heals in ~10s
    instead of waiting on the score poll. maybeRetryStats stops once stats load or are confirmed unavailable. */
 setInterval(function(){openStats.forEach(function(n){const es=cardScore(n);if(es&&es.fid)maybeRetryStats(es.fid);});},10000);
+
+/* ===== All-time World Cup history: head-to-head + per-team record =====
+   Data: wc-history.json, pre-baked from The Fjelstul World Cup Database (CC-BY-SA 4.0).
+   Lazy-loaded on first use (H2H button / squad modal) so it never weighs on page load. */
+let WCH=null,wchLoading=null;
+const histNorm=s=>String(s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z]/g,"");
+/* our display names -> Fjelstul names where they differ (DR Congo competed as Zaire in 1974) */
+const HIST_ALIAS={usa:"unitedstates",turkiye:"turkey",czechia:"czechrepublic",drcongo:"zaire",bosniaherzegovina:"bosniaandherzegovina"};
+const HSTAGE={GS:"Group stage",G2:"2nd group stage",FR:"Final round",R16:"Round of 16",QF:"Quarter-final",SF:"Semi-final","3P":"Third place",F:"Final"};
+function loadHistory(){
+ if(WCH)return Promise.resolve(WCH);
+ if(wchLoading)return wchLoading;
+ wchLoading=fetch("wc-history.json").then(r=>r.ok?r.json():null).then(d=>{
+  if(d&&d.teams){d._byName={};for(const c in d.teams)d._byName[histNorm(d.teams[c].name)]=c;WCH=d;}
+  return WCH;
+ }).catch(()=>null);
+ return wchLoading;
+}
+function histCode(name){if(!WCH)return null;let k=histNorm(name);k=HIST_ALIAS[k]||k;return WCH._byName[k]||null;}
+function teamHist(name){const c=histCode(name);return c?WCH.teams[c]:null;}
+function h2h(aName,bName){
+ const ca=histCode(aName),cb=histCode(bName);if(!ca||!cb)return null;
+ const list=[];let aw=0,d=0,bw=0;
+ WCH.matches.forEach(m=>{const[yr,st,h,a,hs,as_,pen]=m;if(!((h===ca&&a===cb)||(h===cb&&a===ca)))return;
+  const aHome=h===ca,aS=aHome?hs:as_,bS=aHome?as_:hs;
+  if(aS>bS)aw++;else if(aS<bS)bw++;else d++;
+  list.push({yr,st,aS,bS,pen});});
+ list.sort((x,y)=>y.yr-x.yr);
+ return{n:list.length,aw,d,bw,list};
+}
+function teamHistLine(name){
+ const t=teamHist(name);
+ if(!t)return 'No prior World Cup record — a tournament debut (or first appearance under this name).';
+ const bits=[t.apps+(t.apps===1?" appearance":" appearances")];
+ if(t.titles)bits.push("🏆 "+t.titles+"× champion"+(t.titles>1?"s":""));
+ bits.push("best: "+escA(t.best)+(t.bestYear?" ("+t.bestYear+")":""));
+ return escA(t.name)+" at the World Cup — "+bits.join(" · ")+".";
+}
+function teamHistBlock(name){
+ const t=teamHist(name);
+ if(!t)return '<b>'+escA(name)+'</b><div class="hmuted">No prior World Cup record — a tournament debut, or first appearance under this name.</div>';
+ return '<b>'+escA(t.name)+'</b><div class="hstats">'
+  +'<div class="hstat"><span>'+t.apps+'</span>appearances</div>'
+  +'<div class="hstat"><span>'+t.titles+'</span>title'+(t.titles===1?"":"s")+'</div>'
+  +'<div class="hstat"><span>'+t.finals+'</span>final'+(t.finals===1?"":"s")+'</div></div>'
+  +'<div class="hbest">Best: '+escA(t.best)+(t.bestYear?' ('+t.bestYear+')':'')+' · last played '+t.last+'</div>';
+}
+function historyHTML(home,away){
+ if(!WCH)return '<div class="sqload">World Cup history is unavailable right now.</div>';
+ const h=h2h(home,away);let out="";
+ if(h&&h.n){
+  const w=h.n||1;
+  out+='<div class="h2hsum">'+h.n+' World Cup meeting'+(h.n>1?"s":"")+'</div>';
+  out+='<div class="h2hwdl"><span><b>'+h.aw+'</b><small>'+escA(home)+'</small></span><span><b>'+h.d+'</b><small>draw'+(h.d===1?"":"s")+'</small></span><span><b>'+h.bw+'</b><small>'+escA(away)+'</small></span></div>';
+  out+='<div class="h2hbar"><span class="ha" style="width:'+(h.aw/w*100)+'%"></span><span class="hd" style="width:'+(h.d/w*100)+'%"></span><span class="hb" style="width:'+(h.bw/w*100)+'%"></span></div>';
+  out+='<div class="h2hmeet">'+h.list.map(m=>'<div class="meetrow"><span class="my">'+m.yr+'</span><span class="ms">'+(HSTAGE[m.st]||"")+'</span><span class="msc">'+m.aS+'–'+m.bS+(m.pen?' <em>(pens)</em>':'')+'</span></div>').join("")+'</div>';
+ }else{
+  out+='<div class="h2hsum">No previous World Cup meetings</div>';
+ }
+ out+='<div class="histcards"><div class="histcard">'+teamHistBlock(home)+'</div><div class="histcard">'+teamHistBlock(away)+'</div></div>';
+ const sub=(h&&h.n)?(h.aw+'–'+h.d+'–'+h.bw+' all-time at the World Cup'):'FIFA World Cup 2026';
+ out+='<div class="hactions"><button type="button" class="statsbtn sharebtn" data-home="'+escA(home)+'" data-away="'+escA(away)+'" data-sub="'+escA(sub)+'">↗ Share this matchup</button></div>';
+ out+='<div class="credit">'+escA(WCH.attribution||"")+'</div>';
+ return out;
+}
+function openHistory(home,away){
+ const ov=document.getElementById("sqoverlay");if(!ov)return;
+ ov.innerHTML='<div class="sqmodal" role="dialog" aria-modal="true" aria-label="'+escA(home)+' versus '+escA(away)+' World Cup history"><div class="sqhead"><span>'+(FLAGMAP[home]||"")+' '+escA(home)+' <span style="opacity:.65;font-weight:400">v</span> '+(FLAGMAP[away]||"")+' '+escA(away)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqsub">All-time World Cup head-to-head &amp; each team’s tournament record.</div><div class="sqbody" id="sqbody"><div class="sqload">Loading World Cup history…</div></div></div>';
+ ov.style.display="flex";document.body.style.overflow="hidden";
+ loadHistory().then(()=>{const b=document.getElementById("sqbody");if(b)b.innerHTML=historyHTML(home,away);});
+}
+
+/* ===== Share cards: render a branded PNG with html2canvas (vendored locally), then
+   use the Web Share API where available, else download. Loaded on first use only. ===== */
+let _h2cP=null;
+function ensureH2C(){
+ if(window.html2canvas)return Promise.resolve(window.html2canvas);
+ if(_h2cP)return _h2cP;
+ _h2cP=new Promise((res,rej)=>{const s=document.createElement("script");s.src="html2canvas.min.js";s.onload=()=>res(window.html2canvas);s.onerror=rej;document.head.appendChild(s);});
+ return _h2cP;
+}
+function shareNode(o){
+ const big=!!o.score,mid=big?"64px":"38px";
+ const n=document.createElement("div");
+ n.style.cssText="position:fixed;left:-9999px;top:0;width:760px;height:400px;background:#0b3d2e;color:#fff;font-family:Oswald,system-ui,Arial,sans-serif;box-sizing:border-box;overflow:hidden";
+ n.innerHTML='<div style="height:12px;background:#e8b84b"></div>'
+  +'<div style="padding:34px 44px 0;font-size:15px;letter-spacing:.24em;color:#e8b84b;font-weight:600">FIFA WORLD CUP 2026</div>'
+  +'<div style="padding:30px 44px 0;display:flex;align-items:center;justify-content:space-between;gap:16px">'
+   +'<div style="flex:1;font-size:38px;font-weight:700;line-height:1.05">'+escA(o.home)+'</div>'
+   +'<div style="font-size:'+mid+';font-weight:700;color:#e8b84b;white-space:nowrap;padding:0 6px">'+(big?escA(o.score):"v")+'</div>'
+   +'<div style="flex:1;font-size:38px;font-weight:700;line-height:1.05;text-align:right">'+escA(o.away)+'</div>'
+  +'</div>'
+  +(o.sub?'<div style="padding:26px 44px 0;font-size:20px;color:#cfe3d8;font-family:system-ui,Arial,sans-serif">'+escA(o.sub)+'</div>':'')
+  +'<div style="position:absolute;bottom:28px;left:44px;right:44px;display:flex;justify-content:space-between;align-items:flex-end;font-size:15px;color:#9fc3b2;font-family:system-ui,Arial,sans-serif;letter-spacing:.03em"><span>danpune.github.io/worldcup2026</span><span style="color:#e8b84b">★</span></div>';
+ return n;
+}
+async function shareCard(o){
+ let h2c;try{h2c=await ensureH2C();}catch(e){alert("Couldn’t load the image generator. Check your connection and try again.");return;}
+ const node=shareNode(o);document.body.appendChild(node);
+ try{
+  const canvas=await h2c(node,{scale:2,backgroundColor:"#0b3d2e",logging:false});
+  await new Promise(res=>canvas.toBlob(async blob=>{
+   if(!blob){res();return;}
+   const url=URL.createObjectURL(blob),fname="worldcup2026-"+String(o.home+"-"+o.away).replace(/[^a-z0-9]+/gi,"-").toLowerCase().replace(/^-|-$/g,"")+".png";
+   try{
+    const file=new File([blob],fname,{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"FIFA World Cup 2026",text:o.home+" v "+o.away});}
+    else{const a=document.createElement("a");a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();}
+   }catch(_){/* user dismissed the share sheet */}
+   setTimeout(()=>URL.revokeObjectURL(url),6000);res();
+  },"image/png"));
+ }catch(e){alert("Couldn’t create the image on this device.");}
+ finally{node.remove();}
+}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".sharebtn");if(!b)return;e.preventDefault();shareCard({home:b.dataset.home,away:b.dataset.away,score:b.dataset.score||"",sub:b.dataset.sub||""});});
 </script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7271996b0f234a3981511907aaa6188b"}'></script><!-- End Cloudflare Web Analytics -->
 <!-- OneSignal push notifications (Web SDK v16) -->
