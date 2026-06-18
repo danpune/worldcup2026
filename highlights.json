@@ -1,10 +1,26 @@
 {
-"updated": "2026-06-13",
-"_howto": "Add an entry per match: \"<matchNumber>\": {\"yt\": \"<YouTube video ID>\"}. The video ID is the part after watch?v= in the URL. Use official FIFA / FIFA+ uploads.",
+"updated": "2026-06-17",
+"_howto": "Add an entry per match: \"<matchNumber>\": {\"yt\": \"<YouTube video ID>\"}. The video ID is the part after watch?v= in the URL. Use official FIFA / FIFA+ uploads — verify the channel via the YouTube oEmbed endpoint (author_name should be \"FIFA\").",
 "highlights": {
-"1": {"yt": "r1Afsds3ZD0"},
-"2": {"yt": "QWoDfCkh7f8"},
-"3": {"yt": "n5qkHOWhFAc"},
-"4": {"yt": "BXD1_mhODBU"}
+"1": {"yt": "PmevGCkUtM8"},
+"2": {"yt": "6k18EJY8zIc"},
+"3": {"yt": "w-_rY5morQY"},
+"4": {"yt": "0PVo3bk-TMk"},
+"5": {"yt": "KVz43-eddIQ"},
+"6": {"yt": "ECnK7UzAjIs"},
+"7": {"yt": "TcCufmPCsu4"},
+"8": {"yt": "5eqzEDe8wHs"},
+"9": {"yt": "B6-Z5ul2ccQ"},
+"10": {"yt": "r8SvHZxALQs"},
+"11": {"yt": "84xvEwRc0iQ"},
+"12": {"yt": "MM5hUuEzH3g"},
+"13": {"yt": "W9Z4ER9oX0k"},
+"14": {"yt": "i8sD2Aea9_M"},
+"15": {"yt": "XrDExPcLCXY"},
+"16": {"yt": "memCfdob60w"},
+"17": {"yt": "n3JDGlOwMJ4"},
+"18": {"yt": "UzSswKnmpgk"},
+"19": {"yt": "JH_WRKTCPK4"},
+"20": {"yt": "77QlrB57Oy4"}
 }
 }
