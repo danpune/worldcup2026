@@ -158,6 +158,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .ststatus{font-family:Oswald;font-size:12px;letter-spacing:.04em;color:var(--muted);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .ststatus.live{color:var(--live);font-weight:600}
 .statload{color:var(--muted);font-size:13px;padding:5px 0}
+.statnote{color:var(--muted);font-size:12px;padding:8px 0 2px;font-style:italic}
 .strow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:10px}
 .strow .sv{font-weight:600;color:var(--muted);min-width:42px}
 .strow .sv.lead{font-weight:800;color:var(--text)}
@@ -656,6 +657,7 @@ document.addEventListener("click",e=>{
  const tl=e.target.closest&&e.target.closest(".teamlink");if(tl){e.preventDefault();openSquad(tl.dataset.squad);return;}
  const sb=e.target.closest&&e.target.closest(".sqbtn");if(sb){openMatchSquads(sb.dataset.h,sb.dataset.a);return;}
  const hb=e.target.closest&&e.target.closest(".histbtn");if(hb){e.preventDefault();openHistory(hb.dataset.h,hb.dataset.a);return;}
+ const hl=e.target.closest&&e.target.closest(".hlbtn");if(hl){e.preventDefault();openHighlight(hl.dataset.n,hl.dataset.h,hl.dataset.a);return;}
  if(e.target.id==="sqoverlay")closeSquad();
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSquad();});
@@ -677,7 +679,9 @@ async function fetchStats(fid){
 function maybeRetryStats(fid){
  if(!statsThin(fid)||statsFetching.has(fid))return;
  const d=statsCache[fid];
- if(d&&!statsErr(fid))return;            /* clean empty = feed has no stats for this match → stop retrying */
+ /* clean empty can be transient (just kicked off, KV not warm yet) — retry a few times before giving up;
+    retries hit the cheap KV read, so this is safe and recovers the "stuck unavailable" case. */
+ if(d&&!statsErr(fid)&&((d._tries||0)>=5))return;
  const tries=(d&&d._tries)||0,wait=Math.min(10000*Math.pow(2,Math.min(tries,3)),80000);
  if(Date.now()-((d&&d._t)||0)>=wait)fetchStats(fid);
 }
@@ -691,7 +695,9 @@ function statsPanelHTML(fid){
   const hn=statNum(hv),an=statNum(av),tot=hn+an,hp=tot>0?Math.round(hn/tot*100):50;
   const hc="sv"+(hn>an?" lead":""),ac="sv"+(an>hn?" lead":"");
   rows+='<div class="strow"><span class="'+hc+'">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="'+ac+'">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
- const body=(rows?'<div class="stsec">'+rows+'</div>':"")+timelineHTML(d.events,H,A)+lineupsHTML(d.lineups);
+ const tl=timelineHTML(d.events,H,A),lu=lineupsHTML(d.lineups);
+ let body=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+lu;
+ if(rows&&!tl&&!lu)body+='<div class="statnote">Timeline &amp; line-ups aren’t provided for this match.</div>';
  return body||'<div class="statload">No stats yet.</div>';
 }
 /* goal/card/sub timeline — left column = home team's events, right = away (matched by team name) */
@@ -880,6 +886,14 @@ function renderHighlights(){
   b.replaceWith(e);
  }));
 }
+/* highlights from a finished match card: play the curated clip in a modal, else open a YouTube search */
+function openHighlight(n,home,away){
+ const cur=(HL[n]&&ytOk(HL[n].yt))?HL[n].yt:null;
+ if(!cur){window.open("https://www.youtube.com/results?search_query="+encodeURIComponent("FIFA World Cup 2026 "+home+" vs "+away+" highlights"),"_blank","noopener");return;}
+ const ov=document.getElementById("sqoverlay");if(!ov)return;
+ ov.innerHTML='<div class="sqmodal" role="dialog" aria-modal="true" aria-label="'+escA(home)+' versus '+escA(away)+' highlights"><div class="sqhead"><span>🎬 '+escA(home)+' <span style="opacity:.65;font-weight:400">v</span> '+escA(away)+'</span><button type="button" aria-label="Close" onclick="closeSquad()">×</button></div><div class="sqbody"><div class="hlembed"><iframe src="https://www.youtube-nocookie.com/embed/'+cur+'?autoplay=1&rel=0" title="Match highlights" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowfullscreen></iframe></div></div></div>';
+ ov.style.display="flex";document.body.style.overflow="hidden";lockModal();
+}
 /* "LIVE NOW" banner — pins any in-play / half-time match to the top so the live game finds the user */
 function renderLive(){
  const box=document.getElementById("livenow");
@@ -914,6 +928,7 @@ function renderList(){
    const t=liveTag(es,m.n);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
    if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
+   if(es.s==="FINISHED")right+=`<button class="statsbtn hlbtn" type="button" data-n="${m.n}" data-h="${escA(m.home)}" data-a="${escA(m.away)}">🎬 Highlights</button>`;
   }
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
   if(m.group_game)right+=`<button class="statsbtn histbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">📜 H2H</button>`;
@@ -1058,7 +1073,9 @@ fetch("https://abacus.jasoncameron.dev/hit/danpune-worldcup2026/visits").then(r=
 setInterval(renderNext,60000);  /* fetchLive reschedules itself via livePollTimer (20s live / 120s idle) — no separate interval */
 /* fast retry for any OPEN stats panel that's still thin (transient/rate-limited), so it self-heals in ~10s
    instead of waiting on the score poll. maybeRetryStats stops once stats load or are confirmed unavailable. */
-setInterval(function(){openStats.forEach(function(n){const es=cardScore(n);if(es&&es.fid)maybeRetryStats(es.fid);});},10000);
+setInterval(function(){openStats.forEach(function(n){const es=cardScore(n);if(!es||!es.fid)return;maybeRetryStats(es.fid);
+ /* keep an OPEN live match's stats fresh (~30s); otherwise they freeze at the moment the panel was opened */
+ if(isOngoing(es.s)){const d=statsCache[es.fid];if(d&&!statsFetching.has(es.fid)&&Date.now()-((d&&d._t)||0)>30000)fetchStats(es.fid);}});},10000);
 
 /* ===== All-time World Cup history: head-to-head + per-team record =====
    Data: wc-history.json, pre-baked from The Fjelstul World Cup Database (CC-BY-SA 4.0).
