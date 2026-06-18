@@ -15,9 +15,12 @@ A single web page — no build step, no framework, just `index.html` — that yo
 - 👥 **Squads** — tap any team (in Standings or on a fixture) to see their full **World Cup roster** grouped by position; upcoming matches have a **Squads** button showing both teams — useful before kickoff, when the official XI isn't out yet.
 - ⭐ **Follow your team** — star teams to filter to them and target your alerts.
 - 🔔 **Goal alerts** — opt-in push notifications for your teams, with an **Everything / Goals-only** preference.
-- 🎬 **Highlights** — every finished match, with an official clip where one's been added or a YouTube search link otherwise.
+- 🎬 **Highlights** — every finished match, with an official clip where one's been added or a YouTube search link otherwise, plus a **🎬 Highlights** button right on each finished match card.
 - 📜 **All-time head-to-head & history** — tap **H2H** on any group fixture for the teams' past World Cup meetings plus each side's record (appearances, titles, best finish). Pre-baked from a historical dataset, so it adds zero live-API load.
 - ↗ **Share cards** — turn a result or matchup into a clean image (Web Share on mobile, download on desktop). Generated in your browser; nothing is uploaded.
+- 📺 **Where to watch** — a dedicated tab with the official broadcaster for your country (auto-detected from your time zone, free-to-air channels flagged), curated from FIFA's media-rights list.
+- 🌤️ **Per-match weather** — kickoff-time forecast on upcoming matches (Open-Meteo, in-browser, no extra API load).
+- 📱 **Installable & fast** — a PWA with an app-shell **service worker**, so repeat opens are near-instant and the schedule works offline.
 - **Ad-free, no tracking, no accounts, no money handled.**
 
 ## How it's built (two layers)
