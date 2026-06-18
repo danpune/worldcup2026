@@ -102,7 +102,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .daydiv{display:flex;align-items:center;gap:12px;margin:20px 0 8px}
 .daydiv span{font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted)}
 .daydiv:after{content:"";height:1px;background:var(--line);flex:1}
-.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c,#7A8C99);border-radius:12px;padding:11px 13px;margin:8px 0;display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c,#7A8C99);border-radius:12px;padding:12px 14px;margin:10px 0;display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(10,31,24,.05),0 5px 16px rgba(10,31,24,.05);transition:box-shadow .15s ease,transform .15s ease}
 .time{font-family:Oswald;font-size:15px;line-height:1.1;color:var(--pitch)}
 .teams{min-width:0}
 .tline{font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
@@ -118,6 +118,8 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .fav:hover{opacity:1}
 .fav:focus-visible{outline:2px solid var(--gold);border-radius:4px;opacity:1}
 .card.following{border-left-color:var(--gold)}
+.card.live{border-left-color:var(--live);background:linear-gradient(90deg,rgba(207,65,45,.06),var(--card) 42%)}
+@media(hover:hover){.card:hover{box-shadow:0 2px 6px rgba(10,31,24,.09),0 12px 30px rgba(10,31,24,.10);transform:translateY(-1px)}}
 .alertbtn{display:inline-flex;align-items:center;gap:8px;background:var(--pitch);color:#fff;border:0;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer;margin:2px 0 8px}
 .notifprompt{position:fixed;left:12px;right:12px;bottom:12px;max-width:540px;margin:0 auto;background:var(--pitch);color:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 28px rgba(0,0,0,.32);z-index:50;border:1px solid rgba(232,184,75,.4)}
 .notifprompt>span{font-size:14px;font-weight:600;line-height:1.3}
@@ -972,6 +974,7 @@ function renderList(){
   let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
   const es=cardScore(m.n);
   if(es){
+   if(isOngoing(es.s))c.classList.add("live");
    const t=liveTag(es,m.n);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
    if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
