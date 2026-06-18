@@ -330,6 +330,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Standings</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">Buzz</button>
+ <button class="tab" role="tab" id="tab-watch" aria-controls="view-watch" aria-selected="false" tabindex="-1" data-view="watch">📺 Watch</button>
  <button class="tab" role="tab" id="tab-info" aria-controls="view-info" aria-selected="false" tabindex="-1" data-view="info">Info</button>
 </div></nav>
 
@@ -368,6 +369,15 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p class="note">Posts open on X — we link out rather than embed (X no longer offers a free in-page feed), which keeps this page tracker-free.</p>
  </section>
 
+ <section id="view-watch" class="hide info" role="tabpanel" aria-labelledby="tab-watch" tabindex="0">
+  <h3>📺 Where to watch</h3>
+  <p>The official World Cup 2026 broadcaster for your country. We've guessed your country from your time zone — change it below if it's off. Kickoff times across the site follow the <b>Show times in</b> picker at the top.</p>
+  <div class="w2w">
+   <select id="w2wsel" aria-label="Your country" onchange="renderW2W(this.value)"></select>
+   <div class="w2wout" id="w2wout"></div>
+   <p class="w2wdis">A guide only — <b>check local listings</b>, as channels and match allocations can change. Full official list: <a href="https://digitalhub.fifa.com/m/af2cdbbd380d70c/original/FWC26-Media-Rights-Licensees-Overview.pdf" target="_blank" rel="noopener">FIFA's media-rights licensees</a>. Not affiliated with any broadcaster.</p>
+  </div>
+ </section>
  <section id="view-info" class="hide info" role="tabpanel" aria-labelledby="tab-info" tabindex="0">
   <h3>Why I built this</h3>
   <p>I'm a football fan, and every World Cup I just wanted two simple things: to see <b>when each match kicks off in my own time zone</b>, and to <b>add the ones I care about to my calendar</b> — without digging through cluttered, ad-heavy sites to piece it together.</p>
@@ -425,12 +435,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <h3>Find your team</h3>
   <p>Use the search box or the team chips. Every kickoff follows the <b>Show times in</b> picker at the top — set it to your zone once and the whole page converts.</p>
   <h3>📺 Where to watch</h3>
-  <p>Official World Cup 2026 broadcasters. Pick your country — we've guessed it from your time zone:</p>
-  <div class="w2w">
-   <select id="w2wsel" aria-label="Your country" onchange="renderW2W(this.value)"></select>
-   <div class="w2wout" id="w2wout"></div>
-   <p class="w2wdis">A guide only — <b>check local listings</b>, as channels and match allocations can change. Full official list: <a href="https://digitalhub.fifa.com/m/af2cdbbd380d70c/original/FWC26-Media-Rights-Licensees-Overview.pdf" target="_blank" rel="noopener">FIFA's media-rights licensees</a>. Not affiliated with any broadcaster.</p>
-  </div>
+  <p>Find the official broadcaster for your country in the <b>📺 Watch</b> tab.</p>
   <h3>Drivable from Austin</h3>
   <p>🚗 Dallas — AT&amp;T Stadium (~3 hrs, 9 games incl. a semifinal) and Houston — NRG (~2.5 hrs). Both air-conditioned.</p>
   <h3>Sources — where every number comes from</h3>
