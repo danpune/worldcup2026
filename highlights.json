@@ -1,5 +1,5 @@
 {
-"updated": "2026-06-17",
+"updated": "2026-06-18",
 "_howto": "Add an entry per match: \"<matchNumber>\": {\"yt\": \"<YouTube video ID>\"}. The video ID is the part after watch?v= in the URL. Use official FIFA / FIFA+ uploads — verify the channel via the YouTube oEmbed endpoint (author_name should be \"FIFA\").",
 "highlights": {
 "1": {"yt": "PmevGCkUtM8"},
@@ -21,6 +21,7 @@
 "17": {"yt": "n3JDGlOwMJ4"},
 "18": {"yt": "UzSswKnmpgk"},
 "19": {"yt": "JH_WRKTCPK4"},
-"20": {"yt": "77QlrB57Oy4"}
+"20": {"yt": "77QlrB57Oy4"},
+"22": {"yt": "uMwYq_teHlw"}
 }
 }
