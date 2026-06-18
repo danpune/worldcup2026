@@ -215,6 +215,43 @@ export default {
         { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=0" }) });
     }
 
+    // Voice / Apple-Shortcut endpoint: a ready-to-speak World Cup summary, built from the same KV snapshot
+    // (no upstream API call). Optional ?team=NAME for one team. Returns plain text so a Shortcut can speak it directly.
+    if (url.pathname === "/say") {
+      var scRaw = await env.STATE.get("scores");
+      var scData = null; try { scData = scRaw ? JSON.parse(scRaw) : null; } catch (e) {}
+      var ms = (scData && scData.matches) || [];
+      var nowS = Math.floor(Date.now() / 1000);
+      var LIVE = { "1H": 1, "2H": 1, "ET": 1, "P": 1, "BT": 1, "LIVE": 1 };
+      var rel = function (t) { if (!t) return "soon"; var d = t - nowS; if (d <= 60) return "shortly"; var m = Math.round(d / 60); if (m < 60) return "in about " + m + " minute" + (m === 1 ? "" : "s"); var h = Math.round(m / 60); if (h < 24) return "in about " + h + " hour" + (h === 1 ? "" : "s"); var dy = Math.round(h / 24); return "in about " + dy + " day" + (dy === 1 ? "" : "s"); };
+      var score = function (m) { return m.home + " " + (m.h == null ? 0 : m.h) + ", " + m.away + " " + (m.a == null ? 0 : m.a); };
+      var liveLabel = function (m) { return m.status === "HT" ? "half-time" : (m.minute != null ? m.minute + " minutes" : "in play"); };
+      var isLive = function (m) { return LIVE[m.status] || m.status === "HT"; };
+      var isDone = function (m) { return m.status === "FT" || m.status === "AET" || m.status === "PEN"; };
+      var say, team = (url.searchParams.get("team") || "").trim().toLowerCase();
+      if (team) {
+        var alias = { "usa": "united states", "us": "united states", "south korea": "korea republic", "iran": "ir iran", "turkey": "türkiye", "czechia": "czech republic", "cape verde": "cabo verde", "ivory coast": "côte d'ivoire", "dr congo": "congo dr" };
+        var q = alias[team] || team;
+        var mine = ms.filter(function (m) { var h = m.home.toLowerCase(), a = m.away.toLowerCase(); return h.indexOf(q) > -1 || a.indexOf(q) > -1 || h.indexOf(team) > -1 || a.indexOf(team) > -1; });
+        var lv = mine.filter(isLive), up = mine.filter(function (m) { return m.status === "NS"; }).sort(function (x, y) { return (x.t || 0) - (y.t || 0); }), dn = mine.filter(isDone).sort(function (x, y) { return (y.t || 0) - (x.t || 0); });
+        if (lv.length) say = "Live: " + score(lv[0]) + ", " + liveLabel(lv[0]) + ".";
+        else if (up.length) say = up[0].home + " play " + up[0].away + " " + rel(up[0].t) + ".";
+        else if (dn.length) say = "Latest: " + score(dn[0]) + ", full-time.";
+        else say = "I couldn't find a World Cup match for that team.";
+        say = "World Cup 2026. " + say;
+      } else {
+        var live = ms.filter(isLive).slice(0, 4);
+        var upN = ms.filter(function (m) { return m.status === "NS" && m.t; }).sort(function (x, y) { return x.t - y.t; });
+        var ft = ms.filter(function (m) { return m.status === "FT"; }).sort(function (x, y) { return (y.t || 0) - (x.t || 0); });
+        var parts = [];
+        if (live.length) parts.push("Live now: " + live.map(function (m) { return score(m) + ", " + liveLabel(m); }).join("; ") + ".");
+        else if (ft.length) parts.push("Latest result: " + score(ft[0]) + ".");
+        if (upN.length) parts.push("Up next: " + upN[0].home + " versus " + upN[0].away + " " + rel(upN[0].t) + ".");
+        say = "World Cup 2026. " + (parts.length ? parts.join(" ") : "No match updates right now.");
+      }
+      return new Response(say, { headers: Object.assign({}, cors(), { "content-type": "text/plain; charset=utf-8", "cache-control": "max-age=30" }) });
+    }
+
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
     // Fails closed: if ADMIN_KEY is unset or the ?key= doesn't match, these routes return 403. (Cron is unaffected.)
     if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
@@ -251,7 +288,7 @@ async function runDetector(env) {
     if (fxResp.errors && Object.keys(fxResp.errors).length) return { error: fxResp.errors };
     fixtures = fxResp.response || [];
     // Decoupled reads: write the public scores snapshot to KV so visitor /scores reads never touch the API.
-    var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed }; });
+    var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, t: x.fixture.timestamp }; });
     if (snap.length) await env.STATE.put("scores", JSON.stringify({ updated: new Date().toISOString(), count: snap.length, matches: snap, errors: null }));
   } catch (e) { return { error: String(e) }; }
   var now = Date.now();
