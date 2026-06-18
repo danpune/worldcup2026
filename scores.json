@@ -1,5 +1,5 @@
 {
-"updated": "2026-06-17T23:50:10Z",
+"updated": "2026-06-18T00:00:13Z",
 "source": "football-data.org",
 "scores": {
 "1": {
@@ -115,7 +115,7 @@
 "23": {
 "h": 0,
 "a": 0,
-"s": "IN_PLAY"
+"s": "PAUSED"
 }
 }
 }
