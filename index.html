@@ -231,6 +231,8 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .w2wch .pay{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
 .w2wnote{font-size:12.5px;color:var(--muted);margin:9px 0 0;line-height:1.45}
 .w2wdis{font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.45}
+.wx{white-space:nowrap;color:var(--muted)}
+.wx:not(:empty)::before{content:" · "}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -888,11 +890,14 @@ function renderList(){
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
   if(m.group_game)right+=`<button class="statsbtn histbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">📜 H2H</button>`;
   const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
-  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}</div></div><div class="right">${right}</div>`;
+  const ll=WX_COORDS[m.venue],koD=new Date(m.utc);
+  const wx=(ll&&koD>now&&(koD-now)<=16*864e5)?`<span class="wx" data-lat="${ll[0]}" data-lon="${ll[1]}" data-date="${m.utc.slice(0,10)}" data-hr="${m.utc.slice(0,13)}" title="Forecast at kickoff"></span>`:"";
+  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${wx}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
   if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid);list.appendChild(sp);maybeRetryStats(es.fid);}
  });
  renderDateStrip(days);
+ observeWx();
 }
 /* date strip: pinned day-navigator — tap a day to jump to its matches; the active pill
    tracks your scroll, and on first load we land on today (or the next match day). */
@@ -986,6 +991,37 @@ tabEls.forEach((t,i)=>{
  });
 });
 /* land on "All" so the pinned date strip shows; renderDateStrip auto-scrolls to today's matches */
+/* ===== Per-match weather: kickoff forecast from Open-Meteo (free, no key, client-side).
+   Chips fill lazily as cards scroll into view; cached per venue+date+unit. Defined before
+   the first render() so renderList can reference WX_COORDS without a TDZ error. ===== */
+const WX_COORDS={"AT&T Stadium":[32.7473,-97.0945],"Arrowhead Stadium":[39.0489,-94.4839],"BC Place":[49.2768,-123.1119],"BMO Field":[43.6332,-79.4185],"Estadio Akron":[20.6819,-103.4625],"Estadio Azteca":[19.3029,-99.1505],"Estadio BBVA":[25.6694,-100.2444],"Gillette Stadium":[42.0909,-71.2643],"Hard Rock Stadium":[25.9580,-80.2389],"Levi's Stadium":[37.4030,-121.9698],"Lincoln Financial Field":[39.9008,-75.1675],"Lumen Field":[47.5952,-122.3316],"Mercedes-Benz Stadium":[33.7553,-84.4006],"MetLife Stadium":[40.8135,-74.0745],"NRG Stadium":[29.6847,-95.4107],"SoFi Stadium":[33.9535,-118.3392]};
+const WMO={0:{i:"☀️",t:"Clear"},1:{i:"🌤️",t:"Mainly clear"},2:{i:"⛅",t:"Partly cloudy"},3:{i:"☁️",t:"Overcast"},45:{i:"🌫️",t:"Fog"},48:{i:"🌫️",t:"Fog"},51:{i:"🌦️",t:"Light drizzle"},53:{i:"🌦️",t:"Drizzle"},55:{i:"🌦️",t:"Heavy drizzle"},56:{i:"🌧️",t:"Freezing drizzle"},57:{i:"🌧️",t:"Freezing drizzle"},61:{i:"🌧️",t:"Light rain"},63:{i:"🌧️",t:"Rain"},65:{i:"🌧️",t:"Heavy rain"},66:{i:"🌧️",t:"Freezing rain"},67:{i:"🌧️",t:"Freezing rain"},71:{i:"🌨️",t:"Light snow"},73:{i:"🌨️",t:"Snow"},75:{i:"🌨️",t:"Heavy snow"},77:{i:"🌨️",t:"Snow grains"},80:{i:"🌦️",t:"Showers"},81:{i:"🌦️",t:"Showers"},82:{i:"⛈️",t:"Violent showers"},85:{i:"🌨️",t:"Snow showers"},86:{i:"🌨️",t:"Snow showers"},95:{i:"⛈️",t:"Thunderstorm"},96:{i:"⛈️",t:"Thunderstorm"},99:{i:"⛈️",t:"Thunderstorm"}};
+const wxCache={};let wxObserver=null;
+function wxUnit(){return detectCountry()==="US"?"fahrenheit":"celsius";}
+function fetchWx(lat,lon,date){
+ const key=lat+","+lon+","+date+","+wxUnit();
+ if(wxCache[key])return wxCache[key];
+ const u="https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&hourly=temperature_2m,weather_code&start_date="+date+"&end_date="+date+"&timezone=GMT&temperature_unit="+wxUnit();
+ wxCache[key]=fetch(u).then(r=>r.ok?r.json():null).then(d=>(d&&d.hourly)?d.hourly:null).catch(()=>null);
+ return wxCache[key];
+}
+async function fillWx(el){
+ if(!el||el.classList.contains("wxdone"))return;el.classList.add("wxdone");
+ const h=await fetchWx(el.dataset.lat,el.dataset.lon,el.dataset.date);
+ if(!h||!h.time)return;
+ const hr=el.dataset.hr;let i=h.time.findIndex(t=>t.slice(0,13)===hr);
+ if(i<0)i=h.time.findIndex(t=>t.slice(0,13)>hr);
+ if(i<0||h.temperature_2m[i]==null)return;
+ const w=WMO[h.weather_code[i]]||{i:"🌡️",t:"Forecast"};
+ el.textContent=w.i+" "+Math.round(h.temperature_2m[i])+(wxUnit()==="fahrenheit"?"°F":"°C");
+ el.title=w.t+" forecast at kickoff";
+}
+function observeWx(){
+ const els=document.querySelectorAll(".wx:not(.wxdone)");
+ if(!("IntersectionObserver" in window)){els.forEach(fillWx);return;}
+ if(!wxObserver)wxObserver=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){fillWx(e.target);wxObserver.unobserve(e.target);}});},{rootMargin:"250px"});
+ els.forEach(el=>wxObserver.observe(el));
+}
 render();fetchLive();fetchHighlights();
 /* fun footer visit counter (free Abacus API; counts page views; fails silently if the service is down) */
 fetch("https://abacus.jasoncameron.dev/hit/danpune-worldcup2026/visits").then(r=>r.json()).then(d=>{if(d&&d.value!=null)document.getElementById("visits").textContent=" · 👀 "+d.value.toLocaleString()+" visits";}).catch(()=>{});
