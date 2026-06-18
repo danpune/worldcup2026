@@ -59,7 +59,7 @@ header{background:linear-gradient(160deg,var(--ink),var(--pitch));color:#fff;bor
 #tz{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:8px 10px;font-size:13px}
 #tz option{color:#16211c}
 nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop-filter:blur(6px)}
-.tabs-in{max-width:980px;margin:0 auto;display:flex;gap:2px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-in{max-width:980px;margin:0 auto;display:flex;gap:2px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
 .tabs-in::-webkit-scrollbar{display:none}
 .tab{flex:1 0 auto;border:0;background:transparent;color:#9fbcb0;font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;padding:13px 12px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
 @media(max-width:400px){.tab{padding:13px 8px;letter-spacing:.02em}}
@@ -1074,6 +1074,7 @@ const tabEls=[...document.querySelectorAll(".tab")];
 function activateTab(t){
  currentView=t.dataset.view;
  tabEls.forEach(x=>{const sel=x===t;x.setAttribute("aria-selected",sel);x.tabIndex=sel?0:-1;});
+ try{var _tb=t.closest(".tabs-in");if(_tb){var _tr=t.getBoundingClientRect(),_br=_tb.getBoundingClientRect();_tb.scrollLeft=Math.max(0,_tb.scrollLeft+(_tr.left-_br.left)-_br.width/2+_tr.width/2);}}catch(e){}  /* center the active tab in the scrollable bar */
  document.querySelectorAll("main section").forEach(s=>s.classList.add("hide"));
  document.getElementById("view-"+currentView).classList.remove("hide");
  render();
