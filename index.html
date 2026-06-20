@@ -190,6 +190,12 @@ body.dsoff #momentstop{top:49px}
 .timeline .evrow{display:grid;grid-template-columns:1fr 38px 1fr;align-items:center;font-size:12.5px;margin:6px 0}
 .evrow .evh{text-align:right}.evrow .eva{text-align:left}
 .evrow .evt{text-align:center;font-weight:700;color:var(--muted);font-size:11.5px}
+.timeline1 .evrow1{display:flex;align-items:center;gap:9px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--line)}
+.timeline1 .evrow1:last-child{border-bottom:0}
+.timeline1 .evi{width:20px;text-align:center;flex:0 0 auto}
+.timeline1 .evt{min-width:38px;flex:0 0 auto;font-weight:700;color:var(--muted);font-size:11.5px}
+.timeline1 .evw{flex:1 1 auto;min-width:0}
+.timeline1 .evtm{flex:0 0 auto;color:var(--muted);font-size:11px;white-space:nowrap;max-width:38%;overflow:hidden;text-overflow:ellipsis}
 .evw sub{font-size:8px;vertical-align:super;font-weight:700}
 .lineups{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .luc .lut{font-weight:700;font-size:12.5px;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;align-items:baseline}
@@ -753,31 +759,37 @@ function maybeRetryStats(fid){
 }
 function statsPanelHTML(fid){
  const d=statsCache[fid];
- if(!d)return '<div class="statload">Loading match stats…</div>';
- const arr=d.stats||[];
- if(arr.length<2)return '<div class="statload">'+(statsErr(fid)?'Match stats aren’t loaded yet — they’ll appear here shortly.':'Match stats aren’t available for this match.')+'</div>';
- const H=arr[0],A=arr[1];let rows="";
- STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
+ if(!d)return '<div class="statload">Loading match details…</div>';
+ const arr=d.stats||[],lu=d.lineups||[];
+ const H=arr.length>=2?arr[0]:null,A=arr.length>=2?arr[1]:null;
+ let rows="";
+ if(H&&A)STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
   const hn=statNum(hv),an=statNum(av),tot=hn+an,hp=tot>0?Math.round(hn/tot*100):50;
   const hc="sv"+(hn>an?" lead":""),ac="sv"+(an>hn?" lead":"");
   rows+='<div class="strow"><span class="'+hc+'">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="'+ac+'">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
- const tl=timelineHTML(d.events,H,A),lu=lineupsHTML(d.lineups);
- let body=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+lu;
- if(rows&&!tl&&!lu)body+='<div class="statnote">Timeline &amp; line-ups aren’t provided for this match.</div>';
- return body||'<div class="statload">No stats yet.</div>';
+ /* home name for the timeline split: from stats or line-ups (reliable); else fall back to a single-column timeline */
+ const hname=(H&&H.team&&H.team.name)||(lu[0]&&lu[0].team&&lu[0].team.name)||null;
+ const tl=timelineHTML(d.events,hname),luh=lineupsHTML(d.lineups);
+ let body=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+luh;
+ if(!body)return '<div class="statload">'+(statsErr(fid)?'Match details aren’t loaded yet — they’ll appear here shortly.':'Match details aren’t available for this match yet.')+'</div>';
+ if(!rows)body='<div class="statnote">Detailed stats (possession, shots) aren’t provided for this match — showing what’s available.</div>'+body;
+ return body;
 }
 /* goal/card/sub timeline — left column = home team's events, right = away (matched by team name) */
-function timelineHTML(events,H,A){
+function timelineHTML(events,hname){
  const ev=(events||[]).filter(e=>e.type==="Goal"||e.type==="Card"||e.type==="subst");
  if(!ev.length)return "";
- const hname=H&&H.team?H.team.name:null;
  const ico=e=>{if(e.type==="Goal")return e.detail==="Own Goal"?"⚽<sub>OG</sub>":e.detail==="Penalty"?"⚽<sub>P</sub>":e.detail==="Missed Penalty"?"❌":"⚽";if(e.type==="Card")return e.detail==="Red Card"?"🟥":"🟨";return "🔀";};
+ const tm=e=>(e.time&&e.time.elapsed!=null?e.time.elapsed:"")+(e.time&&e.time.extra?"+"+e.time.extra:"")+"'";
+ const who=e=>e.type==="subst"?escA((e.assist&&e.assist.name)||(e.player&&e.player.name)||""):escA((e.player&&e.player.name)||"");
+ if(!hname){  /* no reliable home/away split (no line-ups or stats) → single chronological column with team label */
+  const rows=ev.map(e=>'<div class="evrow1"><span class="evi">'+ico(e)+'</span><span class="evt">'+tm(e)+'</span><span class="evw">'+who(e)+'</span><span class="evtm">'+escA((e.team&&e.team.name)||"")+'</span></div>').join("");
+  return '<div class="stsub">Key moments</div><div class="stsec timeline1">'+rows+'</div>';
+ }
  const rows=ev.map(e=>{
-  const t=(e.time&&e.time.elapsed!=null?e.time.elapsed:"")+(e.time&&e.time.extra?"+"+e.time.extra:"")+"'";
-  const who=e.type==="subst"?(escA((e.assist&&e.assist.name)||e.player&&e.player.name||"")):escA((e.player&&e.player.name)||"");
-  const home=hname!=null&&e.team&&e.team.name===hname;
-  const cell='<span class="evw">'+ico(e)+' '+who+'</span>';
-  return '<div class="evrow"><span class="evh">'+(home?cell:"")+'</span><span class="evt">'+t+'</span><span class="eva">'+(home?"":cell)+'</span></div>';
+  const home=e.team&&e.team.name===hname;
+  const cell='<span class="evw">'+ico(e)+' '+who(e)+'</span>';
+  return '<div class="evrow"><span class="evh">'+(home?cell:"")+'</span><span class="evt">'+tm(e)+'</span><span class="eva">'+(home?"":cell)+'</span></div>';
  }).join("");
  return '<div class="stsub">Key moments</div><div class="stsec timeline">'+rows+'</div>';
 }
