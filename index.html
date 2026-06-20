@@ -110,6 +110,9 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 /* schedule cards: stack the two teams on their own rows so the matchup never wraps awkwardly on phones */
 .tcol{flex-direction:column;align-items:stretch;gap:5px}
 .tcol .trow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.tscore{margin-left:auto;font-family:Oswald;font-weight:700;font-size:18px;color:var(--text);font-variant-numeric:tabular-nums;min-width:18px;text-align:right;padding-left:10px}
+.tscore.lose{color:var(--muted);font-weight:600}
+@media(min-width:640px){.tscore{margin-left:4px;padding-left:0}}
 .vsep{display:none;color:var(--muted);font-weight:500;font-size:12px}
 /* wide screens: put the matchup back on one line ("Home v Away"); phones stay stacked */
 @media(min-width:640px){.tcol{flex-direction:row;align-items:center;gap:9px}.tcol .trow{flex:0 1 auto}.vsep{display:inline}}
@@ -971,17 +974,18 @@ function renderList(){
   const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
   const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
+  const es=cardScore(m.n);
+  const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
   const teams=m.group_game
-   ?`<div class="trow">${m.hf} ${tk(m.home)}${rkx(m.home)}${favBtn(m.home)}</div><span class="vsep">v</span><div class="trow">${m.af} ${tk(m.away)}${rkx(m.away)}${favBtn(m.away)}</div>`
-   :`<div class="trow">${m.home}${favBtn(m.home)}</div><span class="vsep">v</span><div class="trow">${m.away}${favBtn(m.away)}</div>`;
+   ?`<div class="trow">${m.hf} ${tk(m.home)}${rkx(m.home)}${favBtn(m.home)}${tsc(es&&es.h,es&&es.h<es.a)}</div><span class="vsep">v</span><div class="trow">${m.af} ${tk(m.away)}${rkx(m.away)}${favBtn(m.away)}${tsc(es&&es.a,es&&es.a<es.h)}</div>`
+   :`<div class="trow">${m.home}${favBtn(m.home)}${tsc(es&&es.h,es&&es.h<es.a)}</div><span class="vsep">v</span><div class="trow">${m.away}${favBtn(m.away)}${tsc(es&&es.a,es&&es.a<es.h)}</div>`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
-  let right=(new Date(m.utc)>now&&!cardScore(m.n))?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
-  const es=cardScore(m.n);
+  let right=(new Date(m.utc)>now&&!es)?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Add to Calendar</a>`:"";
   if(es){
    if(isOngoing(es.s))c.classList.add("live");
    const t=liveTag(es,m.n);
-   right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${es.h}–${es.a}${t.pill?" "+t.pill:""}</div>`;
+   right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${t.pill||(es.h+"–"+es.a)}</div>`;
    if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
    if(es.s==="FINISHED")right+=`<button class="statsbtn hlbtn" type="button" data-n="${m.n}" data-h="${escA(m.home)}" data-a="${escA(m.away)}">🎬 Highlights</button>`;
   }
