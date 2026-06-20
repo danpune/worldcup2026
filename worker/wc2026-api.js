@@ -198,7 +198,7 @@ export default {
           var src = decodeEntities(stripCdata((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || "")).trim();
           var pub = ((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || "").trim();
           if (src && title.length > src.length + 3 && title.slice(-(src.length + 3)) === " - " + src) title = title.slice(0, -(src.length + 3)).trim();
-          if (title && link.indexOf("http") === 0) nitems.push({ title: title, link: link, source: src, pub: pub });
+          if (title && /^https?:\/\//i.test(link)) nitems.push({ title: title, link: link, source: src, pub: pub });
         }
       } catch (e) { nerr = String(e); }
       if (nitems.length) {
@@ -232,7 +232,7 @@ export default {
       if (team) {
         var alias = { "usa": "united states", "us": "united states", "south korea": "korea republic", "iran": "ir iran", "turkey": "türkiye", "czechia": "czech republic", "cape verde": "cabo verde", "ivory coast": "côte d'ivoire", "dr congo": "congo dr" };
         var q = alias[team] || team;
-        var mine = ms.filter(function (m) { var h = m.home.toLowerCase(), a = m.away.toLowerCase(); return h.indexOf(q) > -1 || a.indexOf(q) > -1 || h.indexOf(team) > -1 || a.indexOf(team) > -1; });
+        var mine = ms.filter(function (m) { var h = (m.home || "").toLowerCase(), a = (m.away || "").toLowerCase(); return h.indexOf(q) > -1 || a.indexOf(q) > -1 || h.indexOf(team) > -1 || a.indexOf(team) > -1; });
         var lv = mine.filter(isLive), up = mine.filter(function (m) { return m.status === "NS"; }).sort(function (x, y) { return (x.t || 0) - (y.t || 0); }), dn = mine.filter(isDone).sort(function (x, y) { return (y.t || 0) - (x.t || 0); });
         if (lv.length) say = "Live: " + score(lv[0]) + ", " + liveLabel(lv[0]) + ".";
         else if (up.length) say = up[0].home + " play " + up[0].away + " " + rel(up[0].t) + ".";
