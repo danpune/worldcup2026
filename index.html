@@ -170,6 +170,7 @@ body.dsoff #momentstop{top:49px}
 .ststatus.live{color:var(--live);font-weight:600}
 .statload{color:var(--muted);font-size:13px;padding:5px 0}
 .statnote{color:var(--muted);font-size:12px;padding:8px 0 2px;font-style:italic}
+.statsync{color:var(--muted);font-size:11px;text-align:right;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .buzzh{font-family:Oswald;font-size:16px;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 6px;color:var(--text)}
 .buzzh:first-child{margin-top:4px}
 #newswrap{margin-bottom:6px}
@@ -773,6 +774,9 @@ function statsPanelHTML(fid){
  let body=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+luh;
  if(!body)return '<div class="statload">'+(statsErr(fid)?'Match details aren’t loaded yet — they’ll appear here shortly.':'Match details aren’t available for this match yet.')+'</div>';
  if(!rows)body='<div class="statnote">Detailed stats (possession, shots) aren’t provided for this match — showing what’s available.</div>'+body;
+ /* last-synced stamp: server time (cron/API sync) preferred, client fetch time as fallback — so stale data is visible, not silent */
+ const ts=d.updated||(d._t?new Date(d._t).toISOString():null);
+ if(ts)body+='<div class="statsync">⟳ Synced '+relTime(ts)+'</div>';
  return body;
 }
 /* goal/card/sub timeline — left column = home team's events, right = away (matched by team name) */

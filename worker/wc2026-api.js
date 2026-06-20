@@ -100,7 +100,7 @@ export default {
         stats = r[0].response || []; events = r[1].response || []; lineups = r[2].response || [];
         if (r[0].errors && Object.keys(r[0].errors).length) me = r[0].errors;
       } catch (e) { me = String(e); }
-      var payloadM = { id: id, stats: stats, events: events, lineups: lineups, errors: me };
+      var payloadM = { id: id, stats: stats, events: events, lineups: lineups, errors: me, updated: new Date().toISOString() };
       var mr = new Response(JSON.stringify(payloadM, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": me ? "max-age=0" : "max-age=30" }) });
       if (!me && (stats.length || events.length || lineups.length)) {
         ctx.waitUntil(mc.put(mk, mr.clone()));
@@ -325,7 +325,7 @@ async function runDetector(env) {
             fetch(API + "/fixtures/statistics?fixture=" + fid, { headers }).then(function (x) { return x.json(); }),
             fetch(API + "/fixtures/lineups?fixture=" + fid, { headers }).then(function (x) { return x.json(); })
           ]);
-          await env.STATE.put("match:" + fid, JSON.stringify({ id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], errors: null }), { expirationTtl: 604800 });
+          await env.STATE.put("match:" + fid, JSON.stringify({ id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], errors: null, updated: new Date().toISOString() }), { expirationTtl: 604800 });
         } catch (e) {}
       } catch (e) {}
     }
