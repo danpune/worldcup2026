@@ -281,6 +281,17 @@ td.pts{font-family:Oswald;font-weight:600;color:var(--pitch);font-size:15px}
 .hlmeta{padding:10px 12px}
 .hlmeta .tline{font-size:15px}
 .hlsearch{display:inline-flex;align-items:center;gap:6px;margin-top:9px;border:1px solid var(--line);background:var(--card);color:var(--pitch);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;text-decoration:none}
+.momh{font-family:Oswald;font-size:16px;text-transform:uppercase;letter-spacing:.06em;margin:2px 0 9px;color:var(--text)}
+.momrow{display:flex;gap:12px;overflow-x:auto;padding:1px 1px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.momrow::-webkit-scrollbar{display:none}
+.momcard{flex:0 0 auto;width:228px;scroll-snap-align:start;border:0;background:none;padding:0;margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit;display:block}
+.momthumb{position:relative;display:block;border-radius:12px;overflow:hidden;aspect-ratio:16/9;background:#000;box-shadow:0 2px 8px rgba(10,31,24,.14)}
+.momthumb img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92;transition:opacity .15s,transform .2s}
+.momcard:hover .momthumb img{opacity:1;transform:scale(1.04)}
+.momplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
+.momlab{position:absolute;top:8px;left:8px;background:var(--gold);color:#1a1207;font-family:Oswald;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+.momcap{display:block;font-size:13.5px;margin-top:7px;color:var(--text);line-height:1.3}
+.momcap b{font-variant-numeric:tabular-nums}
 .hlsearch:hover{border-color:var(--pitch2)}
 .hlsearch .ext{color:var(--muted);font-size:12px}
 .note{font-size:12.5px;color:var(--muted);margin:6px 0 2px}
@@ -376,6 +387,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  </section>
 
  <section id="view-highlights" class="hide" role="tabpanel" aria-labelledby="tab-highlights" tabindex="0">
+  <div id="momentswrap"></div>
   <p class="note">Official FIFA highlights, posted after each match — <b>where available in your region</b> (some clips are geo-restricted by broadcast rights). Tap a thumbnail to play.</p>
   <div id="hlwrap"></div>
  </section>
@@ -923,7 +935,34 @@ async function fetchHighlights(){
  if(currentView==="highlights")renderHighlights();
 }
 const ytOk=id=>/^[\w-]{11}$/.test(id||"");  /* valid YouTube video ID only — defensive against malformed entries */
+/* featured "Moments" reel — a curated carousel of the best official FIFA clips (data-ranked: goals, margin,
+   upset, recency). Reuses highlights.json + the openHighlight modal; no new media, no trackers, no IP risk. */
+function renderMoments(){
+ const box=document.getElementById("momentswrap");if(!box)return;
+ const fin=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&s.s==="FINISHED"&&HL[m.n]&&ytOk(HL[m.n].yt);});
+ if(fin.length<2){box.innerHTML="";return;}
+ const now=Date.now();
+ const recent=fin.reduce((a,b)=>new Date(a.utc)>new Date(b.utc)?a:b);
+ const scored=fin.map(m=>{
+  const s=cardScore(m.n),goals=(s.h||0)+(s.a||0),margin=Math.abs((s.h||0)-(s.a||0));
+  const win=s.h>s.a?m.home:(s.a>s.h?m.away:null),lose=s.h>s.a?m.away:(s.a>s.h?m.home:null);
+  const upset=win&&lose&&RANK[win]&&RANK[lose]&&(RANK[win]-RANK[lose]>=12);
+  const ageDays=(now-new Date(m.utc))/864e5;
+  let label;
+  if(m.n===recent.n)label="Latest";
+  else if(goals>=6)label=goals+" goals";
+  else if(upset)label="Upset";
+  else if(margin>=3)label="Statement win";
+  else label=(STAGE_SHORT[m.stage]||"")+(m.group_game?" "+m.grp:"");
+  return {m,s,label,score:goals*2+margin+(upset?6:0)+(m.n===recent.n?5:0)+Math.max(0,7-ageDays)};
+ }).sort((a,b)=>b.score-a.score).slice(0,10);
+ box.innerHTML='<h3 class="momh">🎬 World Cup Moments</h3><div class="momrow" role="list">'+scored.map(x=>{
+  const m=x.m,s=x.s,fh=m.group_game?m.hf+" ":"",fa=m.group_game?m.af+" ":"";
+  return '<button class="momcard hlbtn" type="button" role="listitem" data-n="'+m.n+'" data-h="'+escA(m.home)+'" data-a="'+escA(m.away)+'" aria-label="Play highlights: '+escA(m.home)+' '+s.h+'-'+s.a+' '+escA(m.away)+'"><span class="momthumb"><img loading="lazy" src="https://i.ytimg.com/vi/'+HL[m.n].yt+'/hqdefault.jpg" alt=""><span class="momplay">▶</span><span class="momlab">'+escA(x.label)+'</span></span><span class="momcap">'+fh+escA(m.home)+' <b>'+s.h+'–'+s.a+'</b> '+fa+escA(m.away)+'</span></button>';
+ }).join("")+'</div>';
+}
 function renderHighlights(){
+ renderMoments();
  const box=document.getElementById("hlwrap");if(!box)return;
  /* every finished match shows up — embedded clip if a curated video id exists, otherwise a YouTube search link */
  const rows=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&s.s==="FINISHED";}).sort((a,b)=>new Date(b.utc)-new Date(a.utc));
