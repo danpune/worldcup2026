@@ -303,6 +303,8 @@ td.pts{font-family:Oswald;font-weight:600;color:var(--pitch);font-size:15px}
 #momentstop .momcap{display:none}
 #momentstop .momlab{font-size:9px;padding:2px 6px;top:5px;left:5px;border-radius:5px}
 #momentstop .momplay{width:42px;height:42px;font-size:16px;border-width:2px}
+/* desktop has the vertical room — enlarge the strip cards so they're not cramped (mobile stays slim) */
+@media(min-width:640px){#momentstop{padding:11px 14px 12px}#momentstop .momcard{width:168px}#momentstop .momh{font-size:12px;margin:0 0 9px}#momentstop .momrow{gap:11px}#momentstop .momlab{font-size:10px;padding:2px 7px;top:7px;left:7px}#momentstop .momplay{width:50px;height:50px;font-size:19px}}
 .hlsearch:hover{border-color:var(--pitch2)}
 .hlsearch .ext{color:var(--muted);font-size:12px}
 .note{font-size:12.5px;color:var(--muted);margin:6px 0 2px}
