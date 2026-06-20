@@ -72,6 +72,8 @@ export default {
     if (url.pathname === "/status") {
       var s = await fetch(API + "/status", { headers });
       var body = await s.json();
+      // Strip account PII (name/email) — this route is public; never expose it. Keep subscription + quota only.
+      if (body && body.response && body.response.account) delete body.response.account;
       // Surface API-Football's rate-limit headers so the per-minute ceiling is visible (it's not in the body).
       body.rateLimit = {
         perMinuteLimit: s.headers.get("x-ratelimit-limit"),
