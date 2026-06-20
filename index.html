@@ -79,6 +79,8 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .chip[aria-pressed="true"]{background:var(--pitch);color:#fff;border-color:var(--pitch)}
 .chip:focus-visible{outline:2px solid var(--gold)}
 .datestrip{position:sticky;top:49px;z-index:15;display:flex;gap:7px;overflow-x:auto;margin:0 -14px;padding:9px 14px;background:var(--paper);border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.datestrip:empty{display:none}
+body.dsoff #momentstop{top:49px}
 .datestrip::-webkit-scrollbar{display:none}
 .dpill{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:54px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:8px 10px;cursor:pointer;line-height:1.12;white-space:nowrap}
 .dpill b{font-family:Oswald;font-size:11px;letter-spacing:.05em;color:var(--muted)}
@@ -871,10 +873,11 @@ const favBtn=t=>RANK[t]?`<button class="fav${isFollowed(t)?" on":""}" type="butt
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".fav");if(b){e.preventDefault();toggleFollow(b.dataset.team);}});
 
 /* filters */
-let filter="all",q="";
+/* default to the Today view when today actually has matches; otherwise fall back to All (rest days / off-season) */
+let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":"all",q="";
 const CHIPS=[["all","All"],["today","Today"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["knockout","Knockouts"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
-CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v==="all");b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
+CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
 document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
 function todayStr(){return new Date().toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"});}
 function passes(m){
@@ -1086,7 +1089,8 @@ function jumpToToday(){
 }
 function renderDateStrip(days){
  const strip=document.getElementById("datestrip");if(!strip)return;
- if(days.length<2){strip.innerHTML="";return;}
+ if(days.length<2){strip.innerHTML="";document.body.classList.add("dsoff");return;}
+ document.body.classList.remove("dsoff");
  strip.innerHTML=days.map(d=>{const parts=d.split(", ");const wd=parts[0]||d;const dt=parts[1]||"";
   return `<button class="dpill" type="button" data-day="${d}"><b>${wd}</b><span>${dt}</span></button>`;}).join("");
  strip.querySelectorAll(".dpill").forEach(p=>p.addEventListener("click",()=>{
