@@ -958,11 +958,13 @@ function renderMoments(){
   else label=(STAGE_SHORT[m.stage]||"")+(m.group_game?" "+m.grp:"");
   return {m,s,label,score:goals*2+margin+(upset?6:0)+(m.n===recent.n?5:0)+Math.max(0,7-ageDays)};
  }).sort((a,b)=>b.score-a.score).slice(0,10);
- const html='<h3 class="momh">🎬 World Cup Moments</h3><div class="momrow" role="list">'+scored.map(x=>{
+ const cards=scored.map(x=>{
   const m=x.m,s=x.s,fh=m.group_game?m.hf+" ":"",fa=m.group_game?m.af+" ":"";
   return '<button class="momcard hlbtn" type="button" role="listitem" data-n="'+m.n+'" data-h="'+escA(m.home)+'" data-a="'+escA(m.away)+'" aria-label="Play highlights: '+escA(m.home)+' '+s.h+'-'+s.a+' '+escA(m.away)+'"><span class="momthumb"><img loading="lazy" src="https://i.ytimg.com/vi/'+HL[m.n].yt+'/hqdefault.jpg" alt=""><span class="momplay">▶</span><span class="momlab">'+escA(x.label)+'</span></span><span class="momcap">'+fh+escA(m.home)+' <b>'+s.h+'–'+s.a+'</b> '+fa+escA(m.away)+'</span></button>';
- }).join("")+'</div>';
- hosts.forEach(h=>{h.innerHTML=html;});
+ });
+ /* Schedule = full hero (10); Highlights = short featured strip (5) since the full clip list sits right below it */
+ const build=n=>'<h3 class="momh">🎬 World Cup Moments</h3><div class="momrow" role="list">'+cards.slice(0,n).join("")+'</div>';
+ hosts.forEach(h=>{h.innerHTML=build(h.id==="momentswrap"?5:10);});
 }
 function renderHighlights(){
  renderMoments();
