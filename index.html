@@ -277,6 +277,13 @@ table.st tr.adv td.pos b{background:var(--advance-line)}
 td.pos b{display:inline-block;width:20px;height:20px;line-height:20px;border-radius:50%;background:#eceee9;color:var(--ink);font-family:Oswald;font-size:12px}
 td.pts{font-family:Oswald;font-weight:600;color:var(--pitch);font-size:15px}
 .rk{color:var(--muted);font-size:10.5px;font-weight:500}
+#thirdrace{margin-top:16px}
+#thirdrace .gcard{max-width:580px}
+.grpchip{display:inline-block;font-size:10px;font-weight:600;color:var(--muted);background:#eceee9;border-radius:5px;padding:1px 6px;margin-left:3px;letter-spacing:.02em}
+table.st tr.outq td,table.st tr.outq td.pts{color:var(--muted)}
+table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
+.tr3 .cutline span{display:block;font-family:Oswald;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--live);border-top:2px dashed var(--advance-line);padding-top:4px;text-align:center}
+.trempty{padding:15px 14px;color:var(--muted);font-size:13.5px;line-height:1.45}
 .pm{color:#4a56c0;font-size:10.5px;font-weight:700}
 #hlwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:6px}
 .hlcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -360,6 +367,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  .gcard{background:var(--card)}
  table.st td{border-bottom-color:#222c26}
  td.pos b{background:#28332c;color:var(--text)}
+ .grpchip{background:#28332c;color:var(--muted)}
  td.pts{color:#7fcfa2}
  .meta .pred,.pm{color:#8b97f0}
  .info h3{color:#7fcfa2}
@@ -405,8 +413,9 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 
  <section id="view-standings" class="hide" role="tabpanel" aria-labelledby="tab-standings" tabindex="0">
   <div class="prov" id="prov2"></div>
-  <p class="note"><b>Green ▲ = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see fifa.com for that cross-group cut. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
+  <p class="note"><b>Green ▲ = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — track that race in the table below. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
   <div class="gwrap" id="groups"></div>
+  <div id="thirdrace"></div>
  </section>
 
  <section id="view-highlights" class="hide" role="tabpanel" aria-labelledby="tab-highlights" tabindex="0">
@@ -1150,7 +1159,27 @@ function renderStandings(){
   card.innerHTML=`<div class="ghead">Group ${g}<span class="gp">${any?"":"awaiting results"}</span></div><table class="st"><thead><tr><th></th><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>${rows}</tbody></table>`;
   box.appendChild(card);
  });
+ renderThirdRace();
  if(!pmLoaded)fetchPolymarket();
+}
+/* The 48-team format's signature twist: the 8 best 3rd-placed teams (of 12) also reach the Round of 32.
+   Fans can't easily track this anywhere — so rank all 12 third-placed teams by FIFA's tiebreakers (Pts → GD → GF). */
+function renderThirdRace(){
+ const box=document.getElementById("thirdrace");if(!box)return;
+ const thirds=["A","B","C","D","E","F","G","H","I","J","K","L"]
+  .map(g=>{const a=computeGroup(g);const t=a[2];return t?Object.assign({},t,{g:g}):null;}).filter(Boolean);
+ if(!thirds.length){box.innerHTML="";return;}
+ if(!thirds.some(t=>t.P>0)){
+  box.innerHTML='<div class="gcard"><div class="ghead">Race for the last 8 spots<span class="gp">best 3rd-placed teams</span></div><div class="trempty">Fills in as the groups play — the <b>8 best third-placed teams</b> (of 12) join the top two from each group in the Round of 32.</div></div>';
+  return;
+ }
+ thirds.sort((a,b)=>(b.Pts-a.Pts)||(b.GD-a.GD)||(b.GF-a.GF)||a.t.localeCompare(b.t));
+ const rows=thirds.map((t,i)=>{
+  const inq=i<8;const tr=inq?' class="adv"':' class="outq"';
+  const cut=i===7?'<tr class="cutline"><td colspan="8"><span>top 8 advance · qualification cut</span></td></tr>':'';
+  return `<tr${tr}><td class="pos"><b>${i+1}</b>${inq?' <span class="qb" title="In the top 8">▲</span>':''}</td><td class="tm">${FLAGMAP[t.t]||""} <button type="button" class="teamlink" data-squad="${escA(t.t)}" title="View ${escA(t.t)} squad">${t.t}</button> <span class="grpchip">Grp ${t.g}</span></td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GD>0?"+":""}${t.GD}</td><td class="pts">${t.Pts}</td></tr>${cut}`;
+ }).join("");
+ box.innerHTML=`<div class="gcard"><div class="ghead">Race for the last 8 spots<span class="gp">best 3rd-placed · 8 of 12 advance</span></div><table class="st tr3"><thead><tr><th></th><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 let currentView="schedule";
 const tabEls=[...document.querySelectorAll(".tab")];
