@@ -174,6 +174,8 @@ body.dsoff #momentstop{top:49px}
 .ststatus.live{color:var(--live);font-weight:600}
 .statload{color:var(--muted);font-size:13px;padding:5px 0}
 .statnote{color:var(--muted);font-size:12px;padding:8px 0 2px;font-style:italic}
+.stfacts{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;font-size:12.5px;color:var(--muted);padding:2px 0 9px;line-height:1.5}
+.stfacts .fsep{color:var(--line)}
 .statsync{color:var(--muted);font-size:11px;text-align:right;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .buzzh{font-family:Oswald;font-size:16px;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 6px;color:var(--text)}
 .buzzh:first-child{margin-top:4px}
@@ -788,11 +790,18 @@ function maybeRetryStats(fid){
  const tries=(d&&d._tries)||0,wait=Math.min(10000*Math.pow(2,Math.min(tries,3)),80000);
  if(Date.now()-((d&&d._t)||0)>=wait)fetchStats(fid);
 }
-function statsPanelHTML(fid){
+function statsPanelHTML(fid,m){
  const d=statsCache[fid];
  if(!d)return '<div class="statload">Loading match details…</div>';
  const arr=d.stats||[],lu=d.lineups||[];
  const H=arr.length>=2?arr[0]:null,A=arr.length>=2?arr[1]:null;
+ /* reliable match facts — present even when possession/shots aren't (referee from the feed; venue/kickoff from our data) */
+ const facts=[];
+ if(d.referee)facts.push('🧑‍⚖️ '+escA(d.referee));
+ const ven=(m&&m.venue)?(m.venue+(m.city?", "+m.city:"")):(d.venue||"");
+ if(ven)facts.push('📍 '+escA(ven));
+ if(m&&m.utc)facts.push('🕐 '+escA(dParts(m.utc).time));
+ const factsHTML=facts.length?'<div class="stfacts">'+facts.join('<span class="fsep"> · </span>')+'</div>':'';
  let rows="";
  if(H&&A)STAT_ROWS.forEach(([type,label])=>{const hv=statGet(H,type),av=statGet(A,type);if(hv==null&&av==null)return;
   const hn=statNum(hv),an=statNum(av),tot=hn+an,hp=tot>0?Math.round(hn/tot*100):50;
@@ -801,9 +810,14 @@ function statsPanelHTML(fid){
  /* home name for the timeline split: from stats or line-ups (reliable); else fall back to a single-column timeline */
  const hname=(H&&H.team&&H.team.name)||(lu[0]&&lu[0].team&&lu[0].team.name)||null;
  const tl=timelineHTML(d.events,hname),luh=lineupsHTML(d.lineups);
- let body=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+luh;
- if(!body)return '<div class="statload">'+(statsErr(fid)?'Match details aren’t loaded yet — they’ll appear here shortly.':'Match details aren’t available for this match yet.')+'</div>';
- if(!rows)body='<div class="statnote">Detailed stats (possession, shots) aren’t provided for this match — showing what’s available.</div>'+body;
+ const content=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+luh;
+ let body=factsHTML;
+ if(content){
+  if(!rows)body+='<div class="statnote">Detailed stats (possession, shots) aren’t provided for this match — showing what’s available.</div>';
+  body+=content;
+ }else if(!factsHTML){
+  return '<div class="statload">'+(statsErr(fid)?'Match details aren’t loaded yet — they’ll appear here shortly.':'Match details aren’t available for this match yet.')+'</div>';
+ }else body+='<div class="statnote">Detailed stats, timeline &amp; line-ups aren’t posted for this match yet.</div>';
  /* last-synced stamp: server time (cron/API sync) preferred, client fetch time as fallback — so stale data is visible, not silent */
  const ts=d.updated||(d._t?new Date(d._t).toISOString():null);
  if(ts)body+='<div class="statsync">⟳ Synced '+relTime(ts)+'</div>';
@@ -1110,7 +1124,7 @@ function renderList(){
   const wx=(ll&&koD>now&&(koD-now)<=16*864e5)?`<span class="wx" data-lat="${ll[0]}" data-lon="${ll[1]}" data-date="${m.utc.slice(0,10)}" data-hr="${m.utc.slice(0,13)}" title="Forecast at kickoff"></span>`:"";
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${wx}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
-  if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid);list.appendChild(sp);maybeRetryStats(es.fid);}
+  if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid,m);list.appendChild(sp);maybeRetryStats(es.fid);}
  });
  renderDateStrip(days);
  observeWx();
