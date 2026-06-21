@@ -284,6 +284,18 @@ table.st tr.outq td,table.st tr.outq td.pts{color:var(--muted)}
 table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .tr3 .cutline span{display:block;font-family:Oswald;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--live);border-top:2px dashed var(--advance-line);padding-top:4px;text-align:center}
 .trempty{padding:15px 14px;color:var(--muted);font-size:13.5px;line-height:1.45}
+#goldenboot{margin-bottom:14px}
+.gbcard{max-width:580px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gbrow{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid #f0f2ef}
+.gbrow:last-child{border-bottom:0}
+.gbrow.lead{background:linear-gradient(90deg,rgba(232,184,75,.16),transparent 70%)}
+.gbpos{flex:0 0 26px;text-align:center;font-size:16px}
+.gbpos b{font-family:Oswald;color:var(--muted);font-size:13px}
+.gbname{flex:1 1 auto;min-width:0;font-size:14px;line-height:1.25}
+.gbname b{font-weight:600}
+.gbteam{color:var(--muted);font-size:12px}
+.gbx{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+.gbg{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:21px;color:var(--pitch);font-variant-numeric:tabular-nums;min-width:22px;text-align:right}
 .pm{color:#4a56c0;font-size:10.5px;font-weight:700}
 #hlwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:6px}
 .hlcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -368,6 +380,9 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  table.st td{border-bottom-color:#222c26}
  td.pos b{background:#28332c;color:var(--text)}
  .grpchip{background:#28332c;color:var(--muted)}
+ .gbcard{background:var(--card)}
+ .gbrow{border-bottom-color:#222c26}
+ .gbg{color:#7fcfa2}
  td.pts{color:#7fcfa2}
  .meta .pred,.pm{color:#8b97f0}
  .info h3{color:#7fcfa2}
@@ -413,6 +428,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 
  <section id="view-standings" class="hide" role="tabpanel" aria-labelledby="tab-standings" tabindex="0">
   <div class="prov" id="prov2"></div>
+  <div id="goldenboot"></div>
   <p class="note"><b>Green ▲ = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — track that race in the table below. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
   <div class="gwrap" id="groups"></div>
   <div id="thirdrace"></div>
@@ -1181,6 +1197,29 @@ function renderThirdRace(){
  }).join("");
  box.innerHTML=`<div class="gcard"><div class="ghead">Race for the last 8 spots<span class="gp">best 3rd-placed · 8 of 12 advance</span></div><table class="st tr3"><thead><tr><th></th><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+/* Golden Boot race — top scorers from the Worker (/topscorers, cached). Lazy-loaded when Standings opens. */
+const TOPSCORERS_API="https://wc2026-api.footy26.workers.dev/topscorers";
+let _tsLoaded=false;
+async function loadTopScorers(attempt){
+ attempt=attempt||0;
+ if(_tsLoaded)return;
+ const box=document.getElementById("goldenboot");if(!box)return;
+ try{
+  const r=await fetch(TOPSCORERS_API);const d=r.ok?await r.json():null;
+  if(d&&d.scorers&&d.scorers.length){_tsLoaded=true;renderGoldenBoot(box,d.scorers);return;}
+ }catch(e){}
+ if(attempt<1){setTimeout(function(){loadTopScorers(attempt+1);},2500);return;}   /* one quiet retry */
+ box.innerHTML="";   /* no data yet — stay invisible rather than show an empty shell */
+}
+function renderGoldenBoot(box,scorers){
+ const top=scorers.slice(0,12),lead=top.length?top[0].goals:0;
+ const rows=top.map((s,i)=>{
+  const fl=FLAGMAP[s.team]||"",medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"<b>"+(i+1)+"</b>";
+  const extra=[];if(s.assists)extra.push(s.assists+" assist"+(s.assists>1?"s":""));if(s.pens)extra.push(s.pens+" pen"+(s.pens>1?"s":""));
+  return `<div class="gbrow${s.goals===lead?" lead":""}"><span class="gbpos">${medal}</span><span class="gbname">${fl} <b>${escA(s.name)}</b> <span class="gbteam">${escA(s.team)}</span>${extra.length?`<span class="gbx">${extra.join(" · ")}</span>`:""}</span><span class="gbg">${s.goals}</span></div>`;
+ }).join("");
+ box.innerHTML=`<div class="gbcard"><div class="ghead">⚽ Golden Boot race<span class="gp">tournament top scorers</span></div><div class="gblist">${rows}</div></div>`;
+}
 let currentView="schedule";
 const tabEls=[...document.querySelectorAll(".tab")];
 function activateTab(t){
@@ -1191,6 +1230,7 @@ function activateTab(t){
  document.getElementById("view-"+currentView).classList.remove("hide");
  render();
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
+ if(currentView==="standings")loadTopScorers();   /* lazy: Golden Boot race only when Standings is opened */
 }
 tabEls.forEach((t,i)=>{
  t.addEventListener("click",()=>activateTab(t));
