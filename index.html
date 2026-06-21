@@ -47,6 +47,10 @@ header{background:linear-gradient(160deg,var(--ink),var(--pitch));color:#fff;bor
 .head-in{max-width:980px;margin:0 auto;padding:18px 14px 14px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px}
 .brand{flex:1 1 auto;min-width:200px}
 .kick{font-family:Oswald;text-transform:uppercase;font-size:12px;letter-spacing:.22em;color:var(--gold)}
+.kick b{color:#ffd97a;font-weight:600}
+.twstat{margin-top:6px;font-size:12.5px;font-weight:600;color:#bcd3c8;display:flex;align-items:center;gap:6px}
+.twstat .dot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
+.twstat b{color:#fff;font-weight:700}
 .brand h1{margin:2px 0;font-size:clamp(24px,5.5vw,38px);text-transform:uppercase;line-height:1;color:#fff}
 .brand p{margin:0;color:#bcd3c8;font-size:13px}
 .tzwrap{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#bcd3c8}
@@ -395,9 +399,10 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 <header>
  <div class="head-in">
   <div class="brand">
-   <div class="kick">USA · Canada · Mexico · June 11 – July 19</div>
+   <div class="kick">USA · Canada · Mexico · <b>June 11 – July 19, 2026</b></div>
    <h1>World Cup 2026</h1>
    <p>104 matches · your timezone · live scores · one tap to your calendar</p>
+   <div class="twstat" id="twstatus"></div>
   </div>
   <div class="tzwrap"><label for="tz">Show times in</label><select id="tz" aria-label="Choose timezone"></select></div>
  </div>
@@ -950,7 +955,15 @@ function updateProv(){
 }
 
 const calSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
-function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();}
+/* live tournament status in the header — answers "when did it start / when does it end" with context */
+function tournamentStatus(){
+ const el=document.getElementById("twstatus");if(!el)return;
+ const START=Date.UTC(2026,5,11),END=Date.UTC(2026,6,20),now=Date.now(),day=86400000;   /* Jun 11 → Jul 19, 2026 */
+ if(now<START){const d=Math.max(1,Math.ceil((START-now)/day));el.innerHTML='Kicks off June 11 · in <b>'+d+' day'+(d!==1?'s':'')+'</b>';}
+ else if(now<END){const d=Math.floor((now-START)/day)+1;el.innerHTML='<span class="dot"></span><b>Underway</b> · Day '+d+' · Final Sun, July 19';}
+ else el.innerHTML='Completed · the final was played July 19, 2026';
+}
+function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
 let PM={},pmLoaded=false;
 function pmNorm(s){return (s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
