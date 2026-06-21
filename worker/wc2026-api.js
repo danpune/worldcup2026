@@ -217,6 +217,37 @@ export default {
         { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=0" }) });
     }
 
+    // Golden Boot race — top scorers for the tournament. Slow-changing, so edge-cached 30 min with a KV
+    // last-good fallback (so it never blanks if the API is briefly rate-limited). Slim payload for the client.
+    if (url.pathname === "/topscorers") {
+      var tsc = caches.default, tsk = new Request(new URL("/topscorers", url.origin).toString());
+      var tsh = await tsc.match(tsk); if (tsh) return tsh;
+      var scorers = [], tse = null;
+      try {
+        var tsd = await (await fetch(API + "/players/topscorers?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json();
+        scorers = (tsd.response || []).slice(0, 20).map(function (row) {
+          var pl = row.player || {}, st = (row.statistics && row.statistics[0]) || {};
+          return {
+            name: pl.name || "", team: (st.team && st.team.name) || "", nat: pl.nationality || "",
+            goals: (st.goals && st.goals.total) || 0, assists: (st.goals && st.goals.assists) || 0,
+            pens: (st.penalty && st.penalty.scored) || 0, apps: (st.games && st.games.appearences) || 0
+          };
+        }).filter(function (s) { return s.goals > 0; });
+        if (tsd.errors && Object.keys(tsd.errors).length) tse = tsd.errors;
+      } catch (e) { tse = String(e); }
+      if (scorers.length) {
+        var tgood = JSON.stringify({ updated: new Date().toISOString(), count: scorers.length, scorers: scorers, errors: null }, null, 2);
+        ctx.waitUntil(env.STATE.put("topscorers:last", tgood, { expirationTtl: 86400 }));
+        var tsr = new Response(tgood, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=1800" }) }); // 30 min
+        ctx.waitUntil(tsc.put(tsk, tsr.clone()));
+        return tsr;
+      }
+      var lastTs = await env.STATE.get("topscorers:last");
+      if (lastTs) return new Response(lastTs, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=600" }) });
+      return new Response(JSON.stringify({ updated: new Date().toISOString(), count: 0, scorers: [], errors: tse || "no data" }, null, 2),
+        { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=0" }) });
+    }
+
     // Voice / Apple-Shortcut endpoint: a ready-to-speak World Cup summary, built from the same KV snapshot
     // (no upstream API call). Optional ?team=NAME for one team. Returns plain text so a Shortcut can speak it directly.
     if (url.pathname === "/say") {
