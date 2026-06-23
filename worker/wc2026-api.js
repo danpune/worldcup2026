@@ -410,9 +410,13 @@ async function runDetector(env) {
           var prevMRaw = await env.STATE.get("match:" + fid);   // keep-best: don't let a flapped-empty tick wipe goals/stats already captured
           var prevM = null; try { prevM = prevMRaw ? JSON.parse(prevMRaw) : null; } catch (e) {}
           var mergedM = prevM ? bestMatch(prevM, freshM) : freshM;
-          // Only write when the material detail changed (most live minutes add no new event/stat) — saves KV writes.
-          var matStrip = function (o) { return JSON.stringify({ s: o.stats, e: o.events, l: o.lineups, r: o.referee, v: o.venue }); };
-          if (!prevM || matStrip(mergedM) !== matStrip(prevM)) { mergedM.updated = new Date().toISOString(); await env.STATE.put("match:" + fid, JSON.stringify(mergedM), { expirationTtl: 604800 }); }
+          // Write the goal/timeline content (events, line-ups, ref, venue) the INSTANT it changes, but throttle the
+          // noisy possession/shots STATS churn to ~once / 3 min — caps KV writes on busy days without delaying goals.
+          var core = function (o) { return JSON.stringify({ e: o.events, l: o.lineups, r: o.referee, v: o.venue }); };
+          var coreChanged = !prevM || core(mergedM) !== core(prevM);
+          var statsChanged = !prevM || JSON.stringify(mergedM.stats) !== JSON.stringify(prevM.stats);
+          var mdAge = (prevM && prevM.updated) ? (now - Date.parse(prevM.updated)) : Infinity;
+          if (coreChanged || (statsChanged && mdAge > 180000)) { mergedM.updated = new Date().toISOString(); await env.STATE.put("match:" + fid, JSON.stringify(mergedM), { expirationTtl: 604800 }); }
         } catch (e) {}
       } catch (e) {}
     }
