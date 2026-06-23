@@ -88,10 +88,22 @@ export default {
       var id = url.searchParams.get("id"); if (!id) return json({ error: "missing id" });
       // Decoupled: live & finished matches are written to KV by the cron — read those, no API call.
       var kvMatch = await env.STATE.get("match:" + id);
-      if (kvMatch) return new Response(kvMatch, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=20" }) });
-      // Not in KV (e.g. a match that finished before this was deployed) — fetch once and store it.
+      var refreshThin = false;
+      if (kvMatch) {
+        try {
+          var pm0 = JSON.parse(kvMatch);
+          // "thin" = no events AND no stats — e.g. goals/possession the provider posts AFTER full-time, which the
+          // cron never re-fetches (it stops refreshing a match once it ends). Once such a payload is a bit old,
+          // refresh it so the cache catches up with the late-arriving detail. A complete payload serves from KV.
+          var thin0 = !(pm0.events && pm0.events.length) && !(pm0.stats && pm0.stats.length);
+          var age0 = pm0.updated ? (Date.now() - Date.parse(pm0.updated)) : Infinity;
+          refreshThin = thin0 && age0 > 15 * 60000;
+        } catch (e) {}
+        if (!refreshThin) return new Response(kvMatch, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=20" }) });
+      }
+      // KV miss, or a stale+thin payload to refresh — fetch fresh from the API.
       var mc = caches.default, mk = new Request(new URL("/match?id=" + id, url.origin).toString());
-      var mh = await mc.match(mk); if (mh) return mh;
+      if (!refreshThin) { var mh = await mc.match(mk); if (mh) return mh; }   // edge cache only on a true miss (skip on refresh, else it re-serves the stale copy)
       var stats = [], events = [], lineups = [], referee = null, venue = null, me = null;
       try {
         var r = await Promise.all([
@@ -107,7 +119,7 @@ export default {
       } catch (e) { me = String(e); }
       var payloadM = { id: id, stats: stats, events: events, lineups: lineups, referee: referee, venue: venue, errors: me, updated: new Date().toISOString() };
       var mr = new Response(JSON.stringify(payloadM, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": me ? "max-age=0" : "max-age=30" }) });
-      if (!me && (stats.length || events.length || lineups.length)) {
+      if (!me && (refreshThin || stats.length || events.length || lineups.length)) {   // on a refresh, always rewrite so 'updated' resets the 15-min throttle even if still thin
         ctx.waitUntil(mc.put(mk, mr.clone()));
         ctx.waitUntil(env.STATE.put("match:" + id, JSON.stringify(payloadM), { expirationTtl: 86400 }));  // serve from KV next time
       }
