@@ -1,5 +1,5 @@
 {
-"updated": "2026-06-20",
+"updated": "2026-06-23",
 "_howto": "Add an entry per match: \"<matchNumber>\": {\"yt\": \"<YouTube video ID>\"}. Use OFFICIAL FIFA uploads — verify via the YouTube oEmbed endpoint and check author_url == \"https://www.youtube.com/@fifa\" (NOT author_name: a spam channel renamed itself 'FIFA' to spoof the name check). The official title format is 'Highlights | <Home> <score> <Away> | FIFA World Cup 2026™'.",
 "highlights": {
 "1": {"yt": "PmevGCkUtM8"},
@@ -29,6 +29,17 @@
 "25": {"yt": "C_2Lx8Wg1kg"},
 "26": {"yt": "c9wbxaKBu2E"},
 "27": {"yt": "HTR0DIvBYlg"},
-"28": {"yt": "o_AAtfdVp3Y"}
+"28": {"yt": "o_AAtfdVp3Y"},
+"29": {"yt": "tXxvgvgMiRg"},
+"30": {"yt": "ACKeXJdm5us"},
+"31": {"yt": "lz3_atghfmY"},
+"32": {"yt": "atWtyemTWQ0"},
+"33": {"yt": "tm1PRvtp1PM"},
+"34": {"yt": "_3PYS5oCgvQ"},
+"35": {"yt": "nYoSztBShPE"},
+"36": {"yt": "V7z6uzD91Ao"},
+"37": {"yt": "j0BQN0nJ7mM"},
+"38": {"yt": "4zYJyJY57i8"},
+"39": {"yt": "eh20EVuWFFI"}
 }
 }
