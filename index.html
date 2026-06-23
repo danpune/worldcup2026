@@ -194,6 +194,16 @@ body.dsoff #momentstop{top:49px}
 .sbar{height:5px;border-radius:3px;background:#dd8c46;overflow:hidden;margin-top:4px}
 .sbar>span{display:block;height:100%;background:#3f78c9;border-radius:3px}
 .stsub{font-family:Oswald;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);margin:14px 0 7px;padding-top:11px;border-top:1px solid var(--line)}
+.goalrow{display:flex;align-items:baseline;gap:9px;padding:6px 0;font-size:14px;border-bottom:1px solid var(--line)}
+.goalrow:last-child{border-bottom:0}
+.goalrow .gmin{flex:0 0 36px;text-align:right;font-family:Oswald;font-weight:700;font-size:13.5px;color:var(--pitch);font-variant-numeric:tabular-nums}
+.goalrow .gico{flex:0 0 auto}
+.goalrow .gsc{flex:1 1 auto;min-width:0}
+.goalrow .gsc b{font-weight:600}
+.goalrow .gtm{color:var(--muted);font-size:12px;margin-left:6px}
+.goalrow .gasst{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+.gmk{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:var(--gold);color:#1a1207;border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:1px}
+.gmk.og{background:#c9402d;color:#fff}
 .timeline .evrow{display:grid;grid-template-columns:1fr 38px 1fr;align-items:center;font-size:12.5px;margin:6px 0}
 .evrow .evh{text-align:right}.evrow .eva{text-align:left}
 .evrow .evt{text-align:center;font-weight:700;color:var(--muted);font-size:11.5px}
@@ -389,6 +399,8 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  .gbcard{background:var(--card)}
  .gbrow{border-bottom-color:#222c26}
  .gbg{color:#7fcfa2}
+ .goalrow{border-bottom-color:#222c26}
+ .goalrow .gmin{color:#7fcfa2}
  td.pts{color:#7fcfa2}
  .meta .pred,.pm{color:#8b97f0}
  .info h3{color:#7fcfa2}
@@ -809,8 +821,8 @@ function statsPanelHTML(fid,m){
   rows+='<div class="strow"><span class="'+hc+'">'+(hv==null?"–":escA(hv))+'</span><span class="sl">'+label+'</span><span class="'+ac+'">'+(av==null?"–":escA(av))+'</span></div><div class="sbar"><span style="width:'+hp+'%"></span></div>';});
  /* home name for the timeline split: from stats or line-ups (reliable); else fall back to a single-column timeline */
  const hname=(H&&H.team&&H.team.name)||(lu[0]&&lu[0].team&&lu[0].team.name)||null;
- const tl=timelineHTML(d.events,hname),luh=lineupsHTML(d.lineups);
- const content=(rows?'<div class="stsec">'+rows+'</div>':"")+tl+luh;
+ const gl=goalsHTML(d.events),tl=timelineHTML(d.events,hname),luh=lineupsHTML(d.lineups);
+ const content=gl+(rows?'<div class="stsec">'+rows+'</div>':"")+tl+luh;
  let body=factsHTML;
  if(content){
   if(!rows)body+='<div class="statnote">Detailed stats (possession, shots) aren’t provided for this match — showing what’s available.</div>';
@@ -824,22 +836,35 @@ function statsPanelHTML(fid,m){
  return body;
 }
 /* goal/card/sub timeline — left column = home team's events, right = away (matched by team name) */
+/* ⚽ Goals — the headline of any match: who scored, when, how (pen/own goal), and the assist. Shown up top. */
+function goalsHTML(events){
+ const goals=(events||[]).filter(e=>e.type==="Goal"&&e.detail!=="Missed Penalty");
+ if(!goals.length)return "";
+ const rows=goals.map(e=>{
+  const t=(e.time&&e.time.elapsed!=null?e.time.elapsed:"")+(e.time&&e.time.extra?"+"+e.time.extra:"")+"'";
+  const pen=e.detail==="Penalty",og=e.detail==="Own Goal";
+  const mark=pen?'<span class="gmk">pen</span>':og?'<span class="gmk og">own goal</span>':"";
+  const assist=(e.assist&&e.assist.name&&!pen&&!og)?'<span class="gasst">assist '+escA(e.assist.name)+'</span>':"";
+  return '<div class="goalrow"><span class="gmin">'+t+'</span><span class="gico">⚽</span><span class="gsc"><b>'+escA((e.player&&e.player.name)||"")+'</b> '+mark+'<span class="gtm">'+escA((e.team&&e.team.name)||"")+'</span>'+assist+'</span></div>';
+ }).join("");
+ return '<div class="stsub">⚽ Goals</div><div class="goals">'+rows+'</div>';
+}
 function timelineHTML(events,hname){
- const ev=(events||[]).filter(e=>e.type==="Goal"||e.type==="Card"||e.type==="subst");
+ const ev=(events||[]).filter(e=>e.type==="Card"||e.type==="subst");   /* goals get their own section above */
  if(!ev.length)return "";
- const ico=e=>{if(e.type==="Goal")return e.detail==="Own Goal"?"⚽<sub>OG</sub>":e.detail==="Penalty"?"⚽<sub>P</sub>":e.detail==="Missed Penalty"?"❌":"⚽";if(e.type==="Card")return e.detail==="Red Card"?"🟥":"🟨";return "🔀";};
+ const ico=e=>{if(e.type==="Card")return e.detail==="Red Card"?"🟥":"🟨";return "🔀";};
  const tm=e=>(e.time&&e.time.elapsed!=null?e.time.elapsed:"")+(e.time&&e.time.extra?"+"+e.time.extra:"")+"'";
  const who=e=>e.type==="subst"?escA((e.assist&&e.assist.name)||(e.player&&e.player.name)||""):escA((e.player&&e.player.name)||"");
  if(!hname){  /* no reliable home/away split (no line-ups or stats) → single chronological column with team label */
   const rows=ev.map(e=>'<div class="evrow1"><span class="evi">'+ico(e)+'</span><span class="evt">'+tm(e)+'</span><span class="evw">'+who(e)+'</span><span class="evtm">'+escA((e.team&&e.team.name)||"")+'</span></div>').join("");
-  return '<div class="stsub">Key moments</div><div class="stsec timeline1">'+rows+'</div>';
+  return '<div class="stsub">Cards &amp; subs</div><div class="stsec timeline1">'+rows+'</div>';
  }
  const rows=ev.map(e=>{
   const home=e.team&&e.team.name===hname;
   const cell='<span class="evw">'+ico(e)+' '+who(e)+'</span>';
   return '<div class="evrow"><span class="evh">'+(home?cell:"")+'</span><span class="evt">'+tm(e)+'</span><span class="eva">'+(home?"":cell)+'</span></div>';
  }).join("");
- return '<div class="stsub">Key moments</div><div class="stsec timeline">'+rows+'</div>';
+ return '<div class="stsub">Cards &amp; subs</div><div class="stsec timeline">'+rows+'</div>';
 }
 /* starting line-ups, two columns */
 function lineupsHTML(lu){
