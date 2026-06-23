@@ -92,10 +92,10 @@ export default {
       if (kvMatch) {
         try {
           var pm0 = JSON.parse(kvMatch);
-          // "thin" = no events AND no stats — e.g. goals/possession the provider posts AFTER full-time, which the
-          // cron never re-fetches (it stops refreshing a match once it ends). Once such a payload is a bit old,
-          // refresh it so the cache catches up with the late-arriving detail. A complete payload serves from KV.
-          var thin0 = !(pm0.events && pm0.events.length) && !(pm0.stats && pm0.stats.length);
+          // "thin" = no event timeline (goals/cards/subs) — the most fan-visible part, and what the provider
+          // often posts AFTER full-time. The cron stops refreshing a match once it ends, so a payload can freeze
+          // with an empty timeline. Once it's a bit old, refresh so the cache catches up. Throttled by 'updated'.
+          var thin0 = !(pm0.events && pm0.events.length);
           var age0 = pm0.updated ? (Date.now() - Date.parse(pm0.updated)) : Infinity;
           refreshThin = thin0 && age0 > 15 * 60000;
         } catch (e) {}
