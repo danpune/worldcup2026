@@ -363,7 +363,14 @@ async function runDetector(env) {
     fixtures = fxResp.response || [];
     // Decoupled reads: write the public scores snapshot to KV so visitor /scores reads never touch the API.
     var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, t: x.fixture.timestamp }; });
-    if (snap.length) await env.STATE.put("scores", JSON.stringify({ updated: new Date().toISOString(), count: snap.length, matches: snap, errors: null }));
+    // Write the scores snapshot only when it actually CHANGED (or every ~10 min as a freshness heartbeat).
+    // The minute advances every tick while a match is live, so this still refreshes each minute during a game —
+    // but skips the many idle minutes between matches. Biggest KV-write saver (was 1/tick = up to 1440/day).
+    if (snap.length) {
+      var snapStr = JSON.stringify(snap), prevSnapStr = null, prevAge = Infinity;
+      try { var ps = JSON.parse(await env.STATE.get("scores")); prevSnapStr = JSON.stringify(ps.matches); prevAge = Date.now() - Date.parse(ps.updated); } catch (e) {}
+      if (snapStr !== prevSnapStr || prevAge > 600000) await env.STATE.put("scores", JSON.stringify({ updated: new Date().toISOString(), count: snap.length, matches: snap, errors: null }));
+    }
   } catch (e) { return { error: String(e) }; }
   var now = Date.now();
   // tier "core" -> everyone following the team gets it; tier "extra" -> only subscribers whose alerts="all"
@@ -399,9 +406,13 @@ async function runDetector(env) {
             fetch(API + "/fixtures/statistics?fixture=" + fid, { headers }).then(function (x) { return x.json(); }),
             fetch(API + "/fixtures/lineups?fixture=" + fid, { headers }).then(function (x) { return x.json(); })
           ]);
-          var freshM = { id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], referee: (f.fixture && f.fixture.referee) || null, venue: (f.fixture && f.fixture.venue && f.fixture.venue.name) || null, errors: null, updated: new Date().toISOString() };
+          var freshM = { id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], referee: (f.fixture && f.fixture.referee) || null, venue: (f.fixture && f.fixture.venue && f.fixture.venue.name) || null, errors: null };
           var prevMRaw = await env.STATE.get("match:" + fid);   // keep-best: don't let a flapped-empty tick wipe goals/stats already captured
-          await env.STATE.put("match:" + fid, JSON.stringify(prevMRaw ? bestMatch(JSON.parse(prevMRaw), freshM) : freshM), { expirationTtl: 604800 });
+          var prevM = null; try { prevM = prevMRaw ? JSON.parse(prevMRaw) : null; } catch (e) {}
+          var mergedM = prevM ? bestMatch(prevM, freshM) : freshM;
+          // Only write when the material detail changed (most live minutes add no new event/stat) — saves KV writes.
+          var matStrip = function (o) { return JSON.stringify({ s: o.stats, e: o.events, l: o.lineups, r: o.referee, v: o.venue }); };
+          if (!prevM || matStrip(mergedM) !== matStrip(prevM)) { mergedM.updated = new Date().toISOString(); await env.STATE.put("match:" + fid, JSON.stringify(mergedM), { expirationTtl: 604800 }); }
         } catch (e) {}
       } catch (e) {}
     }
