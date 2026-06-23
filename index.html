@@ -763,7 +763,6 @@ document.addEventListener("click",e=>{
  const sb=e.target.closest&&e.target.closest(".sqbtn");if(sb){openMatchSquads(sb.dataset.h,sb.dataset.a);return;}
  const hb=e.target.closest&&e.target.closest(".histbtn");if(hb){e.preventDefault();openHistory(hb.dataset.h,hb.dataset.a);return;}
  const hl=e.target.closest&&e.target.closest(".hlbtn");if(hl){e.preventDefault();openHighlight(hl.dataset.n,hl.dataset.h,hl.dataset.a);return;}
- const ic=e.target.closest&&e.target.closest(".icalbtn");if(ic){e.preventDefault();downloadIcs(ic.dataset.n);return;}
  if(e.target.id==="sqoverlay")closeSquad();
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSquad();});
@@ -957,19 +956,15 @@ function passes(m){
 function pad(n){return String(n).padStart(2,"0");}
 function stamp(d){return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+"00Z";}
 function gcalUrl(m){const s=new Date(m.utc),e=new Date(s.getTime()+72e5);const title=m.home+" vs "+m.away+" — World Cup 2026";const det=(m.group_game?("Group "+m.grp):m.stage)+" · FIFA World Cup 2026";const loc=m.venue+", "+m.city;return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(title)+"&dates="+stamp(s)+"/"+stamp(e)+"&details="+encodeURIComponent(det)+"&location="+encodeURIComponent(loc);}
-/* iCal (.ics) — opens in Apple Calendar (iPhone/Mac), Outlook, etc. Generated client-side and downloaded. */
-function icsEsc(s){return String(s).replace(/[\\;,]/g,"\\$&").replace(/\n/g,"\\n");}
-function downloadIcs(n){
- const m=MATCHES.find(x=>x.n===+n);if(!m)return;
- const s=new Date(m.utc),e=new Date(s.getTime()+72e5);
- const title=m.home+" vs "+m.away+" — World Cup 2026";
- const det=(m.group_game?("Group "+m.grp):m.stage)+" · FIFA World Cup 2026 · Match "+m.n;
+/* iCal — link to the Worker's text/calendar endpoint. A real .ics URL is what makes iOS/macOS open
+   the native "Add to Calendar" sheet directly (far more reliable on Apple devices than a JS download). */
+const ICS_API="https://wc2026-api.footy26.workers.dev/ics";
+function icsLink(m){
+ const s=stamp(new Date(m.utc)),e=stamp(new Date(new Date(m.utc).getTime()+72e5));
+ const t=m.home+" vs "+m.away+" — World Cup 2026";
  const loc=(m.venue?m.venue+", ":"")+(m.city||"");
- const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//WC2026 companion//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT","UID:wc2026-"+m.n+"@danpune.github.io","DTSTAMP:"+stamp(new Date()),"DTSTART:"+stamp(s),"DTEND:"+stamp(e),"SUMMARY:"+icsEsc(title),"LOCATION:"+icsEsc(loc),"DESCRIPTION:"+icsEsc(det),"BEGIN:VALARM","TRIGGER:-PT30M","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(title),"END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
- const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
- const url=URL.createObjectURL(blob),a=document.createElement("a");
- a.href=url;a.download="wc2026-match-"+m.n+".ics";document.body.appendChild(a);a.click();
- setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
+ const d=(m.group_game?("Group "+m.grp):m.stage)+" · FIFA World Cup 2026 · Match "+m.n;
+ return ICS_API+"?t="+encodeURIComponent(t)+"&s="+s+"&e="+e+"&loc="+encodeURIComponent(loc)+"&d="+encodeURIComponent(d)+"&uid="+encodeURIComponent("wc2026-"+m.n+"@danpune.github.io");
 }
 
 /* provenance bar */
@@ -1124,7 +1119,7 @@ function renderList(){
    :`<div class="trow">${m.home}${favBtn(m.home)}${tsc(es&&es.h,es&&es.h<es.a)}</div><span class="vsep">v</span><div class="trow">${m.away}${favBtn(m.away)}${tsc(es&&es.a,es&&es.a<es.h)}</div>`;
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
-  let right=(new Date(m.utc)>now&&!es)?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><button class="cal icalbtn" type="button" data-n="${m.n}" aria-label="Add to Apple Calendar / iCal (downloads an .ics file)">${calSvg} iCal</button>`:"";
+  let right=(new Date(m.utc)>now&&!es)?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(m)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a>`:"";
   if(es){
    if(isOngoing(es.s))c.classList.add("live");
    const t=liveTag(es,m.n);

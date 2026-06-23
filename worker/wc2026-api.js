@@ -251,6 +251,30 @@ export default {
         { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=0" }) });
     }
 
+    // iCal endpoint — returns a real .ics served as text/calendar so iOS/macOS open the native
+    // "Add to Calendar" sheet directly (the reliable way for Apple devices). Fields come as query
+    // params from the page; all are escaped for iCalendar and dates are format-validated.
+    if (url.pathname === "/ics") {
+      var qp = url.searchParams;
+      var icsE = function (v) { return String(v == null ? "" : v).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/[\r\n]+/g, " ").slice(0, 300); };
+      var ds = (qp.get("s") || "").replace(/[^0-9TZ]/g, ""), de = (qp.get("e") || "").replace(/[^0-9TZ]/g, "");
+      if (!/^\d{8}T\d{6}Z$/.test(ds) || !/^\d{8}T\d{6}Z$/.test(de)) return new Response("invalid dates", { status: 400, headers: cors() });
+      var dnow = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");   // YYYYMMDDTHHMMSSZ
+      var uid = (qp.get("uid") || "").replace(/[\r\n,;]/g, "").slice(0, 120) || ("wc2026-" + ds + "@danpune.github.io");
+      var icsBody = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WC2026 companion//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        "BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + dnow, "DTSTART:" + ds, "DTEND:" + de,
+        "SUMMARY:" + icsE(qp.get("t") || "World Cup 2026 match"), "LOCATION:" + icsE(qp.get("loc")), "DESCRIPTION:" + icsE(qp.get("d")),
+        "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:" + icsE(qp.get("t") || "World Cup 2026 match"), "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR"
+      ].join("\r\n");
+      return new Response(icsBody, { headers: Object.assign({}, cors(), {
+        "content-type": "text/calendar; charset=utf-8",
+        "content-disposition": 'inline; filename="wc2026-match.ics"',
+        "cache-control": "max-age=3600"
+      }) });
+    }
+
     // Voice / Apple-Shortcut endpoint: a ready-to-speak World Cup summary, built from the same KV snapshot
     // (no upstream API call). Optional ?team=NAME for one team. Returns plain text so a Shortcut can speak it directly.
     if (url.pathname === "/say") {
