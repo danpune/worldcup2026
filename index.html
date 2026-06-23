@@ -279,7 +279,7 @@ body.dsoff #momentstop{top:49px}
 .wx{white-space:nowrap;color:var(--muted)}
 .wx:not(:empty)::before{content:" · "}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
-#groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:14px;align-items:start}
+#groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:14px;align-items:start}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
 .ghead .gp{color:var(--gold-soft);font-size:11px;letter-spacing:.1em}
@@ -302,7 +302,7 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .tr3 .cutline span{display:block;font-family:Oswald;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--live);border-top:2px dashed var(--advance-line);padding-top:4px;text-align:center}
 .trempty{padding:15px 14px;color:var(--muted);font-size:13.5px;line-height:1.45}
 #goldenboot{margin-bottom:14px}
-.sraces{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;align-items:start;margin-bottom:16px}
+.sraces{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:14px;align-items:start;margin-bottom:16px}
 .sraces #goldenboot{margin-bottom:0}
 .sraces #thirdrace{margin-top:0}
 .sraces .gbcard,.sraces #thirdrace .gcard{max-width:none}
