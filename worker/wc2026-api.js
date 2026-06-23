@@ -97,7 +97,7 @@ export default {
           // with an empty timeline. Once it's a bit old, refresh so the cache catches up. Throttled by 'updated'.
           var thin0 = !(pm0.events && pm0.events.length);
           var age0 = pm0.updated ? (Date.now() - Date.parse(pm0.updated)) : Infinity;
-          refreshThin = thin0 && age0 > 15 * 60000;
+          refreshThin = thin0 && age0 > 5 * 60000;
         } catch (e) {}
         if (!refreshThin) return new Response(kvMatch, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=20" }) });
       }
@@ -118,8 +118,10 @@ export default {
         if (r[0].errors && Object.keys(r[0].errors).length) me = r[0].errors;
       } catch (e) { me = String(e); }
       var payloadM = { id: id, stats: stats, events: events, lineups: lineups, referee: referee, venue: venue, errors: me, updated: new Date().toISOString() };
+      // keep-best: a flapped-empty fetch must not downgrade the goals/stats we already cached for this match
+      if (!me && typeof pm0 !== "undefined" && pm0) payloadM = bestMatch(pm0, payloadM);
       var mr = new Response(JSON.stringify(payloadM, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": me ? "max-age=0" : "max-age=30" }) });
-      if (!me && (refreshThin || stats.length || events.length || lineups.length)) {   // on a refresh, always rewrite so 'updated' resets the 15-min throttle even if still thin
+      if (!me && (refreshThin || payloadM.events.length || payloadM.stats.length || payloadM.lineups.length)) {   // on a refresh, always rewrite so 'updated' resets the 5-min throttle even if still thin
         ctx.waitUntil(mc.put(mk, mr.clone()));
         ctx.waitUntil(env.STATE.put("match:" + id, JSON.stringify(payloadM), { expirationTtl: 86400 }));  // serve from KV next time
       }
@@ -397,7 +399,9 @@ async function runDetector(env) {
             fetch(API + "/fixtures/statistics?fixture=" + fid, { headers }).then(function (x) { return x.json(); }),
             fetch(API + "/fixtures/lineups?fixture=" + fid, { headers }).then(function (x) { return x.json(); })
           ]);
-          await env.STATE.put("match:" + fid, JSON.stringify({ id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], referee: (f.fixture && f.fixture.referee) || null, venue: (f.fixture && f.fixture.venue && f.fixture.venue.name) || null, errors: null, updated: new Date().toISOString() }), { expirationTtl: 604800 });
+          var freshM = { id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], referee: (f.fixture && f.fixture.referee) || null, venue: (f.fixture && f.fixture.venue && f.fixture.venue.name) || null, errors: null, updated: new Date().toISOString() };
+          var prevMRaw = await env.STATE.get("match:" + fid);   // keep-best: don't let a flapped-empty tick wipe goals/stats already captured
+          await env.STATE.put("match:" + fid, JSON.stringify(prevMRaw ? bestMatch(JSON.parse(prevMRaw), freshM) : freshM), { expirationTtl: 604800 });
         } catch (e) {}
       } catch (e) {}
     }
@@ -462,5 +466,22 @@ async function sendPush(env, title, body, teams, tier) {
 function tagKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, "_"); }
 function cors() { return { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "*" }; }
 function json(obj) { return new Response(JSON.stringify(obj, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json" }) }); }
+// Merge two match-detail payloads keeping the MORE COMPLETE value of each list. The provider's feed flaps —
+// events/stats can momentarily return empty then reappear — so a naive overwrite wipes goals we'd already
+// captured. Keep the larger list for each field so a cached match only ever gets richer, never thinner.
+function bestMatch(prev, next) {
+  prev = prev || {}; next = next || {};
+  var pick = function (a, b) { return ((a || []).length > (b || []).length) ? a : b; };
+  return {
+    id: next.id || prev.id,
+    stats: pick(prev.stats, next.stats),
+    events: pick(prev.events, next.events),
+    lineups: pick(prev.lineups, next.lineups),
+    referee: next.referee || prev.referee || null,
+    venue: next.venue || prev.venue || null,
+    errors: next.errors || null,
+    updated: next.updated || prev.updated
+  };
+}
 function stripCdata(s) { return String(s).replace(/^\s*<!\[CDATA\[/, "").replace(/\]\]>\s*$/, ""); }
 function decodeEntities(s) { return String(s).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&apos;/g, "'").replace(/&amp;/g, "&"); }
