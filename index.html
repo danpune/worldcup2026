@@ -49,7 +49,7 @@ a{color:inherit}
 header{background:linear-gradient(160deg,var(--ink),var(--pitch));color:#fff;border-bottom:3px solid var(--gold)}
 .head-in{max-width:1200px;margin:0 auto;padding:18px 14px 14px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px}
 .brand{flex:1 1 auto;min-width:200px}
-.kick{font-family:Oswald;text-transform:uppercase;font-size:12px;letter-spacing:.22em;color:var(--gold)}
+.kick{font-family:Oswald;text-transform:uppercase;font-size:13px;letter-spacing:.18em;color:var(--gold)}
 .kick b{color:#ffd97a;font-weight:600}
 .twstat{margin-top:6px;font-size:12.5px;font-weight:600;color:#bcd3c8;display:flex;align-items:center;gap:6px}
 .twstat .dot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
@@ -68,8 +68,8 @@ header{background:linear-gradient(160deg,var(--ink),var(--pitch));color:#fff;bor
 nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop-filter:blur(6px)}
 .tabs-in{max-width:1200px;margin:0 auto;display:flex;gap:2px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
 .tabs-in::-webkit-scrollbar{display:none}
-.tab{flex:1 0 auto;border:0;background:transparent;color:#9fbcb0;font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;padding:13px 12px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
-@media(max-width:400px){.tab{padding:13px 8px;letter-spacing:.02em}}
+.tab{flex:1 0 auto;border:0;background:transparent;color:#9fbcb0;font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:15px;padding:14px 14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+@media(max-width:400px){.tab{padding:14px 10px;letter-spacing:.02em}}
 .tab[aria-selected="true"]{color:#fff;border-bottom-color:var(--gold)}
 .tab:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
 .prov{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);background:#f3f6f3;border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin:12px 0 2px}
@@ -82,7 +82,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 #search{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff}
 #search:focus{outline:2px solid var(--pitch);border-color:var(--pitch)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;-webkit-overflow-scrolling:touch}
-.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--pitch);color:#fff;border-color:var(--pitch)}
 .chip:focus-visible{outline:2px solid var(--gold)}
 .datestrip{position:sticky;top:49px;z-index:15;display:flex;gap:7px;overflow-x:auto;margin:0 -14px;padding:9px 14px;background:var(--paper);border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -108,12 +108,12 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .livebanner .hlisten:hover{background:var(--live);color:#fff}
 .livebanner .lst.ht{background:#C0922B}
 .daydiv{display:flex;align-items:center;gap:12px;margin:20px 0 8px}
-.daydiv span{font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted)}
+.daydiv span{font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:14px;color:var(--muted)}
 .daydiv:after{content:"";height:1px;background:var(--line);flex:1}
-.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c,#7A8C99);border-radius:12px;padding:12px 14px;margin:10px 0;display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;box-shadow:0 1px 3px rgba(10,31,24,.05),0 5px 16px rgba(10,31,24,.05);transition:box-shadow .15s ease,transform .15s ease}
-.time{font-family:Oswald;font-size:15px;line-height:1.1;color:var(--pitch)}
+.card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c,#7A8C99);border-radius:12px;padding:14px 16px;margin:10px 0;display:grid;grid-template-columns:68px 1fr auto;gap:12px;align-items:center;box-shadow:0 1px 3px rgba(10,31,24,.05),0 5px 16px rgba(10,31,24,.05);transition:box-shadow .15s ease,transform .15s ease}
+.time{font-family:Oswald;font-size:17px;line-height:1.1;color:var(--pitch)}
 .teams{min-width:0}
-.tline{font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tline{font-size:17px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .tline .vs{color:var(--muted);font-weight:500;font-size:12px}
 /* schedule cards: stack the two teams on their own rows so the matchup never wraps awkwardly on phones */
 .tcol{flex-direction:column;align-items:stretch;gap:5px}
@@ -151,7 +151,7 @@ body.np-open{padding-bottom:88px}
 .apbtn+.apbtn{border-left:1px solid var(--line)}
 .apbtn.on{background:var(--pitch);color:#fff}
 .aphint{font-size:12.5px;color:var(--muted);margin:7px 0 0}
-.meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+.meta{font-size:13.5px;color:var(--muted);margin-top:4px}
 .meta .drive{color:#7d6314;font-weight:600}
 .mno{color:var(--muted);font-weight:600;font-size:11px}
 .meta .pred{color:#4a56c0;font-weight:600}
@@ -504,7 +504,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 </header>
 <nav class="tabs"><div class="tabs-in" role="tablist">
  <button class="tab" role="tab" id="tab-schedule" aria-controls="view-schedule" aria-selected="true" tabindex="0" data-view="schedule">Schedule</button>
- <button class="tab" role="tab" id="tab-bracket" aria-controls="view-bracket" aria-selected="false" tabindex="-1" data-view="bracket"><span aria-hidden="true">🏆</span> Knockouts</button>
+ <button class="tab" role="tab" id="tab-knockouts" aria-controls="view-knockouts" aria-selected="false" tabindex="-1" data-view="knockouts"><span aria-hidden="true">🏆</span> Knockouts</button>
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Groups</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">News</button>
@@ -535,7 +535,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <div class="gwrap" id="groups"></div>
  </section>
 
- <section id="view-bracket" class="hide" role="tabpanel" aria-labelledby="tab-bracket" tabindex="0">
+ <section id="view-knockouts" class="hide" role="tabpanel" aria-labelledby="tab-knockouts" tabindex="0">
   <div id="bracket"></div>
  </section>
 
@@ -1094,7 +1094,7 @@ function tournamentStatus(){
  else if(now<END){const d=Math.floor((now-START)/day)+1;el.innerHTML='<span class="dot"></span><b>Underway</b> · Day '+d+' · Final Sun, July 19';}
  else el.innerHTML='Completed · the final was played July 19, 2026';
 }
-function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="bracket")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
+function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="knockouts")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
 let PM={},pmLoaded=false;
 function pmNorm(s){return (s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
@@ -1501,8 +1501,8 @@ function jumpToMatch(n){
  activateTab(document.getElementById("tab-schedule"));
  requestAnimationFrame(()=>{const card=document.querySelector('#list .card[data-n="'+n+'"]');if(!card)return;card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("flash");setTimeout(()=>card.classList.remove("flash"),1500);const sbtn=card.querySelector('.statsbtn[data-fid]');if(sbtn&&!card.querySelector('.statswrap'))sbtn.click();});
 }
-document.getElementById("view-bracket").addEventListener("click",brClick);
-let brRz;window.addEventListener("resize",()=>{clearTimeout(brRz);brRz=setTimeout(()=>{if(currentView==="bracket")brConnectors();},150);});
+document.getElementById("view-knockouts").addEventListener("click",brClick);
+let brRz;window.addEventListener("resize",()=>{clearTimeout(brRz);brRz=setTimeout(()=>{if(currentView==="knockouts")brConnectors();},150);});
 
 
 let currentView="schedule";
@@ -1529,7 +1529,7 @@ tabEls.forEach((t,i)=>{
  });
 });
 /* deep-linking: #highlights, #bracket, #standings … share or bookmark a tab; back/forward moves between tabs */
-addEventListener("hashchange",()=>{let v=location.hash.slice(1)||"schedule";if(v==="watch"||v==="tickets")v="info";if(v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}});
+addEventListener("hashchange",()=>{let v=location.hash.slice(1)||"schedule";if(v==="watch"||v==="tickets")v="info";if(v==="bracket")v="knockouts";if(v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}});
 /* land on "All" so the pinned date strip shows; renderDateStrip auto-scrolls to today's matches */
 /* ===== Per-match weather: kickoff forecast from Open-Meteo (free, no key, client-side).
    Chips fill lazily as cards scroll into view; cached per venue+date+unit. Defined before
