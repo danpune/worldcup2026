@@ -707,6 +707,7 @@ const TEAM_ALIAS={"Cape Verde Islands":"Cape Verde","Congo DR":"DR Congo"};  /* 
 const normTeam=t=>(TEAM_ALIAS[t]||t);
 const pairKey=(h,a)=>normTeam(h).toLowerCase()+"|"+normTeam(a).toLowerCase();
 const PAIR2N={};MATCHES.forEach(m=>{PAIR2N[pairKey(m.home,m.away)]=m.n;});
+const TIME2N={};MATCHES.forEach(m=>{if(!m.group_game)TIME2N[Math.round(Date.parse(m.utc)/1000)]=m.n;});  // knockout fixtures (placeholder names) map by exact kickoff time instead of team-pair
 function mapApiStatus(s){
  if(s==="HT")return{s:"PAUSED",live:true};
  if(["1H","2H","ET","BT","P","LIVE","INT"].indexOf(s)>=0)return{s:"IN_PLAY",live:true};
@@ -725,11 +726,13 @@ async function fetchLive(){
  try{
   const r=await fetch(LIVE_API+"?t="+Date.now(),{cache:"no-store"});
   if(r.ok){const j=await r.json();apiOk=true;apiUpdated=j.updated||null;
-   (j.matches||[]).forEach(f=>{const n=PAIR2N[pairKey(f.home,f.away)];if(!n)return;const st=mapApiStatus(f.status);
-    if(st.s==="SCHEDULED"&&f.h==null)return;
+   (j.matches||[]).forEach(f=>{let n=PAIR2N[pairKey(f.home,f.away)],ko=null;
+    if(!n&&f.t){n=TIME2N[Math.round(f.t)];if(n)ko={home:normTeam(f.home),away:normTeam(f.away)};}  /* knockout: map the real fixture by kickoff time + capture the teams the placeholder pair can't match */
+    if(!n)return;const st=mapApiStatus(f.status);
+    if(st.s==="SCHEDULED"&&f.h==null&&!ko)return;          /* keep a scoreless knockout fixture so its real matchup shows */
     /* coerce feed values to numbers (or null) at ingestion so no feed string ever reaches innerHTML */
     const H=f.h==null?null:(Number.isFinite(+f.h)?+f.h:null),A=f.a==null?null:(Number.isFinite(+f.a)?+f.a:null),MN=f.minute==null?null:(Number.isInteger(+f.minute)?+f.minute:null);
-    overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(st.live)anyLive=true;});}
+    overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(ko){overlay[n].home=ko.home;overlay[n].away=ko.away;}if(st.live)anyLive=true;});}
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
  LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:usingApi?"api-football":"football-data",ok:(apiOk||Object.keys(base).length>0)};
@@ -1221,7 +1224,7 @@ function renderLive(){
 }
 function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
- const rows=MATCHES.filter(passes);
+ const rows=MATCHES.filter(passes).sort((a,b)=>new Date(a.utc)-new Date(b.utc));   // always chronological by kickoff (match numbers aren't strictly in time order)
  if(!rows.length){const msg=(filter==="fav"&&FOLLOWS.size===0)?'No teams followed yet — tap the ☆ next to any team and their matches will collect here.':'No matches match that filter. Try clearing the search.';list.innerHTML='<div class="empty">'+msg+'</div>';renderDateStrip([]);return;}
  let lastDay=null;const now=new Date();const days=[];
  rows.forEach(m=>{
@@ -1398,7 +1401,7 @@ function koGroup(g,idx){const a=computeGroup(g),done=a.length>=4&&a.every(t=>t.P
  return null;}
 function koAdvance(n,which){const sc=cardScore(n);
  if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null||sc.h===sc.a)return null;
- const mt=brM(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?resolveKO(mt.home):resolveKO(mt.away);
+ const tt=brTeams(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?tt.home:tt.away;   // uses the real fixture teams (feed) when present, else the resolved slots
  return(pick&&pick.done)?pick:null;}
 function resolveKO(txt){let m;
  if(m=/^Winner ([A-L])$/.exec(txt))return koGroup(m[1],0);
@@ -1414,10 +1417,13 @@ function brSlot(txt){const r=resolveKO(txt);if(r)return r;let m;
  if(m=/^Winner M(\d+)$/.exec(txt))return{name:"W"+m[1],flag:"",done:false};
  if(m=/^Loser M(\d+)$/.exec(txt))return{name:"L"+m[1],flag:"",done:false};
  return{name:txt,flag:"",done:false};}
-function brTeams(n){const mt=brM(n);return{home:brSlot(mt.home),away:brSlot(mt.away)};}
+// Real knockout matchup straight from the feed (mapped by kickoff time), once the draw is known — beats any slot guess.
+function koFeedTeams(n){const s=(typeof LIVE!=="undefined"&&LIVE.scores)?LIVE.scores[n]:null;return(s&&s.home&&s.away)?{home:s.home,away:s.away}:null;}
+function brTeams(n){const ft=koFeedTeams(n);if(ft)return{home:{name:ft.home,flag:FLAGMAP[ft.home]||"",done:true},away:{name:ft.away,flag:FLAGMAP[ft.away]||"",done:true}};const mt=brM(n);return{home:brSlot(mt.home),away:brSlot(mt.away)};}
 // Schedule cell: real flag+name when resolvable (projected gets prov), else the readable seed label ("Runner-up A").
 function dispTeam(m,side){const raw=m[side];
  if(m.group_game)return{name:raw,flag:m[side==="home"?"hf":"af"],done:true};
+ const ft=koFeedTeams(m.n);if(ft){const nm=side==="home"?ft.home:ft.away;return{name:nm,flag:FLAGMAP[nm]||"",done:true};}
  const r=resolveKO(raw);
  if(r)return{name:r.name,flag:r.flag,done:r.done,prov:r.prov};
  return{name:raw,flag:"",done:false};}
