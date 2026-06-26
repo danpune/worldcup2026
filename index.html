@@ -185,11 +185,15 @@ body.np-open{padding-bottom:88px}
 .buzzh{font-family:Oswald;font-size:16px;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 6px;color:var(--text)}
 .buzzh:first-child{margin-top:4px}
 #newswrap{margin-bottom:6px}
-.newsrow{display:block;padding:11px 2px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
-.newsrow:last-child{border-bottom:0}
-.newsrow .nt{display:block;font-size:14.5px;font-weight:600;color:var(--text);line-height:1.35}
-.newsrow:hover .nt{color:var(--pitch2);text-decoration:underline}
-.newsrow .nm{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.newscard{display:grid;grid-template-columns:90px 1fr;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:inherit;background:var(--card);transition:border-color .15s,box-shadow .15s}
+.newscard:hover{border-color:var(--pitch2);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.newscard.noimg{grid-template-columns:1fr}
+.newscard .nc-img{width:90px;height:64px;object-fit:cover;border-radius:6px;display:block;background:var(--line)}
+.newscard .nt{display:block;font-size:14px;font-weight:600;color:var(--text);line-height:1.35}
+.newscard:hover .nt{color:var(--pitch2)}
+.newscard .nm{display:block;font-size:12px;color:var(--muted);margin-top:5px}
+#newswrap{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:6px}
+@media(min-width:680px){#newswrap{grid-template-columns:1fr 1fr}}
 .newsload{color:var(--muted);font-size:13.5px;padding:14px 2px}
 .strow{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-top:10px}
 .strow .sv{font-weight:600;color:var(--muted);min-width:42px}
@@ -1106,6 +1110,7 @@ async function fetchPolymarket(){
 /* World Cup news headlines — pulled from the Worker's /news route (Google News RSS, fetched server-side
    so the page stays tracker-free). Lazy-loaded on first Buzz-tab open; links open the article in a new tab. */
 const NEWS_API="https://wc2026-api.footy26.workers.dev/news";
+function newsImgErr(el){var a=el.closest('a');if(a)a.classList.add('noimg');el.remove();}
 let _newsLoaded=false;
 async function loadNews(attempt){
  attempt=attempt||0;
@@ -1115,7 +1120,7 @@ async function loadNews(attempt){
   const r=await fetch(NEWS_API); const d=r.ok?await r.json():null;
   if(d&&d.items&&d.items.length){
    _newsLoaded=true;
-   box.innerHTML=d.items.map(n=>'<a class="newsrow" href="'+escA(n.link)+'" target="_blank" rel="noopener"><span class="nt">'+escA(n.title)+'</span><span class="nm">'+escA(n.source||"")+(n.pub&&relTime(n.pub)?' · '+relTime(n.pub):'')+'</span></a>').join("");
+   box.innerHTML=d.items.map(n=>{var img=n.img?'<img class="nc-img" src="'+escA(n.img)+'" alt="" loading="lazy" onerror="newsImgErr(this)">':'';var time=n.pub&&relTime(n.pub)?' · '+relTime(n.pub):'';return '<a class="newscard'+(n.img?'':' noimg')+'" href="'+escA(n.link)+'" target="_blank" rel="noopener">'+img+'<div><span class="nt">'+escA(n.title)+'</span><span class="nm">'+escA(n.source||'')+time+'</span></div></a>';}).join("");
    return;
   }
  }catch(e){}

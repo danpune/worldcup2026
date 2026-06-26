@@ -216,8 +216,9 @@ export default {
           var link = stripCdata((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || "").trim();
           var src = decodeEntities(stripCdata((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || "")).trim();
           var pub = ((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || "").trim();
+          var img = ((b.match(/<media:thumbnail[^>]+url="([^"]+)"/) || [])[1] || (b.match(/<media:content[^>]+url="([^"]+)"/) || [])[1] || "").trim();
           if (src && title.length > src.length + 3 && title.slice(-(src.length + 3)) === " - " + src) title = title.slice(0, -(src.length + 3)).trim();
-          if (title && /^https?:\/\//i.test(link)) nitems.push({ title: title, link: link, source: src, pub: pub });
+          if (title && /^https?:\/\//i.test(link)) nitems.push({ title: title, link: link, source: src, pub: pub, img: img || null });
         }
       } catch (e) { nerr = String(e); }
       if (nitems.length) {
