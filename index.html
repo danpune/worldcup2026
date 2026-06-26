@@ -309,6 +309,45 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .sraces #goldenboot{margin-bottom:0}
 .sraces #thirdrace{margin-top:0}
 .sraces .gbcard,.sraces #thirdrace .gcard{max-width:none}
+/* ---- Knockout bracket ---- */
+.brnote{margin:2px 0 12px}
+.brtabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.brtabs::-webkit-scrollbar{display:none}
+.brtab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:7px 16px;font-family:Oswald;font-weight:500;font-size:13px;letter-spacing:.04em;cursor:pointer}
+.brtab.on{background:var(--pitch);color:#fff;border-color:var(--pitch)}
+.brchamp{background:linear-gradient(90deg,rgba(232,184,75,.22),transparent 80%);border:1px solid var(--gold);border-radius:12px;padding:11px 14px;font-size:15px;margin:0 0 12px}
+.brchamp .brflag{font-size:20px}
+.brtree{display:flex;gap:12px;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.brcol{flex:0 0 232px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:0}
+.brh{font-family:Oswald;text-transform:uppercase;letter-spacing:.07em;font-size:11px;color:var(--muted);text-align:center;padding:2px 0 4px}
+.brtie{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:7px 9px;cursor:pointer;font:inherit;color:inherit}
+.brtie:hover{border-color:var(--pitch2)}
+.brtie.live{border-left-color:var(--live)}
+.brtie.folpath{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(232,184,75,.12),transparent 82%)}
+.brteam{display:flex;align-items:center;gap:7px;padding:2px 0}
+.brteam .brfl{flex:0 0 auto;font-size:15px;width:20px;text-align:center}
+.brteam .brnm{flex:1 1 auto;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brteam.tbd .brnm{color:var(--muted);font-weight:500;font-style:italic}
+.brteam.fol .brnm{color:var(--pitch2)}
+.brteam.win .brnm{color:var(--pitch);font-weight:700}
+.brteam.lose .brnm{color:var(--muted)}
+.brteam .brsc{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
+.brteam.lose .brsc{color:var(--muted)}
+.brmeta{font-size:10.5px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brmeta .brlive{color:var(--live);font-weight:700}
+.card.flash{animation:flashcard 1.5s ease}
+@keyframes flashcard{0%,100%{background:var(--card)}25%{background:var(--gold-soft)}}
+@media(max-width:719px){
+ .brtree{display:block;overflow:visible}
+ .brcol{display:none;width:auto}
+ .brtree[data-active="R32"] .brcol[data-round="R32"],
+ .brtree[data-active="R16"] .brcol[data-round="R16"],
+ .brtree[data-active="QF"] .brcol[data-round="QF"],
+ .brtree[data-active="SF"] .brcol[data-round="SF"],
+ .brtree[data-active="F"] .brcol[data-round="F"],
+ .brtree[data-active="F"] .brcol[data-round="3P"]{display:flex}
+}
+@media(min-width:720px){.brtabs{display:none}}
 .gbcard{max-width:580px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .gbrow{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid #f0f2ef}
 .gbrow:last-child{border-bottom:0}
@@ -432,6 +471,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 <nav class="tabs"><div class="tabs-in" role="tablist">
  <button class="tab" role="tab" id="tab-schedule" aria-controls="view-schedule" aria-selected="true" tabindex="0" data-view="schedule">Schedule</button>
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Standings</button>
+ <button class="tab" role="tab" id="tab-bracket" aria-controls="view-bracket" aria-selected="false" tabindex="-1" data-view="bracket"><span aria-hidden="true">🏆</span> Bracket</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">Buzz</button>
  <button class="tab" role="tab" id="tab-watch" aria-controls="view-watch" aria-selected="false" tabindex="-1" data-view="watch"><span aria-hidden="true">📺</span> Watch</button>
@@ -461,6 +501,10 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   </div>
   <p class="note"><b>Green ▲ = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see the third-place race above. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
   <div class="gwrap" id="groups"></div>
+ </section>
+
+ <section id="view-bracket" class="hide" role="tabpanel" aria-labelledby="tab-bracket" tabindex="0">
+  <div id="bracket"></div>
  </section>
 
  <section id="view-highlights" class="hide" role="tabpanel" aria-labelledby="tab-highlights" tabindex="0">
@@ -1022,7 +1066,7 @@ function tournamentStatus(){
  else if(now<END){const d=Math.floor((now-START)/day)+1;el.innerHTML='<span class="dot"></span><b>Underway</b> · Day '+d+' · Final Sun, July 19';}
  else el.innerHTML='Completed · the final was played July 19, 2026';
 }
-function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
+function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="bracket")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
 let PM={},pmLoaded=false;
 function pmNorm(s){return (s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
@@ -1144,7 +1188,7 @@ function renderList(){
  rows.forEach(m=>{
   const p=dParts(m.utc);
   if(p.day!==lastDay){lastDay=p.day;days.push(p.day);const d=document.createElement("div");d.className="daydiv";d.dataset.day=p.day;d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
-  const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);
+  const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);c.dataset.n=m.n;
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
   const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
   const es=cardScore(m.n);
@@ -1292,6 +1336,70 @@ function renderGoldenBoot(box,scorers){
  }).join("");
  box.innerHTML=`<div class="gbcard"><div class="ghead">⚽ Golden Boot race<span class="gp">tournament top scorers</span></div><div class="gblist">${rows}</div></div>`;
 }
+/* ---------- Knockout bracket: fills in live from the standings, then from each tie's result ---------- */
+const BR_ROUNDS=[
+ {key:"R32",label:"Round of 32",ns:[74,77,73,75,83,84,81,82,76,78,79,80,86,88,85,87]},
+ {key:"R16",label:"Round of 16",ns:[89,90,93,94,91,92,95,96]},
+ {key:"QF",label:"Quarter-finals",ns:[97,98,99,100]},
+ {key:"SF",label:"Semi-finals",ns:[101,102]},
+ {key:"F",label:"Final",ns:[104]}
+];
+const brM=n=>MATCHES.find(x=>x.n===n);
+function groupDone(g){const a=computeGroup(g);return a.length>=4&&a.every(t=>t.P>=3);}
+function brSlot(txt){
+ let m;
+ if(m=/^Winner ([A-L])$/.exec(txt)){if(groupDone(m[1])){const t=computeGroup(m[1])[0].t;return{name:t,flag:FLAGMAP[t]||"",done:true};}return{name:"Winners "+m[1],flag:"",done:false};}
+ if(m=/^Runner-up ([A-L])$/.exec(txt)){if(groupDone(m[1])){const t=computeGroup(m[1])[1].t;return{name:t,flag:FLAGMAP[t]||"",done:true};}return{name:"Runners-up "+m[1],flag:"",done:false};}
+ if(m=/^Best 3rd \(([A-L/]+)\)$/.exec(txt))return{name:"3rd: "+m[1],flag:"",done:false};
+ if(m=/^Winner M(\d+)$/.exec(txt))return brAdvance(+m[1],"W");
+ if(m=/^Loser M(\d+)$/.exec(txt))return brAdvance(+m[1],"L");
+ return{name:txt,flag:"",done:false};
+}
+function brTeams(n){const mt=brM(n);return{home:brSlot(mt.home),away:brSlot(mt.away)};}
+function brAdvance(n,which){
+ const label=(which==="W"?"Winner":"Loser")+" M"+n,sc=cardScore(n);
+ if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null||sc.h===sc.a)return{name:label,flag:"",done:false};
+ const tt=brTeams(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?tt.home:tt.away;
+ return pick.done?pick:{name:label,flag:"",done:false};
+}
+let brActive=0;
+function brTie(n){
+ const mt=brM(n),tt=brTeams(n),sc=cardScore(n);
+ const decided=sc&&sc.s==="FINISHED"&&sc.h!=null&&sc.a!=null&&sc.h!==sc.a,homeWon=decided&&sc.h>sc.a;
+ const row=(s,score,win,lose)=>'<div class="brteam'+(s.done?'':' tbd')+(s.done&&isFollowed(s.name)?' fol':'')+(win?' win':'')+(lose?' lose':'')+'">'
+  +'<span class="brfl">'+(s.flag||'')+'</span><span class="brnm">'+escA(s.name)+'</span><span class="brsc">'+(score==null?'':score)+'</span></div>';
+ let meta;
+ if(sc&&sc.s==="FINISHED")meta="Full-time";
+ else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
+ else{const p=dParts(mt.utc);meta=p.day+" · "+p.time+" · "+mt.city;}
+ const folpath=(tt.home.done&&isFollowed(tt.home.name))||(tt.away.done&&isFollowed(tt.away.name));
+ return '<button type="button" class="brtie'+(sc&&sc.s==="IN_PLAY"?' live':'')+(folpath?' folpath':'')+'" data-n="'+n+'">'
+  +row(tt.home,sc?sc.h:null,homeWon,decided&&!homeWon)+row(tt.away,sc?sc.a:null,decided&&!homeWon,homeWon)
+  +'<div class="brmeta">'+meta+'</div></button>';
+}
+function renderBracket(){
+ const box=document.getElementById("bracket");if(!box)return;
+ const champ=brAdvance(104,"W");
+ const cols=BR_ROUNDS.map(r=>'<div class="brcol" data-round="'+r.key+'"><div class="brh">'+r.label+'</div>'+r.ns.map(brTie).join("")+'</div>').join("")
+  +'<div class="brcol" data-round="3P"><div class="brh">Third place</div>'+brTie(103)+'</div>';
+ box.innerHTML='<p class="note brnote">Fills in live as the groups finish, then as each knockout tie is decided. Tap any tie to open the match. ⭐ Your followed teams’ route is highlighted in gold.</p>'
+  +(champ.done?'<div class="brchamp">🏆 <b>Champions:</b> <span class="brflag">'+champ.flag+'</span> '+escA(champ.name)+'</div>':'')
+  +'<div class="brtabs" id="brtabs">'+BR_ROUNDS.map((r,i)=>'<button type="button" class="brtab'+(i===brActive?' on':'')+'" data-ri="'+i+'">'+r.key+'</button>').join("")+'</div>'
+  +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'">'+cols+'</div>';
+}
+function brClick(e){
+ const tab=e.target.closest(".brtab");
+ if(tab){brActive=+tab.dataset.ri;document.querySelectorAll("#brtabs .brtab").forEach(b=>b.classList.toggle("on",b===tab));const tr=document.getElementById("brtree");if(tr)tr.dataset.active=BR_ROUNDS[brActive].key;return;}
+ const tie=e.target.closest(".brtie");if(tie)jumpToMatch(+tie.dataset.n);
+}
+function jumpToMatch(n){
+ filter="all";q="";const sb=document.getElementById("search");if(sb)sb.value="";
+ try{document.querySelectorAll('#chips .chip').forEach(c=>c.setAttribute('aria-pressed',c.textContent.trim()==='All'));}catch(e){}
+ activateTab(document.getElementById("tab-schedule"));
+ requestAnimationFrame(()=>{const card=document.querySelector('#list .card[data-n="'+n+'"]');if(!card)return;card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("flash");setTimeout(()=>card.classList.remove("flash"),1500);const sbtn=card.querySelector('.statsbtn[data-fid]');if(sbtn&&!card.querySelector('.statswrap'))sbtn.click();});
+}
+document.getElementById("view-bracket").addEventListener("click",brClick);
+
 let currentView="schedule";
 const tabEls=[...document.querySelectorAll(".tab")];
 function activateTab(t){
