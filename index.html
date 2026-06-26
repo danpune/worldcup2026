@@ -366,6 +366,7 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brq{margin-left:2px;color:var(--gold);font-weight:700;font-size:10px;vertical-align:super}
 .brmeta{font-size:9.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brmeta .brmn{font-family:Oswald;font-weight:600;color:var(--pitch2);letter-spacing:.02em}
+.brmeta .brcity{color:var(--text);font-weight:600}
 .brmeta .brlive{color:var(--live);font-weight:700}
 .card.flash,.gcard.flash{animation:flashcard 1.5s ease}
 @keyframes flashcard{0%,100%{background:var(--card)}25%{background:var(--gold-soft)}}
@@ -1431,10 +1432,11 @@ function brTie(n){
  let meta;
  if(sc&&sc.s==="FINISHED")meta="Full-time";
  else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
- else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+" · "+p.time.replace(" PM","p").replace(" AM","a");}
+ else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+' · <span class="brcity">'+escA(mt.city)+'</span>';}
  meta='<span class="brmn">M'+n+'</span> '+meta;
  const folpath=(real(tt.home)&&isFollowed(tt.home.name))||(real(tt.away)&&isFollowed(tt.away.name));
- return '<button type="button" class="brtie'+(sc&&sc.s==="IN_PLAY"?' live':'')+(folpath?' folpath':'')+'" data-n="'+n+'">'
+ const venueTip=mt.venue?mt.venue+", "+mt.city:mt.city;
+ return '<button type="button" class="brtie'+(sc&&sc.s==="IN_PLAY"?' live':'')+(folpath?' folpath':'')+'" data-n="'+n+'" title="'+escA(venueTip)+'">'
   +row(tt.home,sc?sc.h:null,homeWon,decided&&!homeWon)+row(tt.away,sc?sc.a:null,decided&&!homeWon,homeWon)
   +'<div class="brmeta">'+meta+'</div></button>';
 }
