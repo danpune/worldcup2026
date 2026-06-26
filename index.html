@@ -321,8 +321,18 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brchamp .brflag{font-size:20px}
 .brtree{position:relative;left:50%;transform:translateX(-50%);width:min(1400px,calc(100vw - 20px));display:flex;justify-content:center;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
 .brside{display:flex;align-items:stretch}
-.brcenter{box-sizing:border-box;flex:0 0 170px;display:flex;flex-direction:column;justify-content:center;gap:16px;align-self:center;padding:0 6px}
-.brcol{box-sizing:border-box;flex:0 0 154px;height:840px;display:flex;flex-direction:column;padding:0 5px;min-width:0}
+.brcenter{box-sizing:border-box;flex:0 0 196px;display:flex;flex-direction:column;justify-content:center;gap:12px;align-self:center;padding:0 6px}
+.brcol{box-sizing:border-box;flex:0 0 150px;height:780px;display:flex;flex-direction:column;padding:0 5px;min-width:0}
+.brtrophy{text-align:center;margin-bottom:2px}
+.brtrophy .bremoji{font-size:48px;line-height:1;filter:drop-shadow(0 4px 7px rgba(232,184,75,.4))}
+.brtrophy .brtt{font-family:Oswald;text-transform:uppercase;letter-spacing:.12em;font-size:11.5px;color:var(--muted);margin-top:5px}
+.brtrophy.win .brtt{color:var(--gold)}
+.brtrophy .brch{font-family:Oswald;font-weight:700;font-size:16px;color:var(--pitch);margin-top:2px}
+.brcol-f .brtie{padding:10px 12px;border-width:2px}
+.brcol-f .brteam{padding:4px 0}
+.brcol-f .brteam .brnm{font-size:14.5px}
+.brcol-f .brteam .brsc{font-size:17px}
+.brcol-f .brh{font-size:12px;font-weight:600;letter-spacing:.08em}
 .brties{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
 .brsvg{position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible}
 .brln{stroke:var(--muted);stroke-opacity:.55;stroke-width:2;fill:none;stroke-linejoin:round}
@@ -358,6 +368,7 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
  .brtabs{display:flex}
  .brtree{position:static;left:auto;transform:none;width:auto;display:block;overflow:visible}
  .brside,.brcenter{display:block}
+ .brtrophy{display:none}
  .brcol{display:none;width:auto;flex:none;padding:0;margin-bottom:12px;height:auto}
  .brties{justify-content:flex-start;gap:8px}
  .brtree[data-active="R32"] .brcol[data-round="R32"],
@@ -1436,7 +1447,9 @@ function renderBracket(){
  const champ=koAdvance(104,"W")||{done:false};
  const left=BR_LAYOUT.L.map(c=>brColHTML(c,"L")).join("");
  const right=BR_LAYOUT.R.map(c=>brColHTML(c,"R")).join("");
- const center='<div class="brcenter">'
+ const trophy='<div class="brtrophy'+(champ.done?' win':'')+'"><div class="bremoji">🏆</div>'
+  +(champ.done?'<div class="brtt">Champions</div><div class="brch">'+(champ.flag||'')+' '+escA(champ.name)+'</div>':'<div class="brtt">World Cup 2026</div>')+'</div>';
+ const center='<div class="brcenter">'+trophy
   +'<div class="brcol brcol-f" data-round="F"><div class="brh">Final</div><div class="brties">'+brTie(104)+'</div></div>'
   +'<div class="brcol brcol-3rd" data-round="F"><div class="brh">Third place</div><div class="brties">'+brTie(103)+'</div></div></div>';
  box.innerHTML='<p class="note brnote">The full knockout tree — both halves converging on the Final. Fills in live as groups finish; faded teams with a gold <b>?</b> are <b>projected</b> from the current table. Codes: <b>1A</b>=winner Group A, <b>2A</b>=runner-up, <b>3·…</b>=best third from those groups, <b>W74</b>=winner of match 74. ⭐ Followed teams’ route is gold · tap a tie to open the match.</p>'
