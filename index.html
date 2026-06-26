@@ -333,14 +333,9 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brtrophy .brch{font-family:Oswald;font-weight:700;font-size:16px;color:var(--pitch);margin-top:2px}
 .brcol-f .brtie{padding:10px 12px;border-width:2px}
 .brcol-f .brteam{padding:4px 0}
-.brcol-f .brteam .brnm{font-size:14.5px}
-.brcol-f .brteam .brsc{font-size:17px}
+.brcol-f .brteam .brnm{font-size:16px}
+.brcol-f .brteam .brsc{font-size:19px}
 .brcol-f .brh{font-size:12px;font-weight:600;letter-spacing:.08em}
-.brgroups{position:relative;left:50%;transform:translateX(-50%);width:min(1400px,calc(100vw - 20px));display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:6px 0 16px}
-.brgrp{flex:0 1 184px;min-width:140px;border:2px solid var(--gc);border-radius:12px;overflow:hidden;background:var(--card);cursor:pointer;padding:0;font:inherit;color:inherit}
-.brgrp:hover{box-shadow:0 3px 12px rgba(10,31,24,.16)}
-.brgflags{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;justify-items:center;padding:9px 10px 7px;font-size:20px;line-height:1.1}
-.brglab{background:var(--gc);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.09em;font-size:11px;font-weight:600;text-align:center;padding:4px}
 .brties{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
 .brsvg{position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible}
 .brln{stroke:var(--muted);stroke-opacity:.55;stroke-width:2;fill:none;stroke-linejoin:round}
@@ -356,18 +351,18 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brtie.folpath{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(232,184,75,.12),transparent 82%)}
 .brteam{display:flex;align-items:center;gap:6px;padding:3px 0}
 .brteam+.brteam{border-top:1px solid var(--line)}
-.brteam .brfl{flex:0 0 auto;font-size:14px;width:18px;text-align:center}
-.brteam .brnm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brteam .brfl{flex:0 0 auto;font-size:16px;width:20px;text-align:center}
+.brteam .brnm{flex:1 1 auto;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brteam.tbd .brnm{color:var(--muted);font-weight:600}
 .brteam.fol .brnm{color:var(--pitch2)}
 .brteam.win .brnm{color:var(--pitch);font-weight:700}
 .brteam.lose .brnm{color:var(--muted)}
-.brteam .brsc{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:12px;text-align:right}
+.brteam .brsc{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
 .brteam.lose .brsc{color:var(--muted)}
 .brteam.prov .brnm{color:var(--muted);font-weight:600}
 .brteam.prov .brfl{opacity:.5}
 .brq{margin-left:2px;color:var(--gold);font-weight:700;font-size:10px;vertical-align:super}
-.brmeta{font-size:9.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brmeta{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brmeta .brmn{font-family:Oswald;font-weight:600;color:var(--pitch2);letter-spacing:.02em}
 .brmeta .brcity{color:var(--text);font-weight:600}
 .brmeta .brlive{color:var(--live);font-weight:700}
@@ -376,9 +371,6 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 @media(max-width:899px){
  .brtabs{display:flex}
  .brtree{position:static;left:auto;transform:none;width:auto;display:block;overflow:visible}
- .brgroups{position:static;left:auto;transform:none;width:auto;gap:7px}
- .brgrp{flex:1 1 30%;min-width:0}
- .brgflags{font-size:17px;padding:7px 6px 5px;gap:2px 7px}
  .brside,.brcenter{display:block}
  .brtrophy{display:none}
  .brcol{display:none;width:auto;flex:none;padding:0;margin-bottom:12px;height:auto}
@@ -1451,13 +1443,6 @@ const BR_LAYOUT={
     {round:"R32",label:"Round of 32",ns:[76,78,79,80,86,88,85,87]}]
 };
 function brColHTML(c,half){return '<div class="brcol" data-round="'+c.round+'" data-half="'+half+'"><div class="brh">'+c.label+'</div><div class="brties">'+c.ns.map(brTie).join("")+'</div></div>';}
-// Group flag-badges that frame the bracket (A–F top, G–L bottom) — colour-coded, tap to jump to that group's table.
-const GRP_HUES={A:140,B:350,C:30,D:215,E:265,F:90,G:320,H:172,I:255,J:200,K:18,L:235};
-const grpColor=g=>"hsl("+(GRP_HUES[g]!=null?GRP_HUES[g]:0)+",60%,46%)";
-function grpBadge(g){
- const flags=computeGroup(g).map(t=>'<span>'+(FLAGMAP[t.t]||"🏳️")+'</span>').join("");
- return '<button type="button" class="brgrp" data-grp="'+g+'" style="--gc:'+grpColor(g)+'" title="Group '+g+' — view standings"><div class="brgflags">'+flags+'</div><div class="brglab">Group '+g+'</div></button>';
-}
 function renderBracket(){
  const box=document.getElementById("bracket");if(!box)return;
  const champ=koAdvance(104,"W")||{done:false};
@@ -1468,13 +1453,10 @@ function renderBracket(){
  const center='<div class="brcenter">'+trophy
   +'<div class="brcol brcol-f" data-round="F"><div class="brh">Final</div><div class="brties">'+brTie(104)+'</div></div>'
   +'<div class="brcol brcol-3rd" data-round="F"><div class="brh">Third place</div><div class="brties">'+brTie(103)+'</div></div></div>';
- const grpRow=letters=>'<div class="brgroups">'+letters.map(grpBadge).join("")+'</div>';
- box.innerHTML='<p class="note brnote">The full knockout tree — both halves converging on the Final. Fills in live as groups finish; faded teams with a gold <b>?</b> are <b>projected</b> from the current table. Codes: <b>1A</b>=winner Group A, <b>2A</b>=runner-up, <b>3·…</b>=best third from those groups, <b>W74</b>=winner of match 74. ⭐ Followed teams’ route is gold · tap a tie to open the match.</p>'
+ box.innerHTML='<p class="note brnote">The full knockout tree — both halves converging on the Final. Faded teams with a gold <b>?</b> are <b>projected</b> from the current table. <b>W74</b>=winner of match 74. ⭐ Followed teams&#x2019; route is gold · tap a tie to open the match.</p>'
   +(champ.done?'<div class="brchamp">🏆 <b>Champions:</b> <span class="brflag">'+champ.flag+'</span> '+escA(champ.name)+'</div>':'')
   +'<div class="brtabs" id="brtabs">'+BR_ROUNDS.map((r,i)=>'<button type="button" class="brtab'+(i===brActive?' on':'')+'" data-ri="'+i+'">'+r.key+'</button>').join("")+'</div>'
-  +grpRow(["A","B","C","D","E","F"])
-  +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'"><div class="brside brside-l">'+left+'</div>'+center+'<div class="brside brside-r">'+right+'</div></div>'
-  +grpRow(["G","H","I","J","K","L"]);
+  +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'"><div class="brside brside-l">'+left+'</div>'+center+'<div class="brside brside-r">'+right+'</div></div>';
  brConnectors();
 }
 // Draw the bracket connector lines as an SVG overlay computed from the live tie positions (robust to the
@@ -1499,12 +1481,7 @@ function brConnectors(){
 function brClick(e){
  const tab=e.target.closest(".brtab");
  if(tab){brActive=+tab.dataset.ri;document.querySelectorAll("#brtabs .brtab").forEach(b=>b.classList.toggle("on",b===tab));const tr=document.getElementById("brtree");if(tr)tr.dataset.active=BR_ROUNDS[brActive].key;return;}
- const grp=e.target.closest(".brgrp");if(grp){jumpToGroup(grp.dataset.grp);return;}
  const tie=e.target.closest(".brtie");if(tie)jumpToMatch(+tie.dataset.n);
-}
-function jumpToGroup(g){
- activateTab(document.getElementById("tab-standings"));
- requestAnimationFrame(()=>{const card=document.querySelector('#groups .gcard[data-grp="'+g+'"]');if(!card)return;card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("flash");setTimeout(()=>card.classList.remove("flash"),1500);});
 }
 function jumpToMatch(n){
  filter="all";q="";const sb=document.getElementById("search");if(sb)sb.value="";
