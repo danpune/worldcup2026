@@ -1082,7 +1082,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 /* filters */
 /* default to the Today view when today actually has matches; otherwise fall back to All (rest days / off-season) */
 let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":"all",q="";
-const CHIPS=[["all","All"],["today","Today"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["knockout","Knockouts"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
+const CHIPS=[["all","All"],["today","Today"],["knockout","🏆 Knockouts"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
 CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
 document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
