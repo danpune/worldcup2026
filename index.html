@@ -309,48 +309,57 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .sraces #goldenboot{margin-bottom:0}
 .sraces #thirdrace{margin-top:0}
 .sraces .gbcard,.sraces #thirdrace .gcard{max-width:none}
-/* ---- Knockout bracket ---- */
+/* ---- Knockout bracket (two-sided mirrored tree, converging on the Final) ---- */
 .brnote{margin:2px 0 12px}
-.brtabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.brtabs{display:none;gap:6px;overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .brtabs::-webkit-scrollbar{display:none}
 .brtab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:7px 16px;font-family:Oswald;font-weight:500;font-size:13px;letter-spacing:.04em;cursor:pointer}
 .brtab.on{background:var(--pitch);color:#fff;border-color:var(--pitch)}
 .brchamp{background:linear-gradient(90deg,rgba(232,184,75,.22),transparent 80%);border:1px solid var(--gold);border-radius:12px;padding:11px 14px;font-size:15px;margin:0 0 12px}
 .brchamp .brflag{font-size:20px}
-.brtree{display:flex;gap:12px;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
-.brcol{flex:0 0 232px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:0}
-.brh{font-family:Oswald;text-transform:uppercase;letter-spacing:.07em;font-size:11px;color:var(--muted);text-align:center;padding:2px 0 4px}
-.brtie{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:7px 9px;cursor:pointer;font:inherit;color:inherit}
+.brtree{position:relative;left:50%;transform:translateX(-50%);width:min(1400px,calc(100vw - 20px));display:flex;justify-content:center;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.brside{display:flex;align-items:stretch}
+.brcenter{box-sizing:border-box;flex:0 0 170px;display:flex;flex-direction:column;justify-content:center;gap:16px;align-self:center;padding:0 6px}
+.brcol{box-sizing:border-box;flex:0 0 146px;height:840px;display:flex;flex-direction:column;padding:0 5px;min-width:0}
+.brties{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
+.brcol-f,.brcol-3rd{height:auto}
+.brcenter{justify-content:center}
+.brcol-f .brtie{border-color:var(--gold);box-shadow:0 2px 12px rgba(232,184,75,.25)}
+.brcol-f .brh,.brcol-3rd .brh{color:var(--pitch)}
+.brh{font-family:Oswald;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--muted);text-align:center;padding:2px 0 5px;white-space:nowrap}
+.brtie{box-sizing:border-box;display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:6px 8px;cursor:pointer;font:inherit;color:inherit}
 .brtie:hover{border-color:var(--pitch2)}
 .brtie.live{border-left-color:var(--live)}
 .brtie.folpath{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(232,184,75,.12),transparent 82%)}
-.brteam{display:flex;align-items:center;gap:7px;padding:2px 0}
-.brteam .brfl{flex:0 0 auto;font-size:15px;width:20px;text-align:center}
-.brteam .brnm{flex:1 1 auto;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.brteam.tbd .brnm{color:var(--muted);font-weight:500;font-style:italic}
+.brteam{display:flex;align-items:center;gap:6px;padding:2px 0}
+.brteam .brfl{flex:0 0 auto;font-size:14px;width:18px;text-align:center}
+.brteam .brnm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brteam.tbd .brnm{color:var(--muted);font-weight:600}
 .brteam.fol .brnm{color:var(--pitch2)}
 .brteam.win .brnm{color:var(--pitch);font-weight:700}
 .brteam.lose .brnm{color:var(--muted)}
-.brteam .brsc{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
+.brteam .brsc{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:12px;text-align:right}
 .brteam.lose .brsc{color:var(--muted)}
 .brteam.prov .brnm{color:var(--muted);font-weight:600}
 .brteam.prov .brfl{opacity:.5}
-.brq{display:inline-block;margin-left:3px;color:var(--gold);font-weight:700;font-size:11px;vertical-align:super}
-.brmeta{font-size:10.5px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brq{margin-left:2px;color:var(--gold);font-weight:700;font-size:10px;vertical-align:super}
+.brmeta{font-size:9.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brmeta .brmn{font-family:Oswald;font-weight:600;color:var(--pitch2);letter-spacing:.02em}
 .brmeta .brlive{color:var(--live);font-weight:700}
 .card.flash{animation:flashcard 1.5s ease}
 @keyframes flashcard{0%,100%{background:var(--card)}25%{background:var(--gold-soft)}}
-@media(max-width:719px){
- .brtree{display:block;overflow:visible}
- .brcol{display:none;width:auto}
+@media(max-width:899px){
+ .brtabs{display:flex}
+ .brtree{position:static;left:auto;transform:none;width:auto;display:block;overflow:visible}
+ .brside,.brcenter{display:block}
+ .brcol{display:none;width:auto;flex:none;padding:0;margin-bottom:12px;height:auto}
+ .brties{justify-content:flex-start;gap:8px}
  .brtree[data-active="R32"] .brcol[data-round="R32"],
  .brtree[data-active="R16"] .brcol[data-round="R16"],
  .brtree[data-active="QF"] .brcol[data-round="QF"],
  .brtree[data-active="SF"] .brcol[data-round="SF"],
- .brtree[data-active="F"] .brcol[data-round="F"],
- .brtree[data-active="F"] .brcol[data-round="3P"]{display:flex}
+ .brtree[data-active="F"] .brcol[data-round="F"]{display:flex}
 }
-@media(min-width:720px){.brtabs{display:none}}
 .gbcard{max-width:580px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .gbrow{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid #f0f2ef}
 .gbrow:last-child{border-bottom:0}
@@ -1359,16 +1368,16 @@ function brGroupSlot(g,idx,placeholder){
 }
 function brSlot(txt){
  let m;
- if(m=/^Winner ([A-L])$/.exec(txt))return brGroupSlot(m[1],0,"Winners "+m[1]);
- if(m=/^Runner-up ([A-L])$/.exec(txt))return brGroupSlot(m[1],1,"Runners-up "+m[1]);
- if(m=/^Best 3rd \(([A-L/]+)\)$/.exec(txt))return{name:"3rd: "+m[1],flag:"",done:false};
+ if(m=/^Winner ([A-L])$/.exec(txt))return brGroupSlot(m[1],0,"1"+m[1]);
+ if(m=/^Runner-up ([A-L])$/.exec(txt))return brGroupSlot(m[1],1,"2"+m[1]);
+ if(m=/^Best 3rd \(([A-L/]+)\)$/.exec(txt))return{name:"3·"+m[1].replace(/\//g,""),flag:"",done:false};
  if(m=/^Winner M(\d+)$/.exec(txt))return brAdvance(+m[1],"W");
  if(m=/^Loser M(\d+)$/.exec(txt))return brAdvance(+m[1],"L");
  return{name:txt,flag:"",done:false};
 }
 function brTeams(n){const mt=brM(n);return{home:brSlot(mt.home),away:brSlot(mt.away)};}
 function brAdvance(n,which){
- const label=(which==="W"?"Winner":"Loser")+" M"+n,sc=cardScore(n);
+ const label=(which==="W"?"W":"L")+n,sc=cardScore(n);
  if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null||sc.h===sc.a)return{name:label,flag:"",done:false};
  const tt=brTeams(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?tt.home:tt.away;
  return pick.done?pick:{name:label,flag:"",done:false};
@@ -1383,21 +1392,37 @@ function brTie(n){
  let meta;
  if(sc&&sc.s==="FINISHED")meta="Full-time";
  else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
- else{const p=dParts(mt.utc);meta=p.day+" · "+p.time+" · "+mt.city;}
+ else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+" · "+p.time.replace(" PM","p").replace(" AM","a");}
+ meta='<span class="brmn">M'+n+'</span> '+meta;
  const folpath=(real(tt.home)&&isFollowed(tt.home.name))||(real(tt.away)&&isFollowed(tt.away.name));
  return '<button type="button" class="brtie'+(sc&&sc.s==="IN_PLAY"?' live':'')+(folpath?' folpath':'')+'" data-n="'+n+'">'
   +row(tt.home,sc?sc.h:null,homeWon,decided&&!homeWon)+row(tt.away,sc?sc.a:null,decided&&!homeWon,homeWon)
   +'<div class="brmeta">'+meta+'</div></button>';
 }
+// Two-sided mirrored layout: both halves of the draw converge on the Final in the centre (FIFA/ESPN style).
+const BR_LAYOUT={
+ L:[{round:"R32",label:"Round of 32",ns:[74,77,73,75,83,84,81,82]},
+    {round:"R16",label:"Round of 16",ns:[89,90,93,94]},
+    {round:"QF",label:"Quarter-final",ns:[97,98]},
+    {round:"SF",label:"Semi-final",ns:[101]}],
+ R:[{round:"SF",label:"Semi-final",ns:[102]},
+    {round:"QF",label:"Quarter-final",ns:[99,100]},
+    {round:"R16",label:"Round of 16",ns:[91,92,95,96]},
+    {round:"R32",label:"Round of 32",ns:[76,78,79,80,86,88,85,87]}]
+};
+function brColHTML(c,half){return '<div class="brcol" data-round="'+c.round+'" data-half="'+half+'"><div class="brh">'+c.label+'</div><div class="brties">'+c.ns.map(brTie).join("")+'</div></div>';}
 function renderBracket(){
  const box=document.getElementById("bracket");if(!box)return;
  const champ=brAdvance(104,"W");
- const cols=BR_ROUNDS.map(r=>'<div class="brcol" data-round="'+r.key+'"><div class="brh">'+r.label+'</div>'+r.ns.map(brTie).join("")+'</div>').join("")
-  +'<div class="brcol" data-round="3P"><div class="brh">Third place</div>'+brTie(103)+'</div>';
- box.innerHTML='<p class="note brnote">Fills in live as the groups finish, then as each knockout tie is decided. Faded teams with a gold <b>?</b> are <b>projected</b> from the current group table — not yet confirmed. Tap any tie to open the match. ⭐ Your followed teams’ route is highlighted in gold.</p>'
+ const left=BR_LAYOUT.L.map(c=>brColHTML(c,"L")).join("");
+ const right=BR_LAYOUT.R.map(c=>brColHTML(c,"R")).join("");
+ const center='<div class="brcenter">'
+  +'<div class="brcol brcol-f" data-round="F"><div class="brh">Final</div><div class="brties">'+brTie(104)+'</div></div>'
+  +'<div class="brcol brcol-3rd" data-round="F"><div class="brh">Third place</div><div class="brties">'+brTie(103)+'</div></div></div>';
+ box.innerHTML='<p class="note brnote">The full knockout tree — both halves converging on the Final. Fills in live as groups finish; faded teams with a gold <b>?</b> are <b>projected</b> from the current table. Codes: <b>1A</b>=winner Group A, <b>2A</b>=runner-up, <b>3·…</b>=best third from those groups, <b>W74</b>=winner of match 74. ⭐ Followed teams’ route is gold · tap a tie to open the match.</p>'
   +(champ.done?'<div class="brchamp">🏆 <b>Champions:</b> <span class="brflag">'+champ.flag+'</span> '+escA(champ.name)+'</div>':'')
   +'<div class="brtabs" id="brtabs">'+BR_ROUNDS.map((r,i)=>'<button type="button" class="brtab'+(i===brActive?' on':'')+'" data-ri="'+i+'">'+r.key+'</button>').join("")+'</div>'
-  +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'">'+cols+'</div>';
+  +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'"><div class="brside brside-l">'+left+'</div>'+center+'<div class="brside brside-r">'+right+'</div></div>';
 }
 function brClick(e){
  const tab=e.target.closest(".brtab");
