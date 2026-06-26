@@ -169,6 +169,7 @@ body.np-open{padding-bottom:88px}
 .ftpill{background:#8a978f}
 .result.half{background:#fdf4e0;color:#7d6314}
 .livedot{width:7px;height:7px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.6s infinite}
+.tablive{display:inline-flex;align-items:center;margin-left:5px;vertical-align:middle;pointer-events:none}
 .statsbtn{border:1px solid var(--line);background:var(--card);color:var(--pitch);border-radius:8px;padding:8px 11px;min-height:40px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .statsbtn:hover{border-color:var(--pitch2);background:#f3f8f5}
 .statswrap{margin:-2px 0 10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 14px 13px}
@@ -288,6 +289,9 @@ body.np-open{padding-bottom:88px}
 .wx{white-space:nowrap;color:var(--muted)}
 .wx:not(:empty)::before{content:" · "}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
+.grpjumps{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.grpjumps button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:6px;padding:5px 11px;font-size:13px;font-weight:700;cursor:pointer;font-family:Oswald;letter-spacing:.06em;transition:border-color .12s,color .12s}
+.grpjumps button:hover{border-color:var(--pitch2);color:var(--pitch2)}
 #groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:14px;align-items:start}
 .gcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .ghead{background:var(--pitch);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;font-size:15px;display:flex;justify-content:space-between}
@@ -526,6 +530,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
    <div id="goldenboot"></div>
    <div id="thirdrace"></div>
   </div>
+  <div class="grpjumps" id="grpjumps"></div>
   <p class="note"><b>Green ▲ = top two advance.</b> A faded <b>▲?</b> on a lighter row means <b>currently in a qualifying spot</b> while the group is still being played; it turns solid once the group is decided. Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see the third-place race above. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
   <div class="gwrap" id="groups"></div>
  </section>
@@ -1036,7 +1041,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 
 /* filters */
 /* default to the Today view when today actually has matches; otherwise fall back to All (rest days / off-season) */
-let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":"all",q="";
+let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":MATCHES.some(m=>!m.group_game)?"knockout":"all",q="";
 const CHIPS=[["all","All"],["today","Today"],["knockout","🏆 Knockouts"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
 CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
@@ -1197,6 +1202,8 @@ function openHighlight(n,home,away){
 /* "LIVE NOW" banner — pins any in-play / half-time match to the top so the live game finds the user */
 function renderLive(){
  const box=document.getElementById("livenow");
+ const liveCnt=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&isOngoing(s.s);}).length;
+ const tabBtn=document.getElementById("tab-schedule");if(tabBtn){var tld=tabBtn.querySelector(".tablive");if(liveCnt>0&&!tld){const sp=document.createElement("span");sp.className="tablive";sp.innerHTML='<span class="livedot"></span>';tabBtn.appendChild(sp);}else if(liveCnt===0&&tld){tld.remove();}}
  if(currentView!=="schedule"){box.innerHTML="";return;}
  const live=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&isOngoing(s.s);});
  box.innerHTML=live.map(m=>{
@@ -1311,8 +1318,10 @@ function computeGroup(g){
  });
  return Object.values(teams).map(o=>({...o,GD:o.GF-o.GA,Pts:o.W*3+o.D})).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.t.localeCompare(b.t));
 }
+function scrollGrp(g){var el=document.querySelector('.gcard[data-grp="'+g+'"]');if(el)el.scrollIntoView({behavior:"smooth",block:"start"});}
 function renderStandings(){
  const box=document.getElementById("groups");box.innerHTML="";
+ const jb=document.getElementById("grpjumps");if(jb&&!jb.children.length)["A","B","C","D","E","F","G","H","I","J","K","L"].forEach(g=>{const btn=document.createElement("button");btn.textContent=g;btn.onclick=()=>scrollGrp(g);jb.appendChild(btn);});
  ["A","B","C","D","E","F","G","H","I","J","K","L"].forEach(g=>{
   const arr=computeGroup(g);const any=arr.some(t=>t.P>0);const gdone=arr.length>=4&&arr.every(t=>t.P>=3);
   const card=document.createElement("div");card.className="gcard";card.dataset.grp=g;
