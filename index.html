@@ -1422,6 +1422,9 @@ function dispTeam(m,side){const raw=m[side];
  return{name:raw,flag:"",done:false};}
 // inline "🇿🇦 South Africa v 🇨🇦 Canada" for the LIVE NOW / Next-match banners (resolves knockout slots)
 function teamsInline(m){const one=d=>(d.flag?d.flag+" ":"")+escA(d.name)+(d.prov?'<span class="brq">?</span>':"");return one(dispTeam(m,"home"))+' <span class="vs">v</span> '+one(dispTeam(m,"away"));}
+// short host-city labels so the longest names fit the narrow bracket cells (full venue stays in the tooltip)
+const BR_CITY_SHORT={"New York/New Jersey":"NY/NJ","San Francisco Bay":"SF Bay"};
+const brCity=c=>BR_CITY_SHORT[c]||c;
 let brActive=0;
 function brTie(n){
  const mt=brM(n),tt=brTeams(n),sc=cardScore(n);
@@ -1432,7 +1435,7 @@ function brTie(n){
  let meta;
  if(sc&&sc.s==="FINISHED")meta="Full-time";
  else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
- else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+' · <span class="brcity">'+escA(mt.city)+'</span>';}
+ else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+' · <span class="brcity">'+escA(brCity(mt.city))+'</span>';}
  meta='<span class="brmn">M'+n+'</span> '+meta;
  const folpath=(real(tt.home)&&isFollowed(tt.home.name))||(real(tt.away)&&isFollowed(tt.away.name));
  const venueTip=mt.venue?mt.venue+", "+mt.city:mt.city;
