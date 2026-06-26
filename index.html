@@ -320,18 +320,22 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brtree{position:relative;left:50%;transform:translateX(-50%);width:min(1400px,calc(100vw - 20px));display:flex;justify-content:center;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
 .brside{display:flex;align-items:stretch}
 .brcenter{box-sizing:border-box;flex:0 0 170px;display:flex;flex-direction:column;justify-content:center;gap:16px;align-self:center;padding:0 6px}
-.brcol{box-sizing:border-box;flex:0 0 146px;height:840px;display:flex;flex-direction:column;padding:0 5px;min-width:0}
+.brcol{box-sizing:border-box;flex:0 0 154px;height:840px;display:flex;flex-direction:column;padding:0 5px;min-width:0}
 .brties{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
+.brsvg{position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible}
+.brln{stroke:var(--line);stroke-width:1.5;fill:none}
+.brln.fol{stroke:var(--gold);stroke-width:2.5}
 .brcol-f,.brcol-3rd{height:auto}
 .brcenter{justify-content:center}
 .brcol-f .brtie{border-color:var(--gold);box-shadow:0 2px 12px rgba(232,184,75,.25)}
 .brcol-f .brh,.brcol-3rd .brh{color:var(--pitch)}
 .brh{font-family:Oswald;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--muted);text-align:center;padding:2px 0 5px;white-space:nowrap}
-.brtie{box-sizing:border-box;display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:6px 8px;cursor:pointer;font:inherit;color:inherit}
-.brtie:hover{border-color:var(--pitch2)}
+.brtie{position:relative;z-index:1;box-sizing:border-box;display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:5px 8px;cursor:pointer;font:inherit;color:inherit}
+.brtie:hover{border-color:var(--pitch2);box-shadow:0 2px 10px rgba(10,31,24,.12)}
 .brtie.live{border-left-color:var(--live)}
 .brtie.folpath{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(232,184,75,.12),transparent 82%)}
-.brteam{display:flex;align-items:center;gap:6px;padding:2px 0}
+.brteam{display:flex;align-items:center;gap:6px;padding:3px 0}
+.brteam+.brteam{border-top:1px solid var(--line)}
 .brteam .brfl{flex:0 0 auto;font-size:14px;width:18px;text-align:center}
 .brteam .brnm{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brteam.tbd .brnm{color:var(--muted);font-weight:600}
@@ -1423,6 +1427,26 @@ function renderBracket(){
   +(champ.done?'<div class="brchamp">🏆 <b>Champions:</b> <span class="brflag">'+champ.flag+'</span> '+escA(champ.name)+'</div>':'')
   +'<div class="brtabs" id="brtabs">'+BR_ROUNDS.map((r,i)=>'<button type="button" class="brtab'+(i===brActive?' on':'')+'" data-ri="'+i+'">'+r.key+'</button>').join("")+'</div>'
   +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'"><div class="brside brside-l">'+left+'</div>'+center+'<div class="brside brside-r">'+right+'</div></div>';
+ brConnectors();
+}
+// Draw the bracket connector lines as an SVG overlay computed from the live tie positions (robust to the
+// space-around spacing). Each tie's two feeders join with an L into the next round; gold if on a followed route.
+function brConnectors(){
+ const tree=document.getElementById("brtree");if(!tree)return;
+ const old=tree.querySelector("svg.brsvg");if(old)old.remove();
+ if(window.innerWidth<900)return;   // mobile uses round-tabs, no tree
+ const trect=tree.getBoundingClientRect();
+ const R=n=>{const t=tree.querySelector('.brtie[data-n="'+n+'"]');if(!t)return null;const r=t.getBoundingClientRect();return{left:r.left-trect.left+tree.scrollLeft,right:r.right-trect.left+tree.scrollLeft,cy:r.top-trect.top+r.height/2};};
+ const NS="http://www.w3.org/2000/svg",svg=document.createElementNS(NS,"svg");
+ svg.setAttribute("class","brsvg");svg.setAttribute("width",tree.scrollWidth);svg.setAttribute("height",tree.scrollHeight);
+ const seg=(x1,y1,x2,y2,fol)=>{const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("class","brln"+(fol?" fol":""));svg.appendChild(l);};
+ const isFol=n=>{const t=tree.querySelector('.brtie[data-n="'+n+'"]');return!!(t&&t.classList.contains("folpath"));};
+ function pair(recv,fT,fB,side){const r=R(recv),a=R(fT),b=R(fB);if(!r||!a||!b)return;const fx=side==="L"?a.right:a.left,rx=side==="L"?r.left:r.right,mx=(fx+rx)/2;seg(fx,a.cy,mx,a.cy,isFol(fT));seg(fx,b.cy,mx,b.cy,isFol(fB));seg(mx,a.cy,mx,b.cy);seg(mx,r.cy,rx,r.cy,isFol(recv));}
+ function single(recv,f,side){const r=R(recv),a=R(f);if(!r||!a)return;const fx=side==="L"?a.right:a.left,rx=side==="L"?r.left:r.right,mx=(fx+rx)/2;seg(fx,a.cy,mx,a.cy,isFol(f));seg(mx,a.cy,mx,r.cy,isFol(f));seg(mx,r.cy,rx,r.cy,isFol(f));}
+ [[89,74,77],[90,73,75],[93,83,84],[94,81,82],[97,89,90],[98,93,94],[101,97,98]].forEach(p=>pair(p[0],p[1],p[2],"L"));
+ [[91,76,78],[92,79,80],[95,86,88],[96,85,87],[99,91,92],[100,95,96],[102,99,100]].forEach(p=>pair(p[0],p[1],p[2],"R"));
+ single(104,101,"L");single(104,102,"R");
+ tree.insertBefore(svg,tree.firstChild);
 }
 function brClick(e){
  const tab=e.target.closest(".brtab");
@@ -1436,6 +1460,7 @@ function jumpToMatch(n){
  requestAnimationFrame(()=>{const card=document.querySelector('#list .card[data-n="'+n+'"]');if(!card)return;card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("flash");setTimeout(()=>card.classList.remove("flash"),1500);const sbtn=card.querySelector('.statsbtn[data-fid]');if(sbtn&&!card.querySelector('.statswrap'))sbtn.click();});
 }
 document.getElementById("view-bracket").addEventListener("click",brClick);
+let brRz;window.addEventListener("resize",()=>{clearTimeout(brRz);brRz=setTimeout(()=>{if(currentView==="bracket")brConnectors();},150);});
 
 let currentView="schedule";
 const tabEls=[...document.querySelectorAll(".tab")];
