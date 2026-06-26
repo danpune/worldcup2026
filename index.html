@@ -316,16 +316,16 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .sraces .gbcard,.sraces #thirdrace .gcard{max-width:none}
 /* ---- Knockout bracket (two-sided mirrored tree, converging on the Final) ---- */
 .brnote{margin:2px 0 12px}
-.brtabs{display:none;gap:6px;overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.brtabs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .brtabs::-webkit-scrollbar{display:none}
-.brtab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:7px 16px;font-family:Oswald;font-weight:500;font-size:13px;letter-spacing:.04em;cursor:pointer}
+.brtab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:9px 22px;font-family:Oswald;font-weight:600;font-size:15px;letter-spacing:.06em;cursor:pointer;transition:background .15s,color .15s}
 .brtab.on{background:var(--pitch);color:#fff;border-color:var(--pitch)}
 .brchamp{background:linear-gradient(90deg,rgba(232,184,75,.22),transparent 80%);border:1px solid var(--gold);border-radius:12px;padding:11px 14px;font-size:15px;margin:0 0 12px}
 .brchamp .brflag{font-size:20px}
-.brtree{position:relative;left:50%;transform:translateX(-50%);width:min(1400px,calc(100vw - 20px));display:flex;justify-content:center;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
-.brside{display:flex;align-items:stretch}
-.brcenter{box-sizing:border-box;flex:0 0 196px;display:flex;flex-direction:column;justify-content:center;gap:12px;align-self:center;padding:0 6px}
-.brcol{box-sizing:border-box;flex:0 0 150px;height:780px;display:flex;flex-direction:column;padding:0 5px;min-width:0}
+.brtree{display:block;max-width:860px;margin:0 auto}
+.brside{display:block}
+.brcenter{display:block}
+.brcol{display:none;width:100%;height:auto;flex:none;padding:0;margin-bottom:16px}
 .brtrophy{text-align:center;margin-bottom:2px}
 .brtrophy .bremoji{font-size:48px;line-height:1;filter:drop-shadow(0 4px 7px rgba(232,184,75,.4))}
 .brtrophy .brtt{font-family:Oswald;text-transform:uppercase;letter-spacing:.12em;font-size:11.5px;color:var(--muted);margin-top:5px}
@@ -336,15 +336,15 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brcol-f .brteam .brnm{font-size:16px}
 .brcol-f .brteam .brsc{font-size:19px}
 .brcol-f .brh{font-size:12px;font-weight:600;letter-spacing:.08em}
-.brties{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
-.brsvg{position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible}
+.brties{display:flex;flex-direction:column;gap:8px}
+.brsvg{display:none}
 .brln{stroke:var(--muted);stroke-opacity:.55;stroke-width:2;fill:none;stroke-linejoin:round}
 .brln.fol{stroke:var(--gold);stroke-opacity:1;stroke-width:3}
 .brcol-f,.brcol-3rd{height:auto}
 .brcenter{justify-content:center}
 .brcol-f .brtie{border-color:var(--gold);box-shadow:0 2px 12px rgba(232,184,75,.25)}
 .brcol-f .brh,.brcol-3rd .brh{color:var(--pitch)}
-.brh{font-family:Oswald;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--muted);text-align:center;padding:2px 0 5px;white-space:nowrap}
+.brh{display:none}.brcol-f .brh,.brcol-3rd .brh{display:block;font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--pitch2);text-align:center;padding:4px 0 10px;white-space:nowrap;font-weight:600}
 .brtie{position:relative;z-index:1;box-sizing:border-box;display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:9px;padding:5px 8px;cursor:pointer;font:inherit;color:inherit}
 .brtie:hover{border-color:var(--pitch2);box-shadow:0 2px 10px rgba(10,31,24,.12)}
 .brtie.live{border-left-color:var(--live)}
@@ -368,18 +368,16 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brmeta .brlive{color:var(--live);font-weight:700}
 .card.flash,.gcard.flash{animation:flashcard 1.5s ease}
 @keyframes flashcard{0%,100%{background:var(--card)}25%{background:var(--gold-soft)}}
-@media(max-width:899px){
- .brtabs{display:flex}
- .brtree{position:static;left:auto;transform:none;width:auto;display:block;overflow:visible}
- .brside,.brcenter{display:block}
- .brtrophy{display:none}
- .brcol{display:none;width:auto;flex:none;padding:0;margin-bottom:12px;height:auto}
- .brties{justify-content:flex-start;gap:8px}
- .brtree[data-active="R32"] .brcol[data-round="R32"],
- .brtree[data-active="R16"] .brcol[data-round="R16"],
- .brtree[data-active="QF"] .brcol[data-round="QF"],
- .brtree[data-active="SF"] .brcol[data-round="SF"],
- .brtree[data-active="F"] .brcol[data-round="F"]{display:flex}
+.brtrophy{display:none}
+.brtree[data-active="F"] .brtrophy{display:block;text-align:center;margin-bottom:14px}
+.brtree[data-active="R32"] .brcol[data-round="R32"],
+.brtree[data-active="R16"] .brcol[data-round="R16"],
+.brtree[data-active="QF"] .brcol[data-round="QF"],
+.brtree[data-active="SF"] .brcol[data-round="SF"],
+.brtree[data-active="F"] .brcol[data-round="F"]{display:flex;flex-direction:column}
+@media(min-width:700px){
+ .brtree{max-width:960px}
+ .brtree[data-active="R32"] .brties,.brtree[data-active="R16"] .brties{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 }
 .gbcard{max-width:580px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .gbrow{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid #f0f2ef}
@@ -1453,7 +1451,7 @@ function renderBracket(){
  const center='<div class="brcenter">'+trophy
   +'<div class="brcol brcol-f" data-round="F"><div class="brh">Final</div><div class="brties">'+brTie(104)+'</div></div>'
   +'<div class="brcol brcol-3rd" data-round="F"><div class="brh">Third place</div><div class="brties">'+brTie(103)+'</div></div></div>';
- box.innerHTML='<p class="note brnote">The full knockout tree — both halves converging on the Final. Faded teams with a gold <b>?</b> are <b>projected</b> from the current table. <b>W74</b>=winner of match 74. ⭐ Followed teams&#x2019; route is gold · tap a tie to open the match.</p>'
+ box.innerHTML='<p class="note brnote">Faded teams with a gold <b>?</b> are <b>projected</b> from the current table. ⭐ Followed teams’ route is gold · tap a match to open it.</p>'
   +(champ.done?'<div class="brchamp">🏆 <b>Champions:</b> <span class="brflag">'+champ.flag+'</span> '+escA(champ.name)+'</div>':'')
   +'<div class="brtabs" id="brtabs">'+BR_ROUNDS.map((r,i)=>'<button type="button" class="brtab'+(i===brActive?' on':'')+'" data-ri="'+i+'">'+r.key+'</button>').join("")+'</div>'
   +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'"><div class="brside brside-l">'+left+'</div>'+center+'<div class="brside brside-r">'+right+'</div></div>';
@@ -1464,7 +1462,7 @@ function renderBracket(){
 function brConnectors(){
  const tree=document.getElementById("brtree");if(!tree)return;
  const old=tree.querySelector("svg.brsvg");if(old)old.remove();
- if(window.innerWidth<900)return;   // mobile uses round-tabs, no tree
+ return;   // round-tabs always, no tree to connect
  const trect=tree.getBoundingClientRect();
  const R=n=>{const t=tree.querySelector('.brtie[data-n="'+n+'"]');if(!t)return null;const r=t.getBoundingClientRect();return{left:r.left-trect.left+tree.scrollLeft,right:r.right-trect.left+tree.scrollLeft,cy:r.top-trect.top+r.height/2};};
  const NS="http://www.w3.org/2000/svg",svg=document.createElementNS(NS,"svg");
