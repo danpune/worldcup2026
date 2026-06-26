@@ -995,7 +995,7 @@ function updateAlertUI(){
  else{b.textContent="🔔 Enable goal alerts";b.classList.remove("on");}
 }
 /* gentle one-time soft-prompt inviting new visitors to turn on alerts */
-function showNotifPrompt(){
+function showNotifPrompt(){setTimeout(dismissPrompt,8000);
  try{
   if(alertsOn())return;                                   /* already on */
   if(localStorage.getItem("notif_prompt_seen")==="1")return; /* shown before */
