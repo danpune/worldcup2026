@@ -333,6 +333,9 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brteam.lose .brnm{color:var(--muted)}
 .brteam .brsc{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
 .brteam.lose .brsc{color:var(--muted)}
+.brteam.prov .brnm{color:var(--muted);font-weight:600}
+.brteam.prov .brfl{opacity:.5}
+.brq{display:inline-block;margin-left:3px;color:var(--gold);font-weight:700;font-size:11px;vertical-align:super}
 .brmeta{font-size:10.5px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brmeta .brlive{color:var(--live);font-weight:700}
 .card.flash{animation:flashcard 1.5s ease}
@@ -1346,10 +1349,18 @@ const BR_ROUNDS=[
 ];
 const brM=n=>MATCHES.find(x=>x.n===n);
 function groupDone(g){const a=computeGroup(g);return a.length>=4&&a.every(t=>t.P>=3);}
+// Resolve a group slot: confirmed once the group is mathematically done; otherwise show the CURRENT
+// leader/runner-up as a "projected" pick (prov) so the bracket fills in during the final-matchday build-up.
+function brGroupSlot(g,idx,placeholder){
+ const a=computeGroup(g),done=a.length>=4&&a.every(t=>t.P>=3),any=a.some(t=>t.P>0),t=a[idx];
+ if(t&&done)return{name:t.t,flag:FLAGMAP[t.t]||"",done:true};
+ if(t&&any)return{name:t.t,flag:FLAGMAP[t.t]||"",done:false,prov:true};
+ return{name:placeholder,flag:"",done:false};
+}
 function brSlot(txt){
  let m;
- if(m=/^Winner ([A-L])$/.exec(txt)){if(groupDone(m[1])){const t=computeGroup(m[1])[0].t;return{name:t,flag:FLAGMAP[t]||"",done:true};}return{name:"Winners "+m[1],flag:"",done:false};}
- if(m=/^Runner-up ([A-L])$/.exec(txt)){if(groupDone(m[1])){const t=computeGroup(m[1])[1].t;return{name:t,flag:FLAGMAP[t]||"",done:true};}return{name:"Runners-up "+m[1],flag:"",done:false};}
+ if(m=/^Winner ([A-L])$/.exec(txt))return brGroupSlot(m[1],0,"Winners "+m[1]);
+ if(m=/^Runner-up ([A-L])$/.exec(txt))return brGroupSlot(m[1],1,"Runners-up "+m[1]);
  if(m=/^Best 3rd \(([A-L/]+)\)$/.exec(txt))return{name:"3rd: "+m[1],flag:"",done:false};
  if(m=/^Winner M(\d+)$/.exec(txt))return brAdvance(+m[1],"W");
  if(m=/^Loser M(\d+)$/.exec(txt))return brAdvance(+m[1],"L");
@@ -1366,13 +1377,14 @@ let brActive=0;
 function brTie(n){
  const mt=brM(n),tt=brTeams(n),sc=cardScore(n);
  const decided=sc&&sc.s==="FINISHED"&&sc.h!=null&&sc.a!=null&&sc.h!==sc.a,homeWon=decided&&sc.h>sc.a;
- const row=(s,score,win,lose)=>'<div class="brteam'+(s.done?'':' tbd')+(s.done&&isFollowed(s.name)?' fol':'')+(win?' win':'')+(lose?' lose':'')+'">'
-  +'<span class="brfl">'+(s.flag||'')+'</span><span class="brnm">'+escA(s.name)+'</span><span class="brsc">'+(score==null?'':score)+'</span></div>';
+ const real=s=>s.done||s.prov;
+ const row=(s,score,win,lose)=>'<div class="brteam'+(real(s)?'':' tbd')+(s.prov?' prov':'')+(real(s)&&isFollowed(s.name)?' fol':'')+(win?' win':'')+(lose?' lose':'')+'">'
+  +'<span class="brfl">'+(s.flag||'')+'</span><span class="brnm">'+escA(s.name)+(s.prov?'<span class="brq" title="Projected from the current group table — not yet confirmed">?</span>':'')+'</span><span class="brsc">'+(score==null?'':score)+'</span></div>';
  let meta;
  if(sc&&sc.s==="FINISHED")meta="Full-time";
  else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
  else{const p=dParts(mt.utc);meta=p.day+" · "+p.time+" · "+mt.city;}
- const folpath=(tt.home.done&&isFollowed(tt.home.name))||(tt.away.done&&isFollowed(tt.away.name));
+ const folpath=(real(tt.home)&&isFollowed(tt.home.name))||(real(tt.away)&&isFollowed(tt.away.name));
  return '<button type="button" class="brtie'+(sc&&sc.s==="IN_PLAY"?' live':'')+(folpath?' folpath':'')+'" data-n="'+n+'">'
   +row(tt.home,sc?sc.h:null,homeWon,decided&&!homeWon)+row(tt.away,sc?sc.a:null,decided&&!homeWon,homeWon)
   +'<div class="brmeta">'+meta+'</div></button>';
@@ -1382,7 +1394,7 @@ function renderBracket(){
  const champ=brAdvance(104,"W");
  const cols=BR_ROUNDS.map(r=>'<div class="brcol" data-round="'+r.key+'"><div class="brh">'+r.label+'</div>'+r.ns.map(brTie).join("")+'</div>').join("")
   +'<div class="brcol" data-round="3P"><div class="brh">Third place</div>'+brTie(103)+'</div>';
- box.innerHTML='<p class="note brnote">Fills in live as the groups finish, then as each knockout tie is decided. Tap any tie to open the match. ⭐ Your followed teams’ route is highlighted in gold.</p>'
+ box.innerHTML='<p class="note brnote">Fills in live as the groups finish, then as each knockout tie is decided. Faded teams with a gold <b>?</b> are <b>projected</b> from the current group table — not yet confirmed. Tap any tie to open the match. ⭐ Your followed teams’ route is highlighted in gold.</p>'
   +(champ.done?'<div class="brchamp">🏆 <b>Champions:</b> <span class="brflag">'+champ.flag+'</span> '+escA(champ.name)+'</div>':'')
   +'<div class="brtabs" id="brtabs">'+BR_ROUNDS.map((r,i)=>'<button type="button" class="brtab'+(i===brActive?' on':'')+'" data-ri="'+i+'">'+r.key+'</button>').join("")+'</div>'
   +'<div class="brtree" id="brtree" data-active="'+BR_ROUNDS[brActive].key+'">'+cols+'</div>';
