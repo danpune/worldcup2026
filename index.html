@@ -1537,7 +1537,7 @@ let brRz;window.addEventListener("resize",()=>{clearTimeout(brRz);brRz=setTimeou
 
 let currentView="schedule";
 const tabEls=[...document.querySelectorAll(".tab")];
-function activateTab(t){
+function activateTab(t,fromHash){
  currentView=t.dataset.view;
  tabEls.forEach(x=>{const sel=x===t;x.setAttribute("aria-selected",sel);x.tabIndex=sel?0:-1;});
  try{var _tb=t.closest(".tabs-in");if(_tb){var _tr=t.getBoundingClientRect(),_br=_tb.getBoundingClientRect();_tb.scrollLeft=Math.max(0,_tb.scrollLeft+(_tr.left-_br.left)-_br.width/2+_tr.width/2);}}catch(e){}  /* center the active tab in the scrollable bar */
@@ -1546,6 +1546,7 @@ function activateTab(t){
  render();
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
  if(currentView==="standings")loadTopScorers();   /* lazy: Golden Boot race only when Standings is opened */
+ if(!fromHash){const h="#"+currentView;if(location.hash!==h)location.hash=currentView;}  /* reflect the open tab in the URL so it can be shared/bookmarked + the back button moves between tabs */
 }
 tabEls.forEach((t,i)=>{
  t.addEventListener("click",()=>activateTab(t));
@@ -1557,6 +1558,8 @@ tabEls.forEach((t,i)=>{
   if(j!=null){e.preventDefault();tabEls[j].focus();activateTab(tabEls[j]);}
  });
 });
+/* deep-linking: #highlights, #bracket, #standings … share or bookmark a tab; back/forward moves between tabs */
+addEventListener("hashchange",()=>{const v=location.hash.slice(1)||"schedule";if(v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}});
 /* land on "All" so the pinned date strip shows; renderDateStrip auto-scrolls to today's matches */
 /* ===== Per-match weather: kickoff forecast from Open-Meteo (free, no key, client-side).
    Chips fill lazily as cards scroll into view; cached per venue+date+unit. Defined before
@@ -1591,6 +1594,7 @@ function observeWx(){
  if(!wxObserver)wxObserver=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){fillWx(e.target);wxObserver.unobserve(e.target);}});},{rootMargin:"250px"});
  els.forEach(el=>wxObserver.observe(el));
 }
+(function(){const v=location.hash.slice(1);if(v&&v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}})();  /* open the tab from a shared #hash on load (e.g. .../worldcup2026/#highlights) */
 render();fetchLive();fetchHighlights();
 /* fun footer visit counter (free Abacus API; counts page views; fails silently if the service is down) */
 fetch("https://abacus.jasoncameron.dev/hit/danpune-worldcup2026/visits").then(r=>r.json()).then(d=>{if(d&&d.value!=null)document.getElementById("visits").textContent=" · 👀 "+d.value.toLocaleString()+" visits";}).catch(()=>{});
