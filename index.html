@@ -296,7 +296,10 @@ table.st td.tm{text-align:left;font-weight:600;line-height:1.15}
 table.st tr:last-child td{border-bottom:0}
 table.st tr.adv td{background:var(--advance)}
 table.st tr.adv td.pos b{background:var(--advance-line)}
+table.st tr.advp td{background:color-mix(in srgb,var(--advance) 45%,transparent)}   /* projected (group still playing) — lighter than a confirmed advance */
+table.st tr.advp td.pos b{background:color-mix(in srgb,var(--advance-line) 55%,transparent)}
 .qb{font-size:10px}  /* shape-based "advancing" cue so it doesn't rely on the green row colour alone */
+.qbp{opacity:.6}
 td.pos b{display:inline-block;width:20px;height:20px;line-height:20px;border-radius:50%;background:#eceee9;color:var(--ink);font-family:Oswald;font-size:12px}
 td.pts{font-family:Oswald;font-weight:600;color:var(--pitch);font-size:15px}
 .rk{color:var(--muted);font-size:10.5px;font-weight:500}
@@ -542,7 +545,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
    <div id="goldenboot"></div>
    <div id="thirdrace"></div>
   </div>
-  <p class="note"><b>Green ▲ = top two</b> (advance). Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see the third-place race above. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
+  <p class="note"><b>Green ▲ = top two advance.</b> A faded <b>▲?</b> on a lighter row means <b>currently in a qualifying spot</b> while the group is still being played; it turns solid once the group is decided. Tiebreak: Points → Goal Difference → Goals For. The 8 best third-place teams also advance — see the third-place race above. Live scores only count toward the table once a match is final. <b>#</b> = <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA World Ranking</a> (11 Jun 2026) · <span class="pm">%</span> = <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a> odds to win the group (live) — for insight only, not betting advice.</p>
   <div class="gwrap" id="groups"></div>
  </section>
 
@@ -1336,9 +1339,9 @@ function computeGroup(g){
 function renderStandings(){
  const box=document.getElementById("groups");box.innerHTML="";
  ["A","B","C","D","E","F","G","H","I","J","K","L"].forEach(g=>{
-  const arr=computeGroup(g);const any=arr.some(t=>t.P>0);
+  const arr=computeGroup(g);const any=arr.some(t=>t.P>0);const gdone=arr.length>=4&&arr.every(t=>t.P>=3);
   const card=document.createElement("div");card.className="gcard";card.dataset.grp=g;
-  const rows=arr.map((t,i)=>{const isAdv=(i<2&&any);const adv=isAdv?' class="adv"':"";const pm=PM[pmKey(t.t)];return `<tr${adv}><td class="pos"><b>${i+1}</b>${isAdv?' <span class="qb" title="Advancing" aria-label="advancing">▲</span>':''}</td><td class="tm">${FLAGMAP[t.t]||""} <button type="button" class="teamlink" data-squad="${escA(t.t)}" title="View ${escA(t.t)} squad">${t.t}</button>${RANK[t.t]?` <span class="rk">#${RANK[t.t]}</span>`:""}${pm!=null?` <span class="pm" title="Polymarket: chance to win the group">${Math.round(pm*100)}%</span>`:""}</td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${t.GD>0?"+":""}${t.GD}</td><td class="pts">${t.Pts}</td></tr>`;}).join("");
+  const rows=arr.map((t,i)=>{const isAdv=(i<2&&any);const adv=isAdv?(gdone?' class="adv"':' class="advp"'):"";const mark=isAdv?(gdone?' <span class="qb" title="Advances to the Round of 32" aria-label="advancing">▲</span>':' <span class="qb qbp" title="Currently in a qualifying spot — group still being played" aria-label="projected to advance">▲<span class="brq">?</span></span>'):"";const pm=PM[pmKey(t.t)];return `<tr${adv}><td class="pos"><b>${i+1}</b>${mark}</td><td class="tm">${FLAGMAP[t.t]||""} <button type="button" class="teamlink" data-squad="${escA(t.t)}" title="View ${escA(t.t)} squad">${t.t}</button>${RANK[t.t]?` <span class="rk">#${RANK[t.t]}</span>`:""}${pm!=null?` <span class="pm" title="Polymarket: chance to win the group">${Math.round(pm*100)}%</span>`:""}</td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${t.GD>0?"+":""}${t.GD}</td><td class="pts">${t.Pts}</td></tr>`;}).join("");
   card.innerHTML=`<div class="ghead">Group ${g}<span class="gp">${any?"":"awaiting results"}</span></div><table class="st"><thead><tr><th></th><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>${rows}</tbody></table>`;
   box.appendChild(card);
  });
