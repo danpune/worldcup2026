@@ -402,6 +402,19 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .gbx{display:block;color:var(--muted);font-size:11px;margin-top:1px}
 .gbg{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:21px;color:var(--pitch);font-variant-numeric:tabular-nums;min-width:22px;text-align:right}
 .pm{color:#4a56c0;font-size:10.5px;font-weight:700}
+/* ---- Tournament Matrix ---- */
+.mxwrap{max-width:680px;margin:0 auto}
+.mxsvg{width:100%;height:auto;display:block;font-family:Oswald,system-ui,sans-serif}
+.mxq-tr{fill:rgba(124,197,147,.18)}
+.mxq-br{fill:rgba(232,184,75,.13)}
+.mxq-tl{fill:rgba(110,130,150,.10)}
+.mxq-bl{fill:rgba(207,65,45,.08)}
+.mxax{stroke:var(--line);stroke-width:1.5}
+.mxql{font-size:13px;font-weight:600;fill:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.mxal{font-size:11px;fill:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.mxfl{font-size:21px;cursor:pointer;transition:font-size .12s ease}
+.mxfl:hover{font-size:27px}
+.mxcap{text-align:center;margin-top:6px;min-height:22px;font-weight:600;font-size:14px;color:var(--text)}
 #hlwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:6px}
 .hlday{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:14px 0 0}
 .hlday:first-child{margin-top:2px}
@@ -518,6 +531,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  <button class="tab" role="tab" id="tab-schedule" aria-controls="view-schedule" aria-selected="true" tabindex="0" data-view="schedule">Schedule</button>
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Standings</button>
  <button class="tab" role="tab" id="tab-bracket" aria-controls="view-bracket" aria-selected="false" tabindex="-1" data-view="bracket"><span aria-hidden="true">🏆</span> Bracket</button>
+ <button class="tab" role="tab" id="tab-matrix" aria-controls="view-matrix" aria-selected="false" tabindex="-1" data-view="matrix"><span aria-hidden="true">📊</span> Matrix</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">Buzz</button>
  <button class="tab" role="tab" id="tab-watch" aria-controls="view-watch" aria-selected="false" tabindex="-1" data-view="watch"><span aria-hidden="true">📺</span> Watch</button>
@@ -551,6 +565,11 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 
  <section id="view-bracket" class="hide" role="tabpanel" aria-labelledby="tab-bracket" tabindex="0">
   <div id="bracket"></div>
+ </section>
+
+ <section id="view-matrix" class="hide" role="tabpanel" aria-labelledby="tab-matrix" tabindex="0">
+  <p class="note">Every team plotted by <b>how far they're going</b> (← out · deep →) and <b>goal difference</b> (↓ grinding · flying ↑). Built live from the standings — positions shift as matches finish. Tap a flag for the detail.</p>
+  <div class="mxwrap"><div id="matrix"></div><div class="mxcap" id="mxcap">Tap a flag to see how their tournament's going.</div></div>
  </section>
 
  <section id="view-highlights" class="hide" role="tabpanel" aria-labelledby="tab-highlights" tabindex="0">
@@ -1115,7 +1134,7 @@ function tournamentStatus(){
  else if(now<END){const d=Math.floor((now-START)/day)+1;el.innerHTML='<span class="dot"></span><b>Underway</b> · Day '+d+' · Final Sun, July 19';}
  else el.innerHTML='Completed · the final was played July 19, 2026';
 }
-function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="bracket")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
+function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="bracket")renderBracket();if(currentView==="matrix")renderMatrix();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
 let PM={},pmLoaded=false;
 function pmNorm(s){return (s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
@@ -1534,6 +1553,34 @@ function jumpToMatch(n){
 }
 document.getElementById("view-bracket").addEventListener("click",brClick);
 let brRz;window.addEventListener("resize",()=>{clearTimeout(brRz);brRz=setTimeout(()=>{if(currentView==="bracket")brConnectors();},150);});
+
+/* ===== Tournament Matrix: every team plotted by progress (X) and goal difference (Y), 100% from live data ===== */
+function mxOrd(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function renderMatrix(){
+ const box=document.getElementById("matrix");if(!box)return;
+ const Lg="ABCDEFGHIJKL".split(""),info={};
+ Lg.forEach(g=>{const a=computeGroup(g),done=a.length>=4&&a.every(t=>t.P>=3);a.forEach((t,i)=>{info[t.t]={team:t.t,grp:g,pos:i+1,Pts:t.Pts,GD:t.GD,GF:t.GF,P:t.P,done};});});
+ const thirds=Lg.map(g=>{const a=computeGroup(g);return a[2]?info[a[2].t]:null;}).filter(Boolean).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.team.localeCompare(b.team));
+ const q3=new Set(thirds.slice(0,8).map(t=>t.team));
+ const stageIdx={"Round of 32":1,"Round of 16":2,"Quarterfinal":3,"Semifinal":4,"FINAL":5},koRound={};
+ for(let n=73;n<=104;n++){const m=brM(n);if(!m||m.stage==="Third-Place")continue;const sc=cardScore(n);if(sc&&sc.s==="FINISHED"&&sc.h!=null&&sc.a!=null&&sc.h!==sc.a){const tt=brTeams(n),w=sc.h>sc.a?tt.home:tt.away;if(w&&w.done&&info[w.name]){const ri=stageIdx[m.stage]||0;if(ri>(koRound[w.name]||0))koRound[w.name]=ri;}}}
+ const progX=t=>{const kr=koRound[t.team]||0;if(kr>=1)return Math.min(1,.76+kr*.05);if(!t.done)return [0,.62,.52,.40,.30][t.pos]||.46;/* group still playing: lean by current rank, don't commit to the extremes */if(t.pos===1)return .70;if(t.pos===2)return .58;if(t.pos===3)return q3.has(t.team)?.44:.18;return .07;};
+ const statusOf=t=>{const kr=koRound[t.team]||0;if(kr>=5)return"🏆 Champions";if(kr===4)return"In the Final";if(kr===3)return"Semi-finalist";if(kr===2)return"Quarter-finalist";if(kr===1)return"Into the Round of 16";if(!t.done)return"Group "+t.grp+" · "+mxOrd(t.pos)+" so far";if(t.pos===1)return"Won Group "+t.grp;if(t.pos===2)return"Group "+t.grp+" runner-up";if(t.pos===3)return q3.has(t.team)?"Through as a best 3rd":"Out — 3rd in Group "+t.grp;return"Out — 4th in Group "+t.grp;};
+ const W=640,H=560,L=42,R=608,T=40,B=486,mx=(L+R)/2,my=(T+B)/2;
+ const PX=x=>(L+x*(R-L)).toFixed(1),PY=gd=>(my-Math.max(-.9,Math.min(.9,gd/6.2))*(B-T)/2).toFixed(1);
+ const pts=Object.values(info).map((t,idx)=>({t,flag:FLAGMAP[t.team]||"🏳️",x:Math.max(.04,Math.min(.97,progX(t)+(((idx*7+t.team.length)%9)-4)*.009))}));
+ let s='<svg viewBox="0 0 '+W+' '+H+'" class="mxsvg" role="img" aria-label="Tournament matrix: teams by progress and goal difference">';
+ s+='<rect x="'+mx+'" y="'+T+'" width="'+(R-mx)+'" height="'+(my-T)+'" class="mxq mxq-tr"/><rect x="'+mx+'" y="'+my+'" width="'+(R-mx)+'" height="'+(B-my)+'" class="mxq mxq-br"/><rect x="'+L+'" y="'+T+'" width="'+(mx-L)+'" height="'+(my-T)+'" class="mxq mxq-tl"/><rect x="'+L+'" y="'+my+'" width="'+(mx-L)+'" height="'+(B-my)+'" class="mxq mxq-bl"/>';
+ s+='<line x1="'+mx+'" y1="'+T+'" x2="'+mx+'" y2="'+B+'" class="mxax"/><line x1="'+L+'" y1="'+my+'" x2="'+R+'" y2="'+my+'" class="mxax"/>';
+ s+='<text x="'+(R-9)+'" y="'+(T+19)+'" class="mxql" text-anchor="end">🚀 Dream run</text><text x="'+(R-9)+'" y="'+(B-9)+'" class="mxql" text-anchor="end">😮‍💨 Through the hard way</text><text x="'+(L+9)+'" y="'+(T+19)+'" class="mxql" text-anchor="start">😤 Hard-luck exit</text><text x="'+(L+9)+'" y="'+(B-9)+'" class="mxql" text-anchor="start">🫠 Rough trip</text>';
+ s+='<text x="'+L+'" y="'+(B+24)+'" class="mxal" text-anchor="start">◄ going home</text><text x="'+R+'" y="'+(B+24)+'" class="mxal" text-anchor="end">going deep ►</text>';
+ s+='<text x="16" y="'+my+'" class="mxal" text-anchor="middle" transform="rotate(-90 16 '+my+')">◄ grinding · flying ►</text>';
+ pts.forEach(p=>{s+='<text x="'+PX(p.x)+'" y="'+PY(p.t.GD)+'" class="mxfl" data-cap="'+escA(p.flag+"  "+p.t.team+" — "+statusOf(p.t)+" · GD "+(p.t.GD>0?"+":"")+p.t.GD)+'" text-anchor="middle" dominant-baseline="central"><title>'+escA(p.t.team+" — "+statusOf(p.t)+" · GD "+(p.t.GD>0?"+":"")+p.t.GD)+'</title>'+p.flag+'</text>';});
+ s+='</svg>';
+ box.innerHTML=s;
+ const cap=document.getElementById("mxcap");
+ box.querySelector(".mxsvg").addEventListener("click",e=>{const f=e.target.closest(".mxfl");if(f&&cap)cap.textContent=f.dataset.cap;});
+}
 
 let currentView="schedule";
 const tabEls=[...document.querySelectorAll(".tab")];
