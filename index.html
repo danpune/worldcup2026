@@ -400,6 +400,10 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .gbg{flex:0 0 auto;font-family:Oswald;font-weight:700;font-size:21px;color:var(--pitch);font-variant-numeric:tabular-nums;min-width:22px;text-align:right}
 .pm{color:#4a56c0;font-size:10.5px;font-weight:700}
 #hlwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:6px}
+.hlday{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:14px 0 0}
+.hlday:first-child{margin-top:2px}
+.hlday span{font-family:Oswald;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted);white-space:nowrap}
+.hlday:after{content:"";height:1px;background:var(--line);flex:1}
 .hlcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .hlthumb{position:relative;display:block;width:100%;aspect-ratio:16/9;border:0;padding:0;margin:0;cursor:pointer;background:#000}
 .hlthumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1187,14 +1191,16 @@ function renderHighlights(){
  /* every finished match shows up — embedded clip if a curated video id exists, otherwise a YouTube search link */
  const rows=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&s.s==="FINISHED";}).sort((a,b)=>new Date(b.utc)-new Date(a.utc));
  if(!rows.length){box.innerHTML='<div class="empty">No highlights yet — they appear here as matches finish.</div>';return;}
+ let lastDay=null;
  box.innerHTML=rows.map(m=>{
   const es=cardScore(m.n);
-  const teams=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
+  const teams=teamsInline(m);
   const meta=`<div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> ${es.h}–${es.a} · ${m.city}</div>`;
   const cur=(HL[m.n]&&ytOk(HL[m.n].yt))?HL[m.n].yt:null;
-  if(cur)return `<div class="hlcard"><button class="hlthumb" data-yt="${cur}" aria-label="Play highlights: ${m.home} versus ${m.away}"><img loading="lazy" src="https://i.ytimg.com/vi/${cur}/hqdefault.jpg" alt=""><span class="hlplay"><b>▶</b></span></button><div class="hlmeta"><div class="tline">${teams}</div>${meta}</div></div>`;
+  const p=dParts(m.utc);let head="";if(p.day!==lastDay){lastDay=p.day;head=`<div class="hlday"><span>${escA(p.day)}</span></div>`;}   /* date header — scan to the day you missed */
+  if(cur)return head+`<div class="hlcard"><button class="hlthumb" data-yt="${cur}" aria-label="Play highlights: ${escA(m.home)} versus ${escA(m.away)}"><img loading="lazy" src="https://i.ytimg.com/vi/${cur}/hqdefault.jpg" alt=""><span class="hlplay"><b>▶</b></span></button><div class="hlmeta"><div class="tline">${teams}</div>${meta}</div></div>`;
   const q=encodeURIComponent("FIFA World Cup 2026 "+m.home+" vs "+m.away+" highlights");
-  return `<div class="hlcard"><div class="hlmeta"><div class="tline">${teams}</div>${meta}<a class="hlsearch" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ Highlights on YouTube <span class="ext">↗</span></a></div></div>`;
+  return head+`<div class="hlcard"><div class="hlmeta"><div class="tline">${teams}</div>${meta}<a class="hlsearch" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ Highlights on YouTube <span class="ext">↗</span></a></div></div>`;
  }).join("");
  box.querySelectorAll(".hlthumb").forEach(b=>b.addEventListener("click",()=>{
   const id=b.dataset.yt,e=document.createElement("div");e.className="hlembed";
