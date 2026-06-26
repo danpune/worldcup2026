@@ -390,15 +390,23 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 }
 @media(min-width:900px){
  .brtabs{display:none}
- .brtree{position:relative;left:50%;transform:translateX(-50%);width:min(1200px,calc(100vw - 24px));display:flex;justify-content:center;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;max-width:none;margin:0}
+ .brtree{position:relative;left:50%;transform:translateX(-50%);width:min(1240px,calc(100vw - 24px));display:flex;justify-content:center;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;max-width:none;margin:0}
  .brside{display:flex;align-items:stretch}
- .brcenter{box-sizing:border-box;flex:0 0 160px;display:flex;flex-direction:column;justify-content:center;gap:12px;align-self:center;padding:0 4px}
- .brcol{box-sizing:border-box;flex:0 0 125px;height:680px;display:flex;flex-direction:column;padding:0 4px;min-width:0;margin-bottom:0}
+ .brcenter{box-sizing:border-box;flex:0 0 152px;display:flex;flex-direction:column;justify-content:center;gap:12px;align-self:center;padding:0 3px}
+ .brcol{box-sizing:border-box;flex:0 0 132px;height:680px;display:flex;flex-direction:column;padding:0 3px;min-width:0;margin-bottom:0}
  .brcol-f,.brcol-3rd{height:auto}
  .brties{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around;gap:0}
  .brh{display:block}
  .brtrophy{display:block}
  .brsvg{display:block;position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible}
+ .brtie{padding:4px 6px}
+ .brteam{gap:5px}
+ .brteam .brfl{font-size:13px;width:15px}
+ .brteam .brnm{font-size:12.5px}
+ .brteam .brsc{font-size:13px;min-width:11px}
+ .brmeta{font-size:10.5px}
+ .brcol-f .brteam .brnm,.brcol-3rd .brteam .brnm{font-size:15px}
+ .brcol-f .brteam .brsc,.brcol-3rd .brteam .brsc{font-size:18px}
 }
 .gbcard{max-width:580px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .gbrow{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid #f0f2ef}
