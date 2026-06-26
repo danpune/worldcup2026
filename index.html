@@ -123,6 +123,8 @@ body.dsoff #momentstop{top:49px}
 .tscore.lose{color:var(--muted);font-weight:600}
 @media(min-width:640px){.tscore{margin-left:4px;padding-left:0}}
 .vsep{display:none;color:var(--muted);font-weight:500;font-size:12px}
+.trow.koprov .teamlink{color:var(--muted)}
+.trow.koplace{color:var(--muted)}
 /* wide screens: put the matchup back on one line ("Home v Away"); phones stay stacked */
 @media(min-width:640px){.tcol{flex-direction:row;align-items:center;gap:9px}.tcol .trow{flex:0 1 auto}.vsep{display:inline}}
 .fav{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:6px 6px;margin:-6px -8px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent;vertical-align:middle}
@@ -1191,7 +1193,7 @@ function renderLive(){
  const live=MATCHES.filter(m=>{const s=cardScore(m.n);return s&&isOngoing(s.s);});
  box.innerHTML=live.map(m=>{
   const es=cardScore(m.n);
-  const tm=m.group_game?`${m.hf} ${m.home} <span class="vs">v</span> ${m.af} ${m.away}`:`${m.home} <span class="vs">v</span> ${m.away}`;
+  const tm=teamsInline(m);
   const ht=es.s==="PAUSED";
   return `<div class="livebanner"><span class="ll"><span class="livedot"></span>Live now</span><span class="lm">${tm}</span><span class="lsc">${es.h}–${es.a} <span class="lst${ht?" ht":""} liveclock" data-n="${m.n}">${liveClockText(m.n,es)}</span></span><a class="hlisten" href="https://tunein.com/radio/World-Cup-Radio-c1390807/" target="_blank" rel="noopener" aria-label="Listen to live World Cup commentary on TuneIn (opens in a new tab)">🔊 Listen</a></div>`;
  }).join("");
@@ -1204,14 +1206,17 @@ function renderList(){
  rows.forEach(m=>{
   const p=dParts(m.utc);
   if(p.day!==lastDay){lastDay=p.day;days.push(p.day);const d=document.createElement("div");d.className="daydiv";d.dataset.day=p.day;d.innerHTML="<span>"+p.day+"</span>";list.appendChild(d);}
-  const c=document.createElement("div");c.className="card"+((isFollowed(m.home)||isFollowed(m.away))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);c.dataset.n=m.n;
+  const dh=dispTeam(m,"home"),da=dispTeam(m,"away");
+  const c=document.createElement("div");c.className="card"+((isFollowed(dh.name)||isFollowed(da.name))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);c.dataset.n=m.n;
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
   const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
   const es=cardScore(m.n);
   const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
-  const teams=m.group_game
-   ?`<div class="trow">${m.hf} ${tk(m.home)}${rkx(m.home)}${favBtn(m.home)}${tsc(es&&es.h,es&&es.h<es.a)}</div><span class="vsep">v</span><div class="trow">${m.af} ${tk(m.away)}${rkx(m.away)}${favBtn(m.away)}${tsc(es&&es.a,es&&es.a<es.h)}</div>`
-   :`<div class="trow">${m.home}${favBtn(m.home)}${tsc(es&&es.h,es&&es.h<es.a)}</div><span class="vsep">v</span><div class="trow">${m.away}${favBtn(m.away)}${tsc(es&&es.a,es&&es.a<es.h)}</div>`;
+  // knockout slots resolve to real/projected teams (same engine as the bracket); unresolved keeps the seed label
+  const teamRow=(d,score)=>(d.done||d.prov)
+   ?`<div class="trow${d.prov?" koprov":""}">${d.flag?d.flag+" ":""}${tk(d.name)}${d.prov?'<span class="brq" title="Projected — group still being played">?</span>':""}${rkx(d.name)}${favBtn(d.name)}${score}</div>`
+   :`<div class="trow koplace">${escA(d.name)}${score}</div>`;
+  const teams=teamRow(dh,tsc(es&&es.h,es&&es.h<es.a))+'<span class="vsep">v</span>'+teamRow(da,tsc(es&&es.a,es&&es.a<es.h));
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!es)?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(m)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a>`:"";
@@ -1284,7 +1289,7 @@ function renderNext(){
  if(!up||currentView!=="schedule"){box.innerHTML="";return;}
  const p=dParts(up.utc);const diff=new Date(up.utc)-now;const h=Math.floor(diff/36e5),mn=Math.floor((diff%36e5)/6e4);
  const cd=h>24?Math.floor(h/24)+"d "+(h%24)+"h":h+"h "+mn+"m";
- const tm=up.group_game?`${up.hf} ${up.home} v ${up.af} ${up.away}`:`${up.home} v ${up.away}`;
+ const tm=teamsInline(up);
  box.innerHTML=`<div class="next"><div><div class="lab">Next match</div><div class="m">${tm}</div></div><div class="cd">${p.time} · in ${cd}</div></div>`;
 }
 function computeGroup(g){
@@ -1362,30 +1367,41 @@ const BR_ROUNDS=[
 ];
 const brM=n=>MATCHES.find(x=>x.n===n);
 function groupDone(g){const a=computeGroup(g);return a.length>=4&&a.every(t=>t.P>=3);}
-// Resolve a group slot: confirmed once the group is mathematically done; otherwise show the CURRENT
-// leader/runner-up as a "projected" pick (prov) so the bracket fills in during the final-matchday build-up.
-function brGroupSlot(g,idx,placeholder){
- const a=computeGroup(g),done=a.length>=4&&a.every(t=>t.P>=3),any=a.some(t=>t.P>0),t=a[idx];
+// ---- Shared knockout-slot resolver (used by BOTH the bracket and the schedule) ----
+// Returns a real {name,flag,done,prov} team when the slot is known, else null. A group winner/runner-up resolves
+// once its group is mathematically done — or shows the CURRENT leader as a PROJECTED pick (prov) while it's still
+// being played; a Winner/Loser Mxx resolves once that tie is FINISHED.
+function koGroup(g,idx){const a=computeGroup(g),done=a.length>=4&&a.every(t=>t.P>=3),any=a.some(t=>t.P>0),t=a[idx];
  if(t&&done)return{name:t.t,flag:FLAGMAP[t.t]||"",done:true};
  if(t&&any)return{name:t.t,flag:FLAGMAP[t.t]||"",done:false,prov:true};
- return{name:placeholder,flag:"",done:false};
-}
-function brSlot(txt){
- let m;
- if(m=/^Winner ([A-L])$/.exec(txt))return brGroupSlot(m[1],0,"1"+m[1]);
- if(m=/^Runner-up ([A-L])$/.exec(txt))return brGroupSlot(m[1],1,"2"+m[1]);
+ return null;}
+function koAdvance(n,which){const sc=cardScore(n);
+ if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null||sc.h===sc.a)return null;
+ const mt=brM(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?resolveKO(mt.home):resolveKO(mt.away);
+ return(pick&&pick.done)?pick:null;}
+function resolveKO(txt){let m;
+ if(m=/^Winner ([A-L])$/.exec(txt))return koGroup(m[1],0);
+ if(m=/^Runner-up ([A-L])$/.exec(txt))return koGroup(m[1],1);
+ if(m=/^Winner M(\d+)$/.exec(txt))return koAdvance(+m[1],"W");
+ if(m=/^Loser M(\d+)$/.exec(txt))return koAdvance(+m[1],"L");
+ return null;}
+// Bracket cell: resolved team, else the compact FIFA code that fits the narrow tree cells.
+function brSlot(txt){const r=resolveKO(txt);if(r)return r;let m;
+ if(m=/^Winner ([A-L])$/.exec(txt))return{name:"1"+m[1],flag:"",done:false};
+ if(m=/^Runner-up ([A-L])$/.exec(txt))return{name:"2"+m[1],flag:"",done:false};
  if(m=/^Best 3rd \(([A-L/]+)\)$/.exec(txt))return{name:"3·"+m[1].replace(/\//g,""),flag:"",done:false};
- if(m=/^Winner M(\d+)$/.exec(txt))return brAdvance(+m[1],"W");
- if(m=/^Loser M(\d+)$/.exec(txt))return brAdvance(+m[1],"L");
- return{name:txt,flag:"",done:false};
-}
+ if(m=/^Winner M(\d+)$/.exec(txt))return{name:"W"+m[1],flag:"",done:false};
+ if(m=/^Loser M(\d+)$/.exec(txt))return{name:"L"+m[1],flag:"",done:false};
+ return{name:txt,flag:"",done:false};}
 function brTeams(n){const mt=brM(n);return{home:brSlot(mt.home),away:brSlot(mt.away)};}
-function brAdvance(n,which){
- const label=(which==="W"?"W":"L")+n,sc=cardScore(n);
- if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null||sc.h===sc.a)return{name:label,flag:"",done:false};
- const tt=brTeams(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?tt.home:tt.away;
- return pick.done?pick:{name:label,flag:"",done:false};
-}
+// Schedule cell: real flag+name when resolvable (projected gets prov), else the readable seed label ("Runner-up A").
+function dispTeam(m,side){const raw=m[side];
+ if(m.group_game)return{name:raw,flag:m[side==="home"?"hf":"af"],done:true};
+ const r=resolveKO(raw);
+ if(r)return{name:r.name,flag:r.flag,done:r.done,prov:r.prov};
+ return{name:raw,flag:"",done:false};}
+// inline "🇿🇦 South Africa v 🇨🇦 Canada" for the LIVE NOW / Next-match banners (resolves knockout slots)
+function teamsInline(m){const one=d=>(d.flag?d.flag+" ":"")+escA(d.name)+(d.prov?'<span class="brq">?</span>':"");return one(dispTeam(m,"home"))+' <span class="vs">v</span> '+one(dispTeam(m,"away"));}
 let brActive=0;
 function brTie(n){
  const mt=brM(n),tt=brTeams(n),sc=cardScore(n);
@@ -1417,7 +1433,7 @@ const BR_LAYOUT={
 function brColHTML(c,half){return '<div class="brcol" data-round="'+c.round+'" data-half="'+half+'"><div class="brh">'+c.label+'</div><div class="brties">'+c.ns.map(brTie).join("")+'</div></div>';}
 function renderBracket(){
  const box=document.getElementById("bracket");if(!box)return;
- const champ=brAdvance(104,"W");
+ const champ=koAdvance(104,"W")||{done:false};
  const left=BR_LAYOUT.L.map(c=>brColHTML(c,"L")).join("");
  const right=BR_LAYOUT.R.map(c=>brColHTML(c,"R")).join("");
  const center='<div class="brcenter">'
