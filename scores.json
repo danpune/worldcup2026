@@ -1,5 +1,5 @@
 {
-"updated": "2026-06-27T23:00:15Z",
+"updated": "2026-06-27T23:10:10Z",
 "source": "football-data.org",
 "scores": {
 "1": {
@@ -302,6 +302,16 @@
 "a": 0,
 "s": "FINISHED"
 },
+"61": {
+"h": 1,
+"a": 4,
+"s": "FINISHED"
+},
+"62": {
+"h": 5,
+"a": 0,
+"s": "FINISHED"
+},
 "64": {
 "h": 0,
 "a": 1,
@@ -319,18 +329,18 @@
 },
 "65": {
 "h": 1,
-"a": 2,
+"a": 1,
 "s": "FINISHED"
 },
 "67": {
 "h": 0,
 "a": 2,
-"s": "IN_PLAY"
+"s": "FINISHED"
 },
 "68": {
 "h": 2,
 "a": 1,
-"s": "IN_PLAY"
+"s": "FINISHED"
 }
 }
 }
