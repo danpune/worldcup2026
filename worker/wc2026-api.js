@@ -200,38 +200,48 @@ export default {
       ctx.waitUntil(qc.put(qk, qr.clone())); return qr;
     }
 
-    // World Cup news headlines — fetched server-side from Google News RSS (free, no key) and cached 15 min,
-    // so the page stays tracker-free (the visitor's browser never calls Google). Returns clean {title, link, source, pub}.
+    // World Cup news headlines — fetched server-side from Google News RSS (free, no key).
+    // Stale-while-revalidate: cache hit = instant; cache miss = serve stale KV immediately while
+    // background-refreshing via ctx.waitUntil (user never waits for the 8-9s RSS fetch on a miss).
     if (url.pathname === "/news") {
       var newc = caches.default, newk = new Request(new URL("/news", url.origin).toString());
       var newh = await newc.match(newk); if (newh) return newh;
-      var nitems = [], nerr = null;
-      try {
-        var rss = await (await fetch("https://news.google.com/rss/search?q=" + encodeURIComponent("FIFA World Cup 2026") + "&hl=en-US&gl=US&ceid=US:en",
-          { headers: { "User-Agent": "Mozilla/5.0 (compatible; wc2026-news/1.0)" } })).text();
-        var parts = rss.split("<item>").slice(1);
-        for (var i = 0; i < parts.length && nitems.length < 24; i++) {
-          var b = parts[i];
-          var title = decodeEntities(stripCdata((b.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "")).trim();
-          var link = stripCdata((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || "").trim();
-          var src = decodeEntities(stripCdata((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || "")).trim();
-          var pub = ((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || "").trim();
-          var img = ((b.match(/<media:thumbnail[^>]+url="([^"]+)"/) || [])[1] || (b.match(/<media:content[^>]+url="([^"]+)"/) || [])[1] || "").trim();
-          if (src && title.length > src.length + 3 && title.slice(-(src.length + 3)) === " - " + src) title = title.slice(0, -(src.length + 3)).trim();
-          if (title && /^https?:\/\//i.test(link)) nitems.push({ title: title, link: link, source: src, pub: pub, img: img || null });
-        }
-      } catch (e) { nerr = String(e); }
-      if (nitems.length) {
-        var good = JSON.stringify({ updated: new Date().toISOString(), count: nitems.length, items: nitems, errors: null }, null, 2);
-        ctx.waitUntil(env.STATE.put("news:last", good, { expirationTtl: 86400 }));   // remember the last good set (24h)
-        var newr = new Response(good, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=900" }) }); // 15 min
-        ctx.waitUntil(newc.put(newk, newr.clone()));
-        return newr;
-      }
-      // Google occasionally serves a consent/non-RSS page (0 items parsed) — serve the last good set so the feed never goes blank.
+      // Cache miss: fetch stale from KV while triggering background refresh
       var lastNews = await env.STATE.get("news:last");
-      if (lastNews) return new Response(lastNews, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=300" }) });
-      return new Response(JSON.stringify({ updated: new Date().toISOString(), count: 0, items: [], errors: nerr || "no items" }, null, 2),
+      var doRefreshNews = async function() {
+        var nitems = [];
+        try {
+          var rss = await (await fetch("https://news.google.com/rss/search?q=" + encodeURIComponent("FIFA World Cup 2026") + "&hl=en-US&gl=US&ceid=US:en",
+            { headers: { "User-Agent": "Mozilla/5.0 (compatible; wc2026-news/1.0)" } })).text();
+          var parts = rss.split("<item>").slice(1);
+          for (var i = 0; i < parts.length && nitems.length < 24; i++) {
+            var b = parts[i];
+            var title = decodeEntities(stripCdata((b.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "")).trim();
+            var link = stripCdata((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || "").trim();
+            var src = decodeEntities(stripCdata((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || "")).trim();
+            var pub = ((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || "").trim();
+            var img = ((b.match(/<media:thumbnail[^>]+url="([^"]+)"/) || [])[1] || (b.match(/<media:content[^>]+url="([^"]+)"/) || [])[1] || "").trim();
+            if (src && title.length > src.length + 3 && title.slice(-(src.length + 3)) === " - " + src) title = title.slice(0, -(src.length + 3)).trim();
+            if (title && /^https?:\/\//i.test(link)) nitems.push({ title: title, link: link, source: src, pub: pub, img: img || null });
+          }
+        } catch (e) {}
+        if (nitems.length) {
+          var good = JSON.stringify({ updated: new Date().toISOString(), count: nitems.length, items: nitems, errors: null }, null, 2);
+          await env.STATE.put("news:last", good, { expirationTtl: 86400 });
+          var newr = new Response(good, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=900" }) });
+          await newc.put(newk, newr.clone());
+          return newr;
+        }
+        return null;
+      };
+      if (lastNews) {
+        ctx.waitUntil(doRefreshNews());  // background refresh, user gets stale immediately
+        return new Response(lastNews, { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=60" }) });
+      }
+      // First boot: no stale data yet — must wait for the live fetch this once
+      var freshResp = await doRefreshNews();
+      if (freshResp) return freshResp;
+      return new Response(JSON.stringify({ updated: new Date().toISOString(), count: 0, items: [], errors: "no items" }, null, 2),
         { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=0" }) });
     }
 
