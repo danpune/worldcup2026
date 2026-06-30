@@ -10,10 +10,9 @@
  * DECOUPLED READS: the once-a-minute cron is the ONLY thing that calls API-Football for scores/match data.
  * It writes a `scores` snapshot and `match:<fid>` detail into KV; the public /scores and /match routes read
  * from KV, so visitor traffic never hits the upstream API (no per-minute rate-limit risk at any scale).
- * Live data is therefore at most ~60s old (the cron cadence). /squad still fetches on demand (cached 6h).
+ * Live data is therefore at most ~60s old (the cron cadence).
  *                         stats = possession/shots/xG…; events = goal/card/sub timeline;
  *                         lineups = starting XI + formation per team
- *   GET /squad?team=   -> full squad/roster for a team (name -> id -> /players/squads), cached 6h
  *   GET /status        -> API-Football account/key check
  *   GET /testpush?key=…[&team=X] -> send a test push (admin; requires ADMIN_KEY)
  *   GET /run?key=…     -> run the alert detector once (admin; first call seeds silently)
@@ -45,23 +44,6 @@ var LIVE_S = ["1H", "2H", "ET", "BT", "P", "LIVE", "INT"], FINAL_S = ["FT", "AET
 // so the team_<tag> we target matches the team_<tag> the front-end subscribes the user to.
 var TEAM_ALIAS = { "Cape Verde Islands": "Cape Verde", "Congo DR": "DR Congo" };
 function teamTag(name) { return tagKey(TEAM_ALIAS[name] || name); }
-
-// Resolve a canonical team name -> API-Football team id, via a 24h-cached map of all WC teams.
-// The map is keyed by tagKey(canonical name) so the front-end's names ("Sweden", "DR Congo") resolve directly.
-async function resolveTeamId(env, ctx, cache, origin, name) {
-  var mk = new Request(new URL("/teamsmap", origin).toString());
-  var map = null, hit = await cache.match(mk);
-  if (hit) { try { map = await hit.json(); } catch (e) {} }
-  if (!map) {
-    var headers = { "x-apisports-key": env.APISPORTS_KEY };
-    var td = await (await fetch(API + "/teams?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json();
-    map = {};
-    (td.response || []).forEach(function (x) { if (x.team && x.team.id) map[tagKey(TEAM_ALIAS[x.team.name] || x.team.name)] = x.team.id; });
-    var mr = new Response(JSON.stringify(map), { headers: { "content-type": "application/json", "cache-control": "max-age=86400" } });
-    ctx.waitUntil(cache.put(mk, mr.clone()));
-  }
-  return map[tagKey(name)] || null;
-}
 
 export default {
   async fetch(request, env, ctx) {
@@ -178,26 +160,6 @@ export default {
         }));
       } catch (_) {}
       return new Response(null, { status: 204, headers: cors() });
-    }
-
-    if (url.pathname === "/squad") {
-      var tname = url.searchParams.get("team"); if (!tname) return json({ error: "missing team" });
-      var qc = caches.default, qk = new Request(new URL("/squad?team=" + encodeURIComponent(tname), url.origin).toString());
-      var qh = await qc.match(qk); if (qh) return qh;
-      var players = [], qe = null;
-      try {
-        var tid = await resolveTeamId(env, ctx, qc, url.origin, tname);
-        if (!tid) { qe = "team not found"; }
-        else {
-          var qd = await (await fetch(API + "/players/squads?team=" + tid, { headers })).json();
-          var sq = (qd.response && qd.response[0]) || {};
-          players = (sq.players || []).map(function (p) { return { name: p.name, number: p.number, pos: p.position, age: p.age }; });
-          if (qd.errors && Object.keys(qd.errors).length) qe = qd.errors;
-        }
-      } catch (e) { qe = String(e); }
-      var qr = new Response(JSON.stringify({ team: tname, count: players.length, players: players, errors: qe }, null, 2),
-        { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=21600" }) }); // 6h
-      ctx.waitUntil(qc.put(qk, qr.clone())); return qr;
     }
 
     // World Cup news headlines — fetched server-side from Google News RSS (free, no key).
