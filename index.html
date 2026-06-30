@@ -226,6 +226,8 @@ body.np-open{padding-bottom:88px}
 .evw sub{font-size:8px;vertical-align:super;font-weight:700}
 .lineups{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .luc .lut{font-weight:700;font-size:12.5px;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.luc .lutn{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.kit{width:11px;height:11px;border-radius:50%;flex:0 0 auto;border:1px solid rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .luc .luf{font-family:Oswald;color:var(--muted);font-size:11px;font-weight:400}
 .luc ul{list-style:none;margin:0;padding:0}
 .luc li{font-size:12.5px;line-height:1.7;color:var(--text)}
@@ -973,10 +975,16 @@ function timelineHTML(events,hname){
  return '<div class="stsub">Cards &amp; subs</div><div class="stsec timeline">'+rows+'</div>';
 }
 /* starting line-ups, two columns */
+// kit swatch from API-Football lineup colours (shirt primary), shown once lineups are live ~40 min pre-kickoff
+function kitSwatch(team){var c=team&&team.colors&&team.colors.player;if(!c||!c.primary)return "";
+ if(!/^[0-9a-fA-F]{6}$/.test(c.primary))return "";   /* validate hex before it touches a style attribute */
+ var gk=team.colors.goalkeeper&&team.colors.goalkeeper.primary;
+ var tip=/^[0-9a-fA-F]{6}$/.test(gk||"")?("Kit #"+c.primary+" · GK #"+gk):("Kit #"+c.primary);
+ return '<span class="kit" style="background:#'+c.primary+'" title="'+tip+'"></span>';}
 function lineupsHTML(lu){
  if(!lu||lu.length<2||!lu[0].startXI||!lu[1].startXI)return "";
  const col=t=>{const xi=(t.startXI||[]).map(p=>'<li>'+(p.player&&p.player.number!=null?'<b>'+p.player.number+'</b> ':"")+escA((p.player&&p.player.name)||"")+'</li>').join("");
-  return '<div class="luc"><div class="lut">'+escA((t.team&&t.team.name)||"")+(t.formation?'<span class="luf">'+escA(t.formation)+'</span>':"")+'</div><ul>'+xi+'</ul></div>';};
+  return '<div class="luc"><div class="lut"><span class="lutn">'+kitSwatch(t.team)+escA((t.team&&t.team.name)||"")+'</span>'+(t.formation?'<span class="luf">'+escA(t.formation)+'</span>':"")+'</div><ul>'+xi+'</ul></div>';};
  return '<div class="stsub">Starting XI</div><div class="stsec lineups">'+col(lu[0])+col(lu[1])+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".statsbtn");if(!b||!b.dataset.fid)return;  /* ignore the Squads button (no fid) */
