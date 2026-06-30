@@ -726,7 +726,7 @@ let livePollTimer=null;
 let _scoreSig="";
 /* signature of everything the card/standings render reads from the live feed — lets the
    poll skip a full re-render when nothing actually changed (perf: avoids rebuilding 104 cards). */
-function scoreSig(){return Object.keys(LIVE.scores).sort().map(function(k){var s=LIVE.scores[k];return k+":"+(s?(s.h+","+s.a+","+s.s+","+s.min+","+s.fid):"");}).join("|");}
+function scoreSig(){return Object.keys(LIVE.scores).sort().map(function(k){var s=LIVE.scores[k];return k+":"+(s?(s.h+","+s.a+","+s.s+","+s.min+","+s.fid+","+s.w):"");}).join("|");}
 async function fetchLive(){
  let base={},baseUpdated=null;
  try{const r=await fetch("scores.json?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();base=j.scores||{};baseUpdated=j.updated||null;}}catch(e){}
@@ -740,7 +740,7 @@ async function fetchLive(){
     if(st.s==="SCHEDULED"&&f.h==null&&!ko)return;          /* keep a scoreless knockout fixture so its real matchup shows */
     /* coerce feed values to numbers (or null) at ingestion so no feed string ever reaches innerHTML */
     const H=f.h==null?null:(Number.isFinite(+f.h)?+f.h:null),A=f.a==null?null:(Number.isFinite(+f.a)?+f.a:null),MN=f.minute==null?null:(Number.isInteger(+f.minute)?+f.minute:null);
-    overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(ko){overlay[n].home=ko.home;overlay[n].away=ko.away;}if(st.live)anyLive=true;});}
+    overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(ko){overlay[n].home=ko.home;overlay[n].away=ko.away;}if(f.w==="h"||f.w==="a")overlay[n].w=f.w;if(st.live)anyLive=true;});}
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
  LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:usingApi?"api-football":"football-data",ok:(apiOk||Object.keys(base).length>0)};
@@ -1249,13 +1249,13 @@ function renderList(){
   const c=document.createElement("div");c.className="card"+((isFollowed(dh.name)||isFollowed(da.name))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);c.dataset.n=m.n;
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
   const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
-  const es=cardScore(m.n);
+  const es=cardScore(m.n),ew=koWinner(es);
   const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
   // knockout slots resolve to real/projected teams (same engine as the bracket); unresolved keeps the seed label
   const teamRow=(d,score)=>(d.done||d.prov)
    ?`<div class="trow${d.prov?" koprov":""}">${d.flag?d.flag+" ":""}${tk(d.name)}${d.prov?'<span class="brq" title="Projected — group still being played">?</span>':""}${rkx(d.name)}${favBtn(d.name)}${score}</div>`
    :`<div class="trow koplace">${escA(d.name)}${score}</div>`;
-  const teams=teamRow(dh,tsc(es&&es.h,es&&es.h<es.a))+'<span class="vsep">v</span>'+teamRow(da,tsc(es&&es.a,es&&es.a<es.h));
+  const teams=teamRow(dh,tsc(es&&es.h,ew==="a"))+'<span class="vsep">v</span>'+teamRow(da,tsc(es&&es.a,ew==="h"));
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!es)?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(m)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a>`:"";
@@ -1416,9 +1416,12 @@ function koGroup(g,idx){const a=computeGroup(g),done=a.length>=4&&a.every(t=>t.P
  if(t&&done)return{name:t.t,flag:FLAGMAP[t.t]||"",done:true};
  if(t&&any)return{name:t.t,flag:FLAGMAP[t.t]||"",done:false,prov:true};
  return null;}
-function koAdvance(n,which){const sc=cardScore(n);
- if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null||sc.h===sc.a)return null;
- const tt=brTeams(n),homeWon=sc.h>sc.a,pick=((which==="W")===homeWon)?tt.home:tt.away;   // uses the real fixture teams (feed) when present, else the resolved slots
+// Who advanced: explicit feed winner (w) when present — covers penalty shootouts where the
+// regulation score is level — else the higher score. null = not finished or undecided.
+function koWinner(sc){if(!sc||sc.s!=="FINISHED"||sc.h==null||sc.a==null)return null;if(sc.w==="h"||sc.w==="a")return sc.w;if(sc.h>sc.a)return "h";if(sc.a>sc.h)return "a";return null;}
+function koAdvance(n,which){const sc=cardScore(n),w=koWinner(sc);
+ if(!w)return null;
+ const tt=brTeams(n),homeWon=w==="h",pick=((which==="W")===homeWon)?tt.home:tt.away;   // uses the real fixture teams (feed) when present, else the resolved slots
  return(pick&&pick.done)?pick:null;}
 function resolveKO(txt){let m;
  if(m=/^Winner ([A-L])$/.exec(txt))return koGroup(m[1],0);
@@ -1452,12 +1455,12 @@ const brCity=c=>BR_CITY_SHORT[c]||c;
 let brActive=0;
 function brTie(n){
  const mt=brM(n),tt=brTeams(n),sc=cardScore(n);
- const decided=sc&&sc.s==="FINISHED"&&sc.h!=null&&sc.a!=null&&sc.h!==sc.a,homeWon=decided&&sc.h>sc.a;
+ const w=koWinner(sc),decided=!!w,homeWon=w==="h",pens=decided&&sc.h===sc.a;
  const real=s=>s.done||s.prov;
  const row=(s,score,win,lose)=>'<div class="brteam'+(real(s)?'':' tbd')+(s.prov?' prov':'')+(real(s)&&isFollowed(s.name)?' fol':'')+(win?' win':'')+(lose?' lose':'')+'">'
   +'<span class="brfl">'+(s.flag||'')+'</span><span class="brnm">'+escA(s.name)+(s.prov?'<span class="brq" title="Projected from the current group table — not yet confirmed">?</span>':'')+'</span><span class="brsc">'+(score==null?'':score)+'</span></div>';
  let meta;
- if(sc&&sc.s==="FINISHED")meta="Full-time";
+ if(sc&&sc.s==="FINISHED")meta=pens?"Full-time · pens":"Full-time";
  else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
  else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+' · <span class="brcity">'+escA(brCity(mt.city))+'</span>';}
  meta='<span class="brmn">M'+n+'</span> '+meta;

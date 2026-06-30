@@ -124,7 +124,7 @@ export default {
       try {
         var data = await (await fetch(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json();
         if (data.errors && Object.keys(data.errors).length) errors = data.errors;
-        matches = (data.response || []).map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed }; });
+        matches = (data.response || []).map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, w: x.teams.home.winner === true ? "h" : (x.teams.away.winner === true ? "a" : null) }; });
       } catch (e) { errors = String(e); }
       if (matches.length && !errors) {
         // Good data: serve it (cache 30s) and refresh the long-lived last-good copy (10 min).
@@ -335,7 +335,7 @@ async function runDetector(env) {
     if (fxResp.errors && Object.keys(fxResp.errors).length) return { error: fxResp.errors };
     fixtures = fxResp.response || [];
     // Decoupled reads: write the public scores snapshot to KV so visitor /scores reads never touch the API.
-    var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, t: x.fixture.timestamp }; });
+    var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, w: x.teams.home.winner === true ? "h" : (x.teams.away.winner === true ? "a" : null), t: x.fixture.timestamp }; });
     // Write the scores snapshot only when it actually CHANGED (or every ~10 min as a freshness heartbeat).
     // The minute advances every tick while a match is live, so this still refreshes each minute during a game —
     // but skips the many idle minutes between matches. Biggest KV-write saver (was 1/tick = up to 1440/day).

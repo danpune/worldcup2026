@@ -94,6 +94,10 @@ def build_scores(api_matches):
         entry = {"h": gh, "a": ga, "s": status}
         if is_ko:                                  # carry the real teams so the page shows them (koFeedTeams)
             entry["home"], entry["away"] = h, a
+            if gh == ga:                                     # level score -> who advanced is decided by the shootout
+                winner = (m.get("score") or {}).get("winner")   # HOME_TEAM / AWAY_TEAM / DRAW / None
+                if winner in ("HOME_TEAM", "AWAY_TEAM"):
+                    entry["w"] = "h" if winner == "HOME_TEAM" else "a"
         if status == "IN_PLAY":                    # attach the live minute only when in play and the feed provides it
             try:
                 mn = m.get("minute")

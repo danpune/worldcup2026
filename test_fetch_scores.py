@@ -14,12 +14,12 @@ import unittest
 import fetch_scores as fs
 
 
-def match(home, away, home_goals=None, away_goals=None, status="FINISHED", minute=None, utc_date=None):
+def match(home, away, home_goals=None, away_goals=None, status="FINISHED", minute=None, utc_date=None, winner=None):
     """Build a football-data.org-shaped match dict for tests."""
     return {
         "homeTeam": {"name": home},
         "awayTeam": {"name": away},
-        "score": {"fullTime": {"home": home_goals, "away": away_goals}},
+        "score": {"fullTime": {"home": home_goals, "away": away_goals}, "winner": winner},
         "status": status,
         "minute": minute,
         "utcDate": utc_date,
@@ -165,6 +165,21 @@ class TestKnockoutMapping(unittest.TestCase):
         scores, _ = fs.build_scores([match("Mexico", "South Africa", 2, 0, utc_date="2026-06-11T19:00:00Z")])
         self.assertEqual(scores["1"], {"h": 2, "a": 0, "s": "FINISHED"})
         self.assertNotIn("home", scores["1"])
+
+    def test_penalty_shootout_winner_is_captured(self):
+        # Level regulation score; football-data.org's winner field says who advanced.
+        scores, _ = fs.build_scores([match("Germany", "Paraguay", 1, 1, utc_date="2026-06-29T20:30:00Z", winner="AWAY_TEAM")])
+        self.assertEqual(scores["74"], {"h": 1, "a": 1, "s": "FINISHED", "home": "Germany", "away": "Paraguay", "w": "a"})
+
+    def test_home_shootout_winner(self):
+        scores, _ = fs.build_scores([match("Netherlands", "Morocco", 2, 2, utc_date="2026-06-30T01:00:00Z", winner="HOME_TEAM")])
+        self.assertEqual(scores["75"]["w"], "h")
+
+    def test_decisive_knockout_has_no_winner_field(self):
+        # A clear result doesn't need the winner hint (the score alone decides it).
+        scores, _ = fs.build_scores([match("Brazil", "Japan", 2, 1, utc_date="2026-06-29T17:00:00Z", winner="HOME_TEAM")])
+        self.assertNotIn("w", scores["76"])  # decisive scores carry no redundant w
+
 
 
 if __name__ == "__main__":
