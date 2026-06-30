@@ -22,9 +22,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Fetch scores from football-data.org
-        env:
-          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      - name: Fetch scores from the worker feed
         run: python fetch_scores.py
 
       - name: Commit if scores changed
