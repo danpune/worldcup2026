@@ -1,5 +1,5 @@
 {
-"updated": "2026-06-30T04:50:10Z",
+"updated": "2026-06-30T04:53:27Z",
 "source": "football-data.org",
 "scores": {
 "1": {
@@ -361,6 +361,34 @@
 "h": 3,
 "a": 3,
 "s": "FINISHED"
+},
+"73": {
+"h": 0,
+"a": 1,
+"s": "FINISHED",
+"home": "South Africa",
+"away": "Canada"
+},
+"76": {
+"h": 2,
+"a": 1,
+"s": "FINISHED",
+"home": "Brazil",
+"away": "Japan"
+},
+"74": {
+"h": 4,
+"a": 5,
+"s": "FINISHED",
+"home": "Germany",
+"away": "Paraguay"
+},
+"75": {
+"h": 3,
+"a": 4,
+"s": "FINISHED",
+"home": "Netherlands",
+"away": "Morocco"
 }
 }
 }
