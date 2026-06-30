@@ -227,7 +227,7 @@ body.np-open{padding-bottom:88px}
 .lineups{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .luc .lut{font-weight:700;font-size:12.5px;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;align-items:baseline}
 .luc .lutn{display:inline-flex;align-items:center;gap:5px;min-width:0}
-.kit{width:11px;height:11px;border-radius:50%;flex:0 0 auto;border:1px solid rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.kit{display:inline-block;width:11px;height:11px;border-radius:50%;flex:0 0 auto;vertical-align:middle;border:1px solid rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .luc .luf{font-family:Oswald;color:var(--muted);font-size:11px;font-weight:400}
 .luc ul{list-style:none;margin:0;padding:0}
 .luc li{font-size:12.5px;line-height:1.7;color:var(--text)}
@@ -710,7 +710,7 @@ tzSel.value="__local__";tzSel.addEventListener("change",()=>{TZ=tzSel.value==="_
 function dParts(iso){const d=new Date(iso);return{day:d.toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"}),time:d.toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}),d};}
 
 /* live scores from feed */
-let LIVE={scores:{},updated:null,source:null,ok:false};
+let LIVE={scores:{},kits:{},updated:null,source:null,ok:false};
 /* Live scores: a committed scores.json snapshot is the base; the live API-Football feed (via our Cloudflare Worker) is overlaid on top. Both layers are API-Football. */
 const LIVE_API="https://wc2026-api.footy26.workers.dev/scores";
 const TEAM_ALIAS={"Cape Verde Islands":"Cape Verde","Congo DR":"DR Congo"};  /* API-Football spellings → our schedule */
@@ -728,24 +728,24 @@ let livePollTimer=null;
 let _scoreSig="";
 /* signature of everything the card/standings render reads from the live feed — lets the
    poll skip a full re-render when nothing actually changed (perf: avoids rebuilding 104 cards). */
-function scoreSig(){return Object.keys(LIVE.scores).sort().map(function(k){var s=LIVE.scores[k];return k+":"+(s?(s.h+","+s.a+","+s.s+","+s.min+","+s.fid+","+s.w):"");}).join("|");}
+function scoreSig(){var s=Object.keys(LIVE.scores).sort().map(function(k){var v=LIVE.scores[k];return k+":"+(v?(v.h+","+v.a+","+v.s+","+v.min+","+v.fid+","+v.w):"");}).join("|");var ks=Object.keys(LIVE.kits||{}).sort().map(function(k){var v=LIVE.kits[k];return k+":"+v.h+","+v.a;}).join("|");return s+"||"+ks;}
 async function fetchLive(){
  let base={},baseUpdated=null;
  try{const r=await fetch("scores.json?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();base=j.scores||{};baseUpdated=j.updated||null;}}catch(e){}
- let overlay={},apiUpdated=null,anyLive=false,apiOk=false;
+ let overlay={},kitmap={},apiUpdated=null,anyLive=false,apiOk=false;
  try{
   const r=await fetch(LIVE_API+"?t="+Date.now(),{cache:"no-store"});
   if(r.ok){const j=await r.json();apiOk=true;apiUpdated=j.updated||null;
    (j.matches||[]).forEach(f=>{let n=PAIR2N[pairKey(f.home,f.away)],ko=null;
     if(!n&&f.t){n=TIME2N[Math.round(f.t)];if(n)ko={home:normTeam(f.home),away:normTeam(f.away)};}  /* knockout: map the real fixture by kickoff time + capture the teams the placeholder pair can't match */
-    if(!n)return;const st=mapApiStatus(f.status);
+    if(!n)return;if(f.kh||f.ka)kitmap[n]={h:f.kh||null,a:f.ka||null};const st=mapApiStatus(f.status);
     if(st.s==="SCHEDULED"&&f.h==null&&!ko)return;          /* keep a scoreless knockout fixture so its real matchup shows */
     /* coerce feed values to numbers (or null) at ingestion so no feed string ever reaches innerHTML */
     const H=f.h==null?null:(Number.isFinite(+f.h)?+f.h:null),A=f.a==null?null:(Number.isFinite(+f.a)?+f.a:null),MN=f.minute==null?null:(Number.isInteger(+f.minute)?+f.minute:null);
     overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(ko){overlay[n].home=ko.home;overlay[n].away=ko.away;}if(f.w==="h"||f.w==="a")overlay[n].w=f.w;if(st.live)anyLive=true;});}
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
- LIVE={scores:Object.assign({},base,overlay),updated:usingApi?apiUpdated:baseUpdated,source:"api-football",ok:(apiOk||Object.keys(base).length>0)};
+ LIVE={scores:Object.assign({},base,overlay),kits:kitmap,updated:usingApi?apiUpdated:baseUpdated,source:"api-football",ok:(apiOk||Object.keys(base).length>0)};
  Object.keys(LIVE.scores).forEach(function(k){noteClock(k,LIVE.scores[k]);});
  var sig=scoreSig();
  if(sig!==_scoreSig){_scoreSig=sig;render();}      /* full re-render only when the live scores changed */
@@ -754,6 +754,7 @@ async function fetchLive(){
  clearTimeout(livePollTimer);livePollTimer=setTimeout(fetchLive,anyLive?20000:120000);  /* poll fast while live, slow otherwise */
 }
 function liveScore(n){const s=LIVE.scores[n];if(s&&s.h!=null&&s.a!=null)return s;return null;}
+function kitFor(n){return (LIVE.kits&&LIVE.kits[n])||null;}   /* {h,a} shirt-primary hex for the card, present ~40 min pre-KO once line-ups publish */
 function cardScore(n){return liveScore(n);}                          /* score to display — feed only, read-only */
 function tableScore(n){const l=liveScore(n);return l&&l.s==="FINISHED"?l:null;} /* counts in the table once final */
 function isOngoing(s){return s==="IN_PLAY"||s==="PAUSED";}
@@ -1260,10 +1261,12 @@ function renderList(){
   const es=cardScore(m.n),ew=koWinner(es);
   const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
   // knockout slots resolve to real/projected teams (same engine as the bracket); unresolved keeps the seed label
-  const teamRow=(d,score)=>(d.done||d.prov)
-   ?`<div class="trow${d.prov?" koprov":""}">${d.flag?d.flag+" ":""}${tk(d.name)}${d.prov?'<span class="brq" title="Projected — group still being played">?</span>':""}${rkx(d.name)}${favBtn(d.name)}${score}</div>`
+  const ksw=hex=>(hex&&/^[0-9a-fA-F]{6}$/.test(hex))?`<span class="kit" style="background:#${hex}" title="Match kit"></span> `:"";
+  const kit=kitFor(m.n)||{};
+  const teamRow=(d,score,kh)=>(d.done||d.prov)
+   ?`<div class="trow${d.prov?" koprov":""}">${d.flag?d.flag+" ":""}${ksw(kh)}${tk(d.name)}${d.prov?'<span class="brq" title="Projected — group still being played">?</span>':""}${rkx(d.name)}${favBtn(d.name)}${score}</div>`
    :`<div class="trow koplace">${escA(d.name)}${score}</div>`;
-  const teams=teamRow(dh,tsc(es&&es.h,ew==="a"))+'<span class="vsep">v</span>'+teamRow(da,tsc(es&&es.a,ew==="h"));
+  const teams=teamRow(dh,tsc(es&&es.h,ew==="a"),kit.h)+'<span class="vsep">v</span>'+teamRow(da,tsc(es&&es.a,ew==="h"),kit.a);
   const driveTxt=m.near?` · <span class="drive">🚗 drivable</span>`:"";
   /* calendar "Add" only makes sense before kickoff — drop it once a match is in play or finished */
   let right=(new Date(m.utc)>now&&!es)?`<a class="cal" href="${gcalUrl(m)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(m)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a>`:"";

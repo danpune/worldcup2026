@@ -323,9 +323,27 @@ export default {
   }
 };
 
+// Extract shirt-primary hex per team from an API-Football line-ups response (matched by team id).
+function kitColors(lineups, homeId, awayId) {
+  if (!lineups || !lineups.length) return null;
+  function hex(id) {
+    for (var i = 0; i < lineups.length; i++) {
+      var lu = lineups[i];
+      if (lu.team && lu.team.id === id) {
+        var c = lu.team.colors && lu.team.colors.player;
+        return (c && /^[0-9a-fA-F]{6}$/.test(c.primary || "")) ? c.primary : null;
+      }
+    }
+    return null;
+  }
+  var h = hex(homeId), a = hex(awayId);
+  return (h || a) ? { h: h, a: a } : null;
+}
+
 async function runDetector(env) {
   var raw = null, state = {}; try { raw = await env.STATE.get("state"); state = JSON.parse(raw) || {}; } catch (e) {}
   state.fx = state.fx || {};
+  state.kits = state.kits || {};   // fid -> {h,a} shirt-primary hex, captured once when line-ups publish
   var sending = !!state.seeded, log = [], sent = 0;
   var headers = { "x-apisports-key": env.APISPORTS_KEY }, fixtures = [];
   try {
@@ -335,7 +353,7 @@ async function runDetector(env) {
     if (fxResp.errors && Object.keys(fxResp.errors).length) return { error: fxResp.errors };
     fixtures = fxResp.response || [];
     // Decoupled reads: write the public scores snapshot to KV so visitor /scores reads never touch the API.
-    var snap = fixtures.map(function (x) { return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, w: x.teams.home.winner === true ? "h" : (x.teams.away.winner === true ? "a" : null), t: x.fixture.timestamp }; });
+    var snap = fixtures.map(function (x) { var k = state.kits[String(x.fixture.id)] || {}; return { id: x.fixture.id, home: x.teams.home.name, away: x.teams.away.name, h: x.goals.home, a: x.goals.away, status: x.fixture.status.short, minute: x.fixture.status.elapsed, w: x.teams.home.winner === true ? "h" : (x.teams.away.winner === true ? "a" : null), kh: k.h || null, ka: k.a || null, t: x.fixture.timestamp }; });
     // Write the scores snapshot only when it actually CHANGED (or every ~10 min as a freshness heartbeat).
     // The minute advances every tick while a match is live, so this still refreshes each minute during a game —
     // but skips the many idle minutes between matches. Biggest KV-write saver (was 1/tick = up to 1440/day).
@@ -354,6 +372,14 @@ async function runDetector(env) {
     var gh = f.goals.home == null ? 0 : f.goals.home, ga = f.goals.away == null ? 0 : f.goals.away, score = gh + "–" + ga;
     var ko = Date.parse(f.fixture.date), st = state.fx[fid] || {};
     var live = LIVE_S.indexOf(short) >= 0, finished = FINAL_S.indexOf(short) >= 0;
+    // Kit colours: capture once when line-ups publish (~40 min pre-KO), for imminent or live matches.
+    if (!state.kits[fid] && (live || (short === "NS" && ko - now > 0 && ko - now <= 50 * 60000))) {
+      try {
+        var luK = (await (await fetch(API + "/fixtures/lineups?fixture=" + fid, { headers })).json()).response || [];
+        var kc = kitColors(luK, f.teams.home.id, f.teams.away.id);
+        if (kc) state.kits[fid] = kc;
+      } catch (e) {}
+    }
     if (short === "NS" && !st.ko && ko - now > 0 && ko - now <= 16 * 60000) { await fire("🔜 Kicking off soon", home + " vs " + away + " starts in ~15 min", teams, "core"); st.ko = true; }
     if (live && !st.started) { await fire("🟢 Kick-off — " + home + " vs " + away, "The match is underway", teams, "core"); st.started = true; }
     if (short === "HT" && st.short !== "HT") await fire("⏸️ Half-time", home + " " + score + " " + away, teams, "core");
