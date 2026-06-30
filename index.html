@@ -244,8 +244,8 @@ body.np-open{padding-bottom:88px}
 .sqgrp:first-child{border-top:0}
 .sqrow{display:flex;align-items:baseline;gap:11px;font-size:14px;padding:4px 0}
 .sqrow .num{min-width:24px;text-align:right;color:var(--muted);font-weight:700;font-size:13px}
-.sqrow .nm{flex:1}
-.sqrow .ag{color:var(--muted);font-size:12px}
+.sqrow .nm{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sqrow .cl{flex:1 1 auto;text-align:right;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .sqload{color:var(--muted);padding:20px 4px;text-align:center;font-size:13.5px}
 .sqteam{font-family:Oswald;font-size:16px;font-weight:600;margin:16px 0 0;padding:9px 0 2px;border-top:2px solid var(--pitch);color:var(--text)}
 .sqteam:first-child{margin-top:2px;border-top:0}
@@ -814,9 +814,10 @@ function statHeaderHTML(m,es){
 const STATS_API="https://wc2026-api.footy26.workers.dev/match";
 let openStats=new Set(),statsCache={};
 
-/* tap a team name anywhere → its full World Cup squad (via the Worker /squad route), grouped by position */
-const SQUAD_API="https://wc2026-api.footy26.workers.dev/squad";
-let squadCache={};
+/* tap a team name anywhere → its full World Cup squad, grouped by position.
+   Source: static squads.json (player → club + club-country), built from Wikipedia by build_squads.py.
+   Served from Pages: no API key, no per-request cost, instant. */
+let squadCache=null,squadPromise=null;
 const POS_ORDER=["Goalkeeper","Defender","Midfielder","Attacker"];
 const POS_LABEL={Goalkeeper:"Goalkeepers",Defender:"Defenders",Midfielder:"Midfielders",Attacker:"Forwards"};
 function openSquad(team){
@@ -843,13 +844,14 @@ function unlockModal(){
 }
 function closeSquad(){const ov=document.getElementById("sqoverlay");if(!ov)return;ov.style.display="none";ov.innerHTML="";document.body.style.overflow="";unlockModal();}
 async function fetchSquad(team){
- if(squadCache[team])return squadCache[team];
- try{const r=await fetch(SQUAD_API+"?team="+encodeURIComponent(team));if(r.ok){const d=await r.json();if(d&&d.players&&d.players.length)squadCache[team]=d;return d;}}catch(e){}
- return null;
+ if(!squadPromise)squadPromise=fetch("squads.json").then(r=>r.ok?r.json():null).then(d=>{squadCache=(d&&d.teams)||{};return squadCache;}).catch(()=>{squadCache={};return squadCache;});
+ const teams=await squadPromise;
+ const players=(teams&&teams[team])||null;
+ return players?{team:team,players:players}:null;
 }
 function squadSectionHTML(d){
  if(!d||!d.players||!d.players.length)return '<div class="sqload">Squad isn’t available yet'+(d&&d.errors?' (the feed is busy — try again in a moment)':'')+'.</div>';
- const row=p=>'<div class="sqrow"><span class="num">'+(p.number!=null?p.number:"–")+'</span><span class="nm">'+escA(p.name||"")+'</span>'+(p.age?'<span class="ag">age '+p.age+'</span>':"")+'</div>';
+ const row=p=>'<div class="sqrow"><span class="num">'+(p.no!=null?p.no:"–")+'</span><span class="nm">'+escA(p.name||"")+'</span><span class="cl">'+(p.cflag?p.cflag+' ':"")+escA(p.club||"")+'</span></div>';
  let html='<div class="sqsub" style="padding:6px 0 2px">'+d.players.length+' players</div>';
  POS_ORDER.forEach(pos=>{const grp=d.players.filter(p=>p.pos===pos);if(!grp.length)return;
   grp.sort((a,b)=>(a.number||99)-(b.number||99));
