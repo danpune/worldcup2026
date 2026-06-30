@@ -1,7 +1,15 @@
 {
-"updated": "2026-06-30T21:00:13Z",
+"updated": "2026-06-30T21:10:12Z",
 "source": "api-football (via worker)",
 "scores": {
+"77": {
+"h": 0,
+"a": 0,
+"s": "IN_PLAY",
+"home": "France",
+"away": "Sweden",
+"min": 8
+},
 "1": {
 "h": 2,
 "a": 0,
