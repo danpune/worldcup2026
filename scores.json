@@ -1,5 +1,5 @@
 {
-"updated": "2026-06-30T17:20:09Z",
+"updated": "2026-06-30T17:30:11Z",
 "source": "api-football (via worker)",
 "scores": {
 "78": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Ivory Coast",
 "away": "Norway",
-"min": 20
+"min": 28
 },
 "1": {
 "h": 2,
