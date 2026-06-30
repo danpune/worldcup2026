@@ -1,6 +1,6 @@
 {
-"updated": "2026-06-30T06:10:10Z",
-"source": "football-data.org",
+"updated": "2026-06-30T06:13:04Z",
+"source": "api-football (via worker)",
 "scores": {
 "1": {
 "h": 2,
@@ -282,14 +282,14 @@
 "a": 2,
 "s": "FINISHED"
 },
-"58": {
-"h": 1,
-"a": 3,
-"s": "FINISHED"
-},
 "57": {
 "h": 1,
 "a": 1,
+"s": "FINISHED"
+},
+"58": {
+"h": 1,
+"a": 3,
 "s": "FINISHED"
 },
 "59": {
@@ -302,14 +302,14 @@
 "a": 0,
 "s": "FINISHED"
 },
-"61": {
-"h": 1,
-"a": 4,
-"s": "FINISHED"
-},
 "62": {
 "h": 5,
 "a": 0,
+"s": "FINISHED"
+},
+"61": {
+"h": 1,
+"a": 4,
 "s": "FINISHED"
 },
 "64": {
@@ -322,24 +322,24 @@
 "a": 0,
 "s": "FINISHED"
 },
+"65": {
+"h": 1,
+"a": 1,
+"s": "FINISHED"
+},
 "66": {
 "h": 1,
 "a": 5,
 "s": "FINISHED"
 },
-"65": {
-"h": 1,
+"68": {
+"h": 2,
 "a": 1,
 "s": "FINISHED"
 },
 "67": {
 "h": 0,
 "a": 2,
-"s": "FINISHED"
-},
-"68": {
-"h": 2,
-"a": 1,
 "s": "FINISHED"
 },
 "69": {
@@ -352,13 +352,13 @@
 "a": 1,
 "s": "FINISHED"
 },
-"72": {
-"h": 1,
+"71": {
+"h": 3,
 "a": 3,
 "s": "FINISHED"
 },
-"71": {
-"h": 3,
+"72": {
+"h": 1,
 "a": 3,
 "s": "FINISHED"
 },
@@ -377,18 +377,20 @@
 "away": "Japan"
 },
 "74": {
-"h": 4,
-"a": 5,
+"h": 1,
+"a": 1,
 "s": "FINISHED",
 "home": "Germany",
-"away": "Paraguay"
+"away": "Paraguay",
+"w": "a"
 },
 "75": {
-"h": 4,
-"a": 4,
+"h": 1,
+"a": 1,
 "s": "FINISHED",
 "home": "Netherlands",
-"away": "Morocco"
+"away": "Morocco",
+"w": "a"
 }
 }
 }
