@@ -12,6 +12,10 @@ API_URL = "https://api.football-data.org/v4/competitions/WC/matches"
 
 # group games: matchNo -> [home, away]  (canonical names used on the page)
 SCHEDULE_PAIRS = [[1, ["Mexico", "South Africa"]], [2, ["South Korea", "Czechia"]], [3, ["Canada", "Bosnia & Herzegovina"]], [4, ["USA", "Paraguay"]], [5, ["Qatar", "Switzerland"]], [6, ["Brazil", "Morocco"]], [7, ["Haiti", "Scotland"]], [8, ["Australia", "Türkiye"]], [9, ["Germany", "Curaçao"]], [10, ["Netherlands", "Japan"]], [11, ["Ivory Coast", "Ecuador"]], [12, ["Sweden", "Tunisia"]], [13, ["Spain", "Cape Verde"]], [14, ["Belgium", "Egypt"]], [15, ["Saudi Arabia", "Uruguay"]], [16, ["Iran", "New Zealand"]], [17, ["France", "Senegal"]], [18, ["Iraq", "Norway"]], [19, ["Argentina", "Algeria"]], [20, ["Austria", "Jordan"]], [21, ["Portugal", "DR Congo"]], [22, ["England", "Croatia"]], [23, ["Ghana", "Panama"]], [24, ["Uzbekistan", "Colombia"]], [25, ["Czechia", "South Africa"]], [26, ["Switzerland", "Bosnia & Herzegovina"]], [27, ["Canada", "Qatar"]], [28, ["Mexico", "South Korea"]], [29, ["USA", "Australia"]], [30, ["Scotland", "Morocco"]], [31, ["Brazil", "Haiti"]], [32, ["Türkiye", "Paraguay"]], [33, ["Netherlands", "Sweden"]], [34, ["Germany", "Ivory Coast"]], [35, ["Ecuador", "Curaçao"]], [36, ["Tunisia", "Japan"]], [37, ["Spain", "Saudi Arabia"]], [38, ["Belgium", "Iran"]], [39, ["Uruguay", "Cape Verde"]], [40, ["New Zealand", "Egypt"]], [41, ["Argentina", "Austria"]], [42, ["France", "Iraq"]], [43, ["Norway", "Senegal"]], [44, ["Jordan", "Algeria"]], [45, ["Portugal", "Uzbekistan"]], [46, ["England", "Ghana"]], [47, ["Panama", "Croatia"]], [48, ["Colombia", "DR Congo"]], [49, ["Switzerland", "Canada"]], [50, ["Bosnia & Herzegovina", "Qatar"]], [51, ["Scotland", "Brazil"]], [52, ["Morocco", "Haiti"]], [53, ["Czechia", "Mexico"]], [54, ["South Africa", "South Korea"]], [55, ["Curaçao", "Ivory Coast"]], [56, ["Ecuador", "Germany"]], [57, ["Japan", "Sweden"]], [58, ["Tunisia", "Netherlands"]], [59, ["Türkiye", "USA"]], [60, ["Paraguay", "Australia"]], [61, ["Norway", "France"]], [62, ["Senegal", "Iraq"]], [63, ["Cape Verde", "Saudi Arabia"]], [64, ["Uruguay", "Spain"]], [65, ["Egypt", "Iran"]], [66, ["New Zealand", "Belgium"]], [67, ["Panama", "England"]], [68, ["Croatia", "Ghana"]], [69, ["Colombia", "Portugal"]], [70, ["DR Congo", "Uzbekistan"]], [71, ["Algeria", "Austria"]], [72, ["Jordan", "Argentina"]]]
+# knockout games: matchNo -> kickoff UTC. Teams aren't known in advance, so these map by
+# exact kickoff time (every KO match has a unique slot, >=3h apart) instead of by team-pair.
+KO_SCHEDULE = [[73, "2026-06-28T19:00:00Z"], [74, "2026-06-29T20:30:00Z"], [75, "2026-06-30T01:00:00Z"], [76, "2026-06-29T17:00:00Z"], [77, "2026-06-30T21:00:00Z"], [78, "2026-06-30T17:00:00Z"], [79, "2026-07-01T01:00:00Z"], [80, "2026-07-01T16:00:00Z"], [81, "2026-07-02T00:00:00Z"], [82, "2026-07-01T20:00:00Z"], [83, "2026-07-02T23:00:00Z"], [84, "2026-07-02T19:00:00Z"], [85, "2026-07-03T03:00:00Z"], [86, "2026-07-03T22:00:00Z"], [87, "2026-07-04T01:30:00Z"], [88, "2026-07-03T18:00:00Z"], [89, "2026-07-04T21:00:00Z"], [90, "2026-07-04T17:00:00Z"], [91, "2026-07-05T20:00:00Z"], [92, "2026-07-06T00:00:00Z"], [93, "2026-07-06T19:00:00Z"], [94, "2026-07-07T00:00:00Z"], [95, "2026-07-07T16:00:00Z"], [96, "2026-07-07T20:00:00Z"], [97, "2026-07-09T20:00:00Z"], [98, "2026-07-10T19:00:00Z"], [99, "2026-07-11T21:00:00Z"], [100, "2026-07-12T01:00:00Z"], [101, "2026-07-14T19:00:00Z"], [102, "2026-07-15T19:00:00Z"], [103, "2026-07-18T21:00:00Z"], [104, "2026-07-19T19:00:00Z"]]
+
 # football-data.org name (normalized) -> canonical name on the page
 ALIAS = {"unitedstates": "USA", "usa": "USA", "unitedstatesofamerica": "USA", "korearepublic": "South Korea", "southkorea": "South Korea", "korea": "South Korea", "republicofkorea": "South Korea", "turkey": "Türkiye", "turkiye": "Türkiye", "iriran": "Iran", "iran": "Iran", "islamicrepublicofiran": "Iran", "cotedivoire": "Ivory Coast", "ivorycoast": "Ivory Coast", "congodr": "DR Congo", "drcongo": "DR Congo", "democraticrepublicofthecongo": "DR Congo", "democraticrepublicofcongo": "DR Congo", "congo": "DR Congo", "caboverde": "Cape Verde", "capeverde": "Cape Verde", "bosniaandherzegovina": "Bosnia & Herzegovina", "bosniaherzegovina": "Bosnia & Herzegovina", "bosnia": "Bosnia & Herzegovina", "czechrepublic": "Czechia", "czechia": "Czechia", "curacao": "Curaçao"}
 
@@ -26,6 +30,29 @@ def norm(s):
 CANON_NORM = {norm(c): c for c in CANON}
 # lookup: frozenset(home,away) -> matchNo
 PAIR_LOOKUP = {frozenset(pr): no for no, pr in SCHEDULE_PAIRS}
+
+def _epoch(iso):
+    """'2026-06-28T19:00:00Z' -> unix seconds (UTC)."""
+    return int(datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp())
+
+KO_SLOTS = [(_epoch(u), no) for no, u in KO_SCHEDULE]
+
+def ko_match_no(utc_date):
+    """Map a knockout fixture's utcDate to our match number by nearest scheduled slot.
+    Exact match normally; ±2h tolerance absorbs minor schedule drift (slots are >=3h apart,
+    and no group game kicks off within 2h of any knockout slot, so this never hits a group game)."""
+    if not utc_date:
+        return None
+    try:
+        e = _epoch(utc_date)
+    except (ValueError, TypeError):
+        return None
+    best, best_d = None, 7200
+    for se, no in KO_SLOTS:
+        d = abs(se - e)
+        if d < best_d:
+            best, best_d = no, d
+    return best
 
 def resolve_team(name):
     n = norm(name)
@@ -44,18 +71,29 @@ def build_scores(api_matches):
     for m in api_matches:
         h = resolve_team((m.get("homeTeam") or {}).get("name", ""))
         a = resolve_team((m.get("awayTeam") or {}).get("name", ""))
-        if not h or not a:
-            for raw, got in ((m.get("homeTeam") or {}).get("name"), h), ((m.get("awayTeam") or {}).get("name"), a):
-                if raw and not got: unresolved.add(raw)
-            continue
-        no = PAIR_LOOKUP.get(frozenset((h, a)))   # only group games map here
-        if not no: continue
+        ko_no = ko_match_no(m.get("utcDate"))      # knockout fixtures map by kickoff time, not pair
+        if ko_no:
+            # Knockout: teams are decided only at draw time. Need both resolved to record the
+            # real matchup (pre-draw the feed has TBD names -> skip; the page derives those slots).
+            if not h or not a:
+                continue
+            no, is_ko = ko_no, True
+        else:
+            if not h or not a:
+                for raw, got in ((m.get("homeTeam") or {}).get("name"), h), ((m.get("awayTeam") or {}).get("name"), a):
+                    if raw and not got: unresolved.add(raw)
+                continue
+            no = PAIR_LOOKUP.get(frozenset((h, a)))   # group games map by team-pair
+            if not no: continue
+            is_ko = False
         ft = (m.get("score") or {}).get("fullTime") or {}
         gh, ga = ft.get("home"), ft.get("away")
         status = STATUS_MAP.get(m.get("status"), m.get("status"))
         if gh is None or ga is None: continue
         if status not in ("FINISHED", "IN_PLAY", "PAUSED"): continue
         entry = {"h": gh, "a": ga, "s": status}
+        if is_ko:                                  # carry the real teams so the page shows them (koFeedTeams)
+            entry["home"], entry["away"] = h, a
         if status == "IN_PLAY":                    # attach the live minute only when in play and the feed provides it
             try:
                 mn = m.get("minute")
@@ -88,7 +126,8 @@ def main():
     }
     with open("scores.json", "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=0)
-    print(f"Wrote scores.json with {len(scores)} live/final group results from {len(api_matches)} feed matches.")
+    ko = sum(1 for v in scores.values() if "home" in v)
+    print(f"Wrote scores.json with {len(scores)} live/final results ({ko} knockout) from {len(api_matches)} feed matches.")
 
 if __name__ == "__main__":
     main()

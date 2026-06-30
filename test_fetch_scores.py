@@ -14,7 +14,7 @@ import unittest
 import fetch_scores as fs
 
 
-def match(home, away, home_goals=None, away_goals=None, status="FINISHED", minute=None):
+def match(home, away, home_goals=None, away_goals=None, status="FINISHED", minute=None, utc_date=None):
     """Build a football-data.org-shaped match dict for tests."""
     return {
         "homeTeam": {"name": home},
@@ -22,6 +22,7 @@ def match(home, away, home_goals=None, away_goals=None, status="FINISHED", minut
         "score": {"fullTime": {"home": home_goals, "away": away_goals}},
         "status": status,
         "minute": minute,
+        "utcDate": utc_date,
     }
 
 
@@ -129,6 +130,41 @@ class TestBuildScores(unittest.TestCase):
     def test_garbage_minute_is_ignored(self):
         scores, _ = fs.build_scores([match("Mexico", "South Africa", 1, 0, status="IN_PLAY", minute="HT")])
         self.assertNotIn("min", scores["1"])
+
+
+class TestKnockoutMapping(unittest.TestCase):
+    def test_knockout_maps_by_kickoff_time_and_carries_teams(self):
+        # Match 73 kicks off 2026-06-28T19:00:00Z. The teams (any pairing) come from the feed.
+        scores, _ = fs.build_scores([match("South Africa", "Canada", 0, 1, utc_date="2026-06-28T19:00:00Z")])
+        self.assertEqual(scores["73"], {"h": 0, "a": 1, "s": "FINISHED", "home": "South Africa", "away": "Canada"})
+
+    def test_knockout_uses_aliased_team_names(self):
+        # M75 is Netherlands vs Morocco in reality; feed spellings resolve to canonical names.
+        scores, _ = fs.build_scores([match("Netherlands", "Morocco", 1, 1, utc_date="2026-06-30T01:00:00Z")])
+        self.assertEqual(scores["75"]["home"], "Netherlands")
+        self.assertEqual(scores["75"]["away"], "Morocco")
+
+    def test_knockout_rematch_of_group_pair_maps_to_knockout_not_group(self):
+        # A KO kickoff time wins even if the pairing coincides with a group fixture (Mexico/South Africa = M1).
+        scores, _ = fs.build_scores([match("Mexico", "South Africa", 2, 1, utc_date="2026-06-28T19:00:00Z")])
+        self.assertIn("73", scores)
+        self.assertNotIn("1", scores)
+
+    def test_knockout_tolerates_minor_time_drift(self):
+        # 30 min later than the scheduled 19:00 slot still maps to M73 (within 2h tolerance).
+        scores, _ = fs.build_scores([match("South Africa", "Canada", 0, 1, utc_date="2026-06-28T19:30:00Z")])
+        self.assertIn("73", scores)
+
+    def test_pre_draw_knockout_with_tbd_names_is_skipped(self):
+        # Before the draw the feed has empty/TBD team names -> nothing to record.
+        scores, _ = fs.build_scores([match("", "", None, None, status="TIMED", utc_date="2026-07-14T19:00:00Z")])
+        self.assertEqual(scores, {})
+
+    def test_group_match_with_utcdate_still_maps_by_pair(self):
+        # A group fixture carrying its real kickoff time is far from any KO slot -> group path unchanged.
+        scores, _ = fs.build_scores([match("Mexico", "South Africa", 2, 0, utc_date="2026-06-11T19:00:00Z")])
+        self.assertEqual(scores["1"], {"h": 2, "a": 0, "s": "FINISHED"})
+        self.assertNotIn("home", scores["1"])
 
 
 if __name__ == "__main__":
