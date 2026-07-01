@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-01T22:46:02Z",
+"updated": "2026-07-01T22:50:12Z",
 "source": "api-football (via worker)",
 "scores": {
 "82": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Belgium",
 "away": "Senegal",
-"min": 126
+"min": 130
 },
 "1": {
 "h": 2,
