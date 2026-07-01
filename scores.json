@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-01T17:40:14Z",
+"updated": "2026-07-01T17:50:09Z",
 "source": "api-football (via worker)",
 "scores": {
 "80": {
-"h": 0,
+"h": 1,
 "a": 1,
 "s": "IN_PLAY",
 "home": "England",
 "away": "DR Congo",
-"min": 74
+"min": 86
 },
 "1": {
 "h": 2,
