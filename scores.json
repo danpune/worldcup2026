@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-01T18:00:13Z",
+"updated": "2026-07-01T18:10:11Z",
 "source": "api-football (via worker)",
 "scores": {
-"80": {
-"h": 2,
-"a": 1,
-"s": "IN_PLAY",
-"home": "England",
-"away": "DR Congo",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -420,6 +412,13 @@
 "s": "FINISHED",
 "home": "Mexico",
 "away": "Ecuador"
+},
+"80": {
+"h": 2,
+"a": 1,
+"s": "FINISHED",
+"home": "England",
+"away": "DR Congo"
 }
 }
 }
