@@ -1,14 +1,13 @@
 {
-"updated": "2026-07-01T02:50:09Z",
+"updated": "2026-07-01T03:00:12Z",
 "source": "api-football (via worker)",
 "scores": {
 "79": {
 "h": 2,
 "a": 0,
-"s": "IN_PLAY",
+"s": "PAUSED",
 "home": "Mexico",
-"away": "Ecuador",
-"min": 45
+"away": "Ecuador"
 },
 "1": {
 "h": 2,
