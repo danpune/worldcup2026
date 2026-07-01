@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-01T04:00:11Z",
+"updated": "2026-07-01T04:10:09Z",
 "source": "api-football (via worker)",
 "scores": {
-"79": {
-"h": 2,
-"a": 0,
-"s": "IN_PLAY",
-"home": "Mexico",
-"away": "Ecuador",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -413,6 +405,13 @@
 "s": "FINISHED",
 "home": "France",
 "away": "Sweden"
+},
+"79": {
+"h": 2,
+"a": 0,
+"s": "FINISHED",
+"home": "Mexico",
+"away": "Ecuador"
 }
 }
 }
