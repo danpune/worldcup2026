@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-01T02:40:09Z",
+"updated": "2026-07-01T02:50:09Z",
 "source": "api-football (via worker)",
 "scores": {
 "79": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Mexico",
 "away": "Ecuador",
-"min": 36
+"min": 45
 },
 "1": {
 "h": 2,
