@@ -289,8 +289,9 @@ body.np-open{padding-bottom:88px}
 .w2wch .pay{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
 .w2wnote{font-size:12.5px;color:var(--muted);margin:9px 0 0;line-height:1.45}
 .w2wdis{font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.45}
-.wx{white-space:nowrap;color:var(--muted)}
-.wx:not(:empty)::before{content:" · "}
+.wx,.wxnow{white-space:nowrap;color:var(--muted)}
+.wx:not(:empty)::before,.wxnow:not(:empty)::before{content:" · "}
+.wxsevere{color:#e0552f;font-weight:700}
 .gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:6px}
 .grpjumps{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
 .grpjumps button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:6px;padding:5px 11px;font-size:13px;font-weight:700;cursor:pointer;font-family:Oswald;letter-spacing:.06em;transition:border-color .12s,color .12s}
@@ -1288,7 +1289,8 @@ function renderList(){
   const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
   const ll=WX_COORDS[m.venue],koD=new Date(m.utc);
   const wx=(ll&&koD>now&&(koD-now)<=16*864e5)?`<span class="wx" data-lat="${ll[0]}" data-lon="${ll[1]}" data-date="${m.utc.slice(0,10)}" data-hr="${m.utc.slice(0,13)}" title="Forecast at kickoff"></span>`:"";
-  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${wx}</div></div><div class="right">${right}</div>`;
+  const wxNow=(ll&&((es&&isOngoing(es.s))||off))?`<span class="wxnow" data-lat="${ll[0]}" data-lon="${ll[1]}" title="Weather at the venue now"></span>`:"";
+  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${wx}${wxNow}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
   if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid,m);list.appendChild(sp);maybeRetryStats(es.fid);}
  });
@@ -1596,16 +1598,39 @@ async function fillWx(el){
  const hr=el.dataset.hr;let i=h.time.findIndex(t=>t.slice(0,13)===hr);
  if(i<0)i=h.time.findIndex(t=>t.slice(0,13)>hr);
  if(i<0||h.temperature_2m[i]==null)return;
+ let severe=null;   /* scan the match window (kickoff -> +2h) for disruptive conditions */
+ for(let j=i;j<=i+2&&j<h.weather_code.length;j++){const code=h.weather_code[j];
+  if([95,96,99].indexOf(code)>=0){severe="⛈️ Storm risk";break;}
+  if([82,65].indexOf(code)>=0&&!severe)severe="🌧️ Heavy rain";}
  const w=WMO[h.weather_code[i]]||{i:"🌡️",t:"Forecast"};
  const temp=Math.round(h.temperature_2m[i]),unit=wxUnit()==="fahrenheit"?"°F":"°C";
- el.textContent=w.i+" "+temp+unit;
- el.title=w.t+" forecast at kickoff";
- el.setAttribute("aria-label",w.t+", "+temp+unit+" at kickoff");
+ if(severe){el.textContent=severe+" · "+temp+unit;el.classList.add("wxsevere");
+  el.title=severe.replace(/^\S+\s/,"")+" around kickoff";el.setAttribute("aria-label",severe+", "+temp+unit+" around kickoff");}
+ else{el.textContent=w.i+" "+temp+unit;el.title=w.t+" forecast at kickoff";el.setAttribute("aria-label",w.t+", "+temp+unit+" at kickoff");}
 }
+const wxNowCache={};
+function fetchWxNow(lat,lon){
+ const key=lat+","+lon+","+wxUnit();const c=wxNowCache[key];
+ if(c&&Date.now()-c.t<600000)return c.p;
+ const u="https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,weather_code&timezone=GMT&temperature_unit="+wxUnit();
+ const pr=fetch(u).then(r=>r.ok?r.json():null).then(d=>(d&&d.current)?d.current:null).catch(()=>null);
+ wxNowCache[key]={t:Date.now(),p:pr};return pr;
+}
+async function fillWxNow(el){
+ if(!el||el.classList.contains("wxdone"))return;el.classList.add("wxdone");
+ const cur=await fetchWxNow(el.dataset.lat,el.dataset.lon);
+ if(!cur||cur.temperature_2m==null)return;
+ const w=WMO[cur.weather_code]||{i:"🌡️",t:"Now"};
+ const temp=Math.round(cur.temperature_2m),unit=wxUnit()==="fahrenheit"?"°F":"°C";
+ el.textContent=w.i+" "+temp+unit;
+ if([95,96,99,82,65].indexOf(cur.weather_code)>=0)el.classList.add("wxsevere");
+ el.title=w.t+" at the venue now";el.setAttribute("aria-label",w.t+", "+temp+unit+" at the venue now");
+}
+function fillWxEl(el){if(el.classList.contains("wxnow"))fillWxNow(el);else fillWx(el);}
 function observeWx(){
- const els=document.querySelectorAll(".wx:not(.wxdone)");
- if(!("IntersectionObserver" in window)){els.forEach(fillWx);return;}
- if(!wxObserver)wxObserver=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){fillWx(e.target);wxObserver.unobserve(e.target);}});},{rootMargin:"250px"});
+ const els=document.querySelectorAll(".wx:not(.wxdone), .wxnow:not(.wxdone)");
+ if(!("IntersectionObserver" in window)){els.forEach(fillWxEl);return;}
+ if(!wxObserver)wxObserver=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){fillWxEl(e.target);wxObserver.unobserve(e.target);}});},{rootMargin:"250px"});
  els.forEach(el=>wxObserver.observe(el));
 }
 (function(){const v=location.hash.slice(1);if(v&&v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}})();  /* open the tab from a shared #hash on load (e.g. .../worldcup2026/#highlights) */
