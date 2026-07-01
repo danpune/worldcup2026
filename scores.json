@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-01T21:10:13Z",
+"updated": "2026-07-01T21:20:13Z",
 "source": "api-football (via worker)",
 "scores": {
 "82": {
 "h": 0,
-"a": 1,
+"a": 2,
 "s": "IN_PLAY",
 "home": "Belgium",
 "away": "Senegal",
-"min": 46
+"min": 57
 },
 "1": {
 "h": 2,
