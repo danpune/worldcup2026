@@ -1,7 +1,15 @@
 {
-"updated": "2026-07-02T00:00:14Z",
+"updated": "2026-07-02T00:10:10Z",
 "source": "api-football (via worker)",
 "scores": {
+"81": {
+"h": 0,
+"a": 0,
+"s": "IN_PLAY",
+"home": "USA",
+"away": "Bosnia & Herzegovina",
+"min": 6
+},
 "1": {
 "h": 2,
 "a": 0,
