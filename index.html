@@ -703,7 +703,7 @@ const FLAGMAP={};MATCHES.forEach(m=>{FLAGMAP[m.home]=m.hf;FLAGMAP[m.away]=m.af;}
 /* FIFA/Coca-Cola World Ranking, 11 Jun 2026 (static for the tournament) — shown next to teams for context */
 const RANK={"Argentina":1,"Spain":2,"France":3,"England":4,"Portugal":5,"Brazil":6,"Morocco":7,"Netherlands":8,"Belgium":9,"Germany":10,"Croatia":11,"Colombia":13,"Mexico":14,"Senegal":15,"Uruguay":16,"USA":17,"Japan":18,"Switzerland":19,"Iran":20,"Türkiye":22,"Ecuador":23,"Austria":24,"South Korea":25,"Australia":27,"Algeria":28,"Egypt":29,"Canada":30,"Norway":31,"Ivory Coast":33,"Panama":34,"Sweden":38,"Czechia":40,"Paraguay":41,"Scotland":42,"Tunisia":45,"DR Congo":46,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,"Jordan":63,"Bosnia & Herzegovina":64,"Cape Verde":67,"Ghana":73,"Curaçao":82,"Haiti":83,"New Zealand":85};
 /* rough per-match win estimate from the two FIFA ranks — a simple model, NOT betting odds (ignores form, injuries, draws) */
-function matchPred(m){const ra=RANK[m.home],rb=RANK[m.away];if(!ra||!rb)return null;let p=1/(1+Math.pow(10,-(rb-ra)/60));p=0.5+(p-0.5)*0.8;const hf=p>=0.5;return {team:hf?m.home:m.away,pct:Math.round((hf?p:1-p)*100)};}
+function matchPred(h,a){const ra=RANK[h],rb=RANK[a];if(!ra||!rb)return null;let p=1/(1+Math.pow(10,-(rb-ra)/60));p=0.5+(p-0.5)*0.8;const hf=p>=0.5;return {team:hf?h:a,pct:Math.round((hf?p:1-p)*100)};}
 
 /* timezone */
 const localTZ=Intl.DateTimeFormat().resolvedOptions().timeZone||"America/Chicago";
@@ -1286,7 +1286,7 @@ function renderList(){
   if(off)right+=`<div class="result off">${off}</div>`;
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
   if(m.group_game)right+=`<button class="statsbtn histbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">📜 H2H</button>`;
-  const pred=(new Date(m.utc)>now&&!es)?matchPred(m):null;
+  const pred=(new Date(m.utc)>now&&!es&&dh.done&&da.done)?matchPred(dh.name,da.name):null;   /* resolved names, so knockout fixtures predict too */
   const ll=WX_COORDS[m.venue],koD=new Date(m.utc);
   const wx=(ll&&koD>now&&(koD-now)<=16*864e5)?`<span class="wx" data-lat="${ll[0]}" data-lon="${ll[1]}" data-date="${m.utc.slice(0,10)}" data-hr="${m.utc.slice(0,13)}" title="Forecast at kickoff"></span>`:"";
   const wxNow=(ll&&((es&&isOngoing(es.s))||off))?`<span class="wxnow" data-lat="${ll[0]}" data-lon="${ll[1]}" title="Weather at the venue now"></span>`:"";

@@ -356,6 +356,7 @@ async function runDetector(env) {
   var raw = null, state = {}; try { raw = await env.STATE.get("state"); state = JSON.parse(raw) || {}; } catch (e) {}
   state.fx = state.fx || {};
   state.kits = state.kits || {};   // fid -> {h,a} shirt-primary hex, captured once when line-ups publish
+  state.kitTry = state.kitTry || {}; // fid -> attempts where line-ups existed but had no colours (bounded retry)
   var sending = !!state.seeded, log = [], sent = 0;
   var headers = { "x-apisports-key": env.APISPORTS_KEY }, fixtures = [];
   try {
@@ -384,12 +385,15 @@ async function runDetector(env) {
     var gh = f.goals.home == null ? 0 : f.goals.home, ga = f.goals.away == null ? 0 : f.goals.away, score = gh + "–" + ga;
     var ko = Date.parse(f.fixture.date), st = state.fx[fid] || {};
     var live = LIVE_S.indexOf(short) >= 0, finished = FINAL_S.indexOf(short) >= 0;
-    // Kit colours: capture once when line-ups publish (~40 min pre-KO), for imminent or live matches.
-    if (!state.kits[fid] && (live || (short === "NS" && ko - now > 0 && ko - now <= 50 * 60000))) {
+    // Kit colours, pre-KO only: one lineups call/min once published (~40 min out). Live matches reuse
+    // the detail-path lineups below — no extra API call (saves 1 call/min/live match; rate-limit headroom).
+    // Bounded: if lineups exist but carry no colours ~10 times, the provider isn't going to add them — stop.
+    if (!state.kits[fid] && short === "NS" && ko - now > 0 && ko - now <= 50 * 60000 && (state.kitTry[fid] || 0) < 10) {
       try {
         var luK = (await (await fetch(API + "/fixtures/lineups?fixture=" + fid, { headers })).json()).response || [];
         var kc = kitColors(luK, f.teams.home.id, f.teams.away.id);
-        if (kc) state.kits[fid] = kc;
+        if (kc) { state.kits[fid] = kc; delete state.kitTry[fid]; }
+        else if (luK.length) state.kitTry[fid] = (state.kitTry[fid] || 0) + 1;   // published but colourless
       } catch (e) {}
     }
     if (short === "NS" && !st.ko && ko - now > 0 && ko - now <= 16 * 60000) { await fire("🔜 Kicking off soon", home + " vs " + away + " starts in ~15 min", teams, "core"); st.ko = true; }
@@ -417,6 +421,7 @@ async function runDetector(env) {
             fetch(API + "/fixtures/statistics?fixture=" + fid, { headers }).then(function (x) { return x.json(); }),
             fetch(API + "/fixtures/lineups?fixture=" + fid, { headers }).then(function (x) { return x.json(); })
           ]);
+          if (!state.kits[fid]) { var kcL = kitColors(md[1].response || [], f.teams.home.id, f.teams.away.id); if (kcL) state.kits[fid] = kcL; }   // reuse — no extra call
           var freshM = { id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], referee: (f.fixture && f.fixture.referee) || null, venue: (f.fixture && f.fixture.venue && f.fixture.venue.name) || null, errors: null };
           var prevMRaw = await env.STATE.get("match:" + fid);   // keep-best: don't let a flapped-empty tick wipe goals/stats already captured
           var prevM = null; try { prevM = prevMRaw ? JSON.parse(prevMRaw) : null; } catch (e) {}
