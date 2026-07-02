@@ -1,7 +1,7 @@
 /*
  * wc2026-api — Cloudflare Worker (live scores + match stats + goal-alert detector)
  * -----------------------------------------------------------------------------
- * Backup/documentation copy of the deployed Worker.
+ * SOURCE OF TRUTH for the deployed Worker — .github/workflows/deploy-worker.yml deploys this exact file on push.
  *
  * HTTP routes (fetch handler):
  *   GET /scores        -> all WC2026 fixtures (live+finished+scheduled), read from KV (cron-written)
@@ -18,7 +18,8 @@
  *   GET /run?key=…     -> run the alert detector once (admin; first call seeds silently)
  *   GET /reset?key=…   -> clear the detector's KV memory (admin; re-seeds next run)
  *   GET /              -> health check
- *   (/testpush, /run, /reset require ?key=<ADMIN_KEY>; they fail closed with 403 otherwise.)
+ *   (/testpush, /run, /reset require the ADMIN_KEY via "Authorization: Bearer <key>" — preferred, stays
+ *    out of logs — or the deprecated ?key=<ADMIN_KEY>; they fail closed with 403 otherwise.)
  *
  * Scheduled handler: a Cron trigger ("* * * * *", every minute) runs the detector,
  * which sends OneSignal pushes for kickoff / goals / cards / subs / VAR / half-time /
@@ -45,6 +46,13 @@ var LIVE_S = ["1H", "2H", "ET", "BT", "P", "LIVE", "INT"], FINAL_S = ["FT", "AET
 var TEAM_ALIAS = { "Cape Verde Islands": "Cape Verde", "Congo DR": "DR Congo" };
 function teamTag(name) { return tagKey(TEAM_ALIAS[name] || name); }
 
+// Valid WC2026 fixture ids come from the cron-written scores snapshot. Used to reject
+// /match?id=<random>, which would otherwise be an unauthenticated path to the metered API.
+async function knownFixtureIds(env) {
+  try { var ps = JSON.parse(await env.STATE.get("scores")); if (ps && ps.matches && ps.matches.length) return new Set(ps.matches.map(function (m) { return String(m.id); })); } catch (e) {}
+  return null;   // snapshot unavailable (cold start) -> fail open so legit stats never break
+}
+
 export default {
   async fetch(request, env, ctx) {
     var url = new URL(request.url);
@@ -68,6 +76,8 @@ export default {
 
     if (url.pathname === "/match") {
       var id = url.searchParams.get("id"); if (!id) return json({ error: "missing id" });
+      var known = await knownFixtureIds(env);   // block random ids from reaching the paid API (negative results aren't cached, so each miss = 4 upstream calls)
+      if (known && !known.has(String(id))) return new Response(JSON.stringify({ error: "unknown fixture" }), { status: 404, headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=3600" }) });
       // Decoupled: live & finished matches are written to KV by the cron — read those, no API call.
       var kvMatch = await env.STATE.get("match:" + id);
       var refreshThin = false;
@@ -151,6 +161,7 @@ export default {
     // text + source location + browser — no IP, no identifiers, nothing persisted beyond Cloudflare's logs.
     if (url.pathname === "/log") {
       if (request.method !== "POST") return new Response(null, { status: 405, headers: cors() });
+      if ((request.headers.get("origin") || "").indexOf("danpune.github.io") < 0) return new Response(null, { status: 204, headers: cors() });   // ignore off-site beacons (log-spam guard)
       try {
         var e = JSON.parse((await request.text()).slice(0, 2000));
         console.log("wc2026 client-error: " + JSON.stringify({
@@ -302,7 +313,9 @@ export default {
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
     // Fails closed: if ADMIN_KEY is unset or the ?key= doesn't match, these routes return 403. (Cron is unaffected.)
     if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
-      if (!env.ADMIN_KEY || url.searchParams.get("key") !== env.ADMIN_KEY)
+      // Prefer "Authorization: Bearer <key>" (stays out of request logs); ?key= still works but is deprecated.
+      var adminKey = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "") || url.searchParams.get("key");
+      if (!env.ADMIN_KEY || adminKey !== env.ADMIN_KEY)
         return new Response("forbidden", { status: 403, headers: cors() });
     }
 

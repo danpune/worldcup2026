@@ -21,7 +21,7 @@ A single web page — no build step, no framework, just `index.html` — that yo
 - 📺 **Where to watch** — a dedicated tab with the official broadcaster for your country (auto-detected from your time zone, free-to-air channels flagged), curated from FIFA's media-rights list.
 - 🌤️ **Per-match weather** — kickoff-time forecast on upcoming matches (Open-Meteo, in-browser, no extra API load).
 - 📱 **Installable & fast** — a PWA with an app-shell **service worker**, so repeat opens are near-instant and the schedule works offline.
-- **Ad-free, no tracking, no accounts, no money handled.**
+- **Ad-free, no accounts, no money handled.** No cross-site tracking, cookies, fingerprinting, or ad networks; the only analytics is [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) — cookieless and aggregate-only (page-view counts, no per-user identifiers).
 
 ## How it's built (two layers)
 
