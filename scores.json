@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-02T19:20:12Z",
+"updated": "2026-07-02T19:30:14Z",
 "source": "api-football (via worker)",
 "scores": {
 "84": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Spain",
 "away": "Austria",
-"min": 17
+"min": 29
 },
 "1": {
 "h": 2,
