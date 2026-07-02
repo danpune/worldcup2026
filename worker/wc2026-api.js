@@ -14,12 +14,11 @@
  *                         stats = possession/shots/xG…; events = goal/card/sub timeline;
  *                         lineups = starting XI + formation per team
  *   GET /status        -> API-Football account/key check
- *   GET /testpush?key=…[&team=X] -> send a test push (admin; requires ADMIN_KEY)
- *   GET /run?key=…     -> run the alert detector once (admin; first call seeds silently)
- *   GET /reset?key=…   -> clear the detector's KV memory (admin; re-seeds next run)
+ *   GET /testpush[?team=X] -> send a test push (admin; Authorization: Bearer <ADMIN_KEY>)
+ *   GET /run           -> run the alert detector once (admin; first call seeds silently)
+ *   GET /reset         -> clear the detector's KV memory (admin; re-seeds next run)
  *   GET /              -> health check
- *   (/testpush, /run, /reset require the ADMIN_KEY via "Authorization: Bearer <key>" — preferred, stays
- *    out of logs — or the deprecated ?key=<ADMIN_KEY>; they fail closed with 403 otherwise.)
+ *   (/testpush, /run, /reset require "Authorization: Bearer <ADMIN_KEY>"; they fail closed with 403 otherwise.)
  *
  * Scheduled handler: a Cron trigger ("* * * * *", every minute) runs the detector,
  * which sends OneSignal pushes for kickoff / goals / cards / subs / VAR / half-time /
@@ -311,10 +310,10 @@ export default {
     }
 
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
-    // Fails closed: if ADMIN_KEY is unset or the ?key= doesn't match, these routes return 403. (Cron is unaffected.)
+    // Fails closed: if ADMIN_KEY is unset or the Bearer token doesn't match, these routes return 403. (Cron is unaffected.)
     if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
-      // Prefer "Authorization: Bearer <key>" (stays out of request logs); ?key= still works but is deprecated.
-      var adminKey = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "") || url.searchParams.get("key");
+      // Admin auth via "Authorization: Bearer <key>" ONLY — keeps the secret out of request-log URLs.
+      var adminKey = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
       if (!env.ADMIN_KEY || adminKey !== env.ADMIN_KEY)
         return new Response("forbidden", { status: 403, headers: cors() });
     }
