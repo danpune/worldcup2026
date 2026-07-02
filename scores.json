@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-02T02:00:15Z",
+"updated": "2026-07-02T02:10:10Z",
 "source": "api-football (via worker)",
 "scores": {
-"81": {
-"h": 2,
-"a": 0,
-"s": "IN_PLAY",
-"home": "USA",
-"away": "Bosnia & Herzegovina",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -434,6 +426,13 @@
 "s": "FINISHED",
 "home": "Belgium",
 "away": "Senegal"
+},
+"81": {
+"h": 2,
+"a": 0,
+"s": "FINISHED",
+"home": "USA",
+"away": "Bosnia & Herzegovina"
 }
 }
 }
