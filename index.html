@@ -704,6 +704,23 @@ const FLAGMAP={};MATCHES.forEach(m=>{FLAGMAP[m.home]=m.hf;FLAGMAP[m.away]=m.af;}
 const RANK={"Argentina":1,"Spain":2,"France":3,"England":4,"Portugal":5,"Brazil":6,"Morocco":7,"Netherlands":8,"Belgium":9,"Germany":10,"Croatia":11,"Colombia":13,"Mexico":14,"Senegal":15,"Uruguay":16,"USA":17,"Japan":18,"Switzerland":19,"Iran":20,"Türkiye":22,"Ecuador":23,"Austria":24,"South Korea":25,"Australia":27,"Algeria":28,"Egypt":29,"Canada":30,"Norway":31,"Ivory Coast":33,"Panama":34,"Sweden":38,"Czechia":40,"Paraguay":41,"Scotland":42,"Tunisia":45,"DR Congo":46,"Uzbekistan":50,"Qatar":56,"Iraq":57,"South Africa":60,"Saudi Arabia":61,"Jordan":63,"Bosnia & Herzegovina":64,"Cape Verde":67,"Ghana":73,"Curaçao":82,"Haiti":83,"New Zealand":85};
 /* rough per-match win estimate from the two FIFA ranks — a simple model, NOT betting odds (ignores form, injuries, draws) */
 function matchPred(h,a){const ra=RANK[h],rb=RANK[a];if(!ra||!rb)return null;let p=1/(1+Math.pow(10,-(rb-ra)/60));p=0.5+(p-0.5)*0.8;const hf=p>=0.5;return {team:hf?h:a,pct:Math.round((hf?p:1-p)*100)};}
+/* live win probability: rank prior + current score + time left. Poisson remaining-goals model —
+   ponytail: fixed 2.6-goal pace, no cards/xG; upgrade to a stats-fed model only if fans ask. */
+function livePred(hn,an,es){
+ const ra=RANK[hn],rb=RANK[an];if(!ra||!rb||es.h==null||es.a==null)return null;
+ if(es.raw==="P")return null;                                             /* mid-shootout: nothing sensible to say */
+ const p=1/(1+Math.pow(10,-(rb-ra)/60));                                  /* prior: chance the home side wins */
+ const et=es.raw==="ET"||es.raw==="BT";
+ const min=Number.isInteger(es.min)?es.min:({"1H":23,"HT":45,"2H":68}[es.raw]||(et?100:90));
+ const frac=Math.max(0,(et?120:90)-min)/90;
+ const q=0.5+(p-0.5)*0.8,lh=2.6*q*frac,la=2.6*(1-q)*frac;
+ const F=[1,1,2,6,24,120,720,5040,40320],pois=(k,l)=>Math.exp(-l)*Math.pow(l,k)/F[k];
+ let win=0,draw=0;
+ for(let i=0;i<=8;i++)for(let j=0;j<=8;j++){const d=es.h-es.a+i-j,pr=pois(i,lh)*pois(j,la);if(d>0)win+=pr;else if(d===0)draw+=pr;}
+ const tb=0.5+(p-0.5)*0.4;                                                /* level at the whistle -> ET/pens, mildly rank-tilted */
+ const ph=win+draw*tb,hf=ph>=0.5;
+ return {team:hf?hn:an,pct:Math.max(1,Math.min(99,Math.round((hf?ph:1-ph)*100)))};
+}
 
 /* timezone */
 const localTZ=Intl.DateTimeFormat().resolvedOptions().timeZone||"America/Chicago";
@@ -1287,10 +1304,11 @@ function renderList(){
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
   if(m.group_game)right+=`<button class="statsbtn histbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">📜 H2H</button>`;
   const pred=(new Date(m.utc)>now&&!es&&dh.done&&da.done)?matchPred(dh.name,da.name):null;   /* resolved names, so knockout fixtures predict too */
+  const lp=(es&&isOngoing(es.s)&&dh.done&&da.done)?livePred(dh.name,da.name,es):null;          /* in-play: updates every poll as score/minute move */
   const ll=WX_COORDS[m.venue],koD=new Date(m.utc);
   const wx=(ll&&koD>now&&(koD-now)<=16*864e5)?`<span class="wx" data-lat="${ll[0]}" data-lon="${ll[1]}" data-date="${m.utc.slice(0,10)}" data-hr="${m.utc.slice(0,13)}" title="Forecast at kickoff"></span>`:"";
   const wxNow=(ll&&((es&&isOngoing(es.s))||off))?`<span class="wxnow" data-lat="${ll[0]}" data-lon="${ll[1]}" title="Weather at the venue now"></span>`:"";
-  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${wx}${wxNow}</div></div><div class="right">${right}</div>`;
+  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${lp?` · <span class="pred" title="Live win probability — score, time left and FIFA ranks; informational only, not betting odds">📊 ${lp.team} ${lp.pct}%</span>`:""}${wx}${wxNow}</div></div><div class="right">${right}</div>`;
   list.appendChild(c);
   if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid,m);list.appendChild(sp);maybeRetryStats(es.fid);}
  });
