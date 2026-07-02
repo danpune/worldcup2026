@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-02T20:58:15Z",
+"updated": "2026-07-02T21:00:17Z",
 "source": "api-football (via worker)",
 "scores": {
-"84": {
-"h": 3,
-"a": 0,
-"s": "IN_PLAY",
-"home": "Spain",
-"away": "Austria",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -441,6 +433,13 @@
 "s": "FINISHED",
 "home": "USA",
 "away": "Bosnia & Herzegovina"
+},
+"84": {
+"h": 3,
+"a": 0,
+"s": "FINISHED",
+"home": "Spain",
+"away": "Austria"
 }
 }
 }
