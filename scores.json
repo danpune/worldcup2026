@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-03T23:20:12Z",
+"updated": "2026-07-03T23:30:13Z",
 "source": "api-football (via worker)",
 "scores": {
 "86": {
 "h": 1,
-"a": 0,
+"a": 1,
 "s": "IN_PLAY",
 "home": "Argentina",
 "away": "Cape Verde",
-"min": 59
+"min": 68
 },
 "1": {
 "h": 2,
