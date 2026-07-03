@@ -1,13 +1,14 @@
 {
-"updated": "2026-07-03T04:00:15Z",
+"updated": "2026-07-03T04:10:12Z",
 "source": "api-football (via worker)",
 "scores": {
 "85": {
-"h": 1,
+"h": 2,
 "a": 0,
-"s": "PAUSED",
+"s": "IN_PLAY",
 "home": "Switzerland",
-"away": "Algeria"
+"away": "Algeria",
+"min": 49
 },
 "1": {
 "h": 2,
