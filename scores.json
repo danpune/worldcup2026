@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-03T04:10:12Z",
+"updated": "2026-07-03T04:20:12Z",
 "source": "api-football (via worker)",
 "scores": {
 "85": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Switzerland",
 "away": "Algeria",
-"min": 49
+"min": 58
 },
 "1": {
 "h": 2,
