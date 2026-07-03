@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-03T01:10:12Z",
+"updated": "2026-07-03T01:20:11Z",
 "source": "api-football (via worker)",
 "scores": {
-"83": {
-"h": 2,
-"a": 2,
-"s": "IN_PLAY",
-"home": "Portugal",
-"away": "Croatia",
-"min": 46
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -448,6 +440,13 @@
 "s": "FINISHED",
 "home": "Spain",
 "away": "Austria"
+},
+"83": {
+"h": 2,
+"a": 1,
+"s": "FINISHED",
+"home": "Portugal",
+"away": "Croatia"
 }
 }
 }
