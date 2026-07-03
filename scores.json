@@ -1,7 +1,15 @@
 {
-"updated": "2026-07-03T19:30:14Z",
+"updated": "2026-07-03T19:40:11Z",
 "source": "api-football (via worker)",
 "scores": {
+"88": {
+"h": 1,
+"a": 1,
+"s": "IN_PLAY",
+"home": "Australia",
+"away": "Egypt",
+"min": 76
+},
 "1": {
 "h": 2,
 "a": 0,
@@ -454,14 +462,6 @@
 "s": "FINISHED",
 "home": "Switzerland",
 "away": "Algeria"
-},
-"88": {
-"h": 1,
-"a": 1,
-"s": "IN_PLAY",
-"home": "Australia",
-"away": "Egypt",
-"min": 68
 }
 }
 }
