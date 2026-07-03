@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-03T19:50:13Z",
+"updated": "2026-07-03T20:00:15Z",
 "source": "api-football (via worker)",
 "scores": {
 "88": {
@@ -7,8 +7,7 @@
 "a": 1,
 "s": "IN_PLAY",
 "home": "Australia",
-"away": "Egypt",
-"min": 88
+"away": "Egypt"
 },
 "1": {
 "h": 2,
