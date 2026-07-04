@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-04T23:10:17Z",
+"updated": "2026-07-04T23:20:16Z",
 "source": "api-football (via worker)",
 "scores": {
-"89": {
-"h": 0,
-"a": 1,
-"s": "IN_PLAY",
-"home": "Paraguay",
-"away": "France",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -491,6 +483,13 @@
 "s": "FINISHED",
 "home": "Canada",
 "away": "Morocco"
+},
+"89": {
+"h": 0,
+"a": 1,
+"s": "FINISHED",
+"home": "Paraguay",
+"away": "France"
 }
 }
 }
