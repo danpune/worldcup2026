@@ -421,7 +421,7 @@ async function runDetector(env) {
             fetch(API + "/fixtures/statistics?fixture=" + fid, { headers }).then(function (x) { return x.json(); }),
             fetch(API + "/fixtures/lineups?fixture=" + fid, { headers }).then(function (x) { return x.json(); })
           ]);
-          if (!state.kits[fid]) { var kcL = kitColors(md[1].response || [], f.teams.home.id, f.teams.away.id); if (kcL) state.kits[fid] = kcL; }   // reuse — no extra call
+          var kcL = kitColors(md[1].response || [], f.teams.home.id, f.teams.away.id); if (kcL) state.kits[fid] = kcL;   // reuse (no extra call); overwrite so provider corrections propagate mid-match
           var freshM = { id: fid, stats: md[0].response || [], events: events, lineups: md[1].response || [], referee: (f.fixture && f.fixture.referee) || null, venue: (f.fixture && f.fixture.venue && f.fixture.venue.name) || null, errors: null };
           var prevMRaw = await env.STATE.get("match:" + fid);   // keep-best: don't let a flapped-empty tick wipe goals/stats already captured
           var prevM = null; try { prevM = prevMRaw ? JSON.parse(prevMRaw) : null; } catch (e) {}

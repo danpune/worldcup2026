@@ -776,6 +776,9 @@ async function fetchLive(){
 }
 function liveScore(n){const s=LIVE.scores[n];if(s&&s.h!=null&&s.a!=null)return s;return null;}
 function kitFor(n){return (LIVE.kits&&LIVE.kits[n])||null;}   /* {h,a} shirt-primary hex for the card, present ~40 min pre-KO once line-ups publish */
+/* FIFA never allows two near-identical shirts, so if the feed claims it (e.g. registered team colours
+   instead of the real change kits), the data is wrong for this match — suppress rather than mislead. */
+function kitClash(h,a){if(!h||!a)return false;const v=x=>[parseInt(x.slice(0,2),16),parseInt(x.slice(2,4),16),parseInt(x.slice(4,6),16)];const A=v(h),B=v(a);return Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2])<100;}
 function cardScore(n){return liveScore(n);}                          /* score to display — feed only, read-only */
 function offStatus(n){var s=LIVE.scores[n];return (s&&OFFLABEL[s.raw])||null;}   /* Postponed/Cancelled/etc. label, else null */
 function tableScore(n){const l=liveScore(n);return l&&l.s==="FINISHED"?l:null;} /* counts in the table once final */
@@ -1011,8 +1014,10 @@ function kitSwatch(team){var c=team&&team.colors&&team.colors.player;if(!c||!c.p
  return kitSvg(c.primary,tip);}
 function lineupsHTML(lu){
  if(!lu||lu.length<2||!lu[0].startXI||!lu[1].startXI)return "";
+ const _pc=t=>(t&&t.team&&t.team.colors&&t.team.colors.player&&t.team.colors.player.primary)||null;
+ const kitsOk=!kitClash(_pc(lu[0]),_pc(lu[1]));
  const col=t=>{const xi=(t.startXI||[]).map(p=>'<li>'+(p.player&&p.player.number!=null?'<b>'+p.player.number+'</b> ':"")+escA((p.player&&p.player.name)||"")+'</li>').join("");
-  return '<div class="luc"><div class="lut"><span class="lutn">'+kitSwatch(t.team)+escA((t.team&&t.team.name)||"")+'</span>'+(t.formation?'<span class="luf">'+escA(t.formation)+'</span>':"")+'</div><ul>'+xi+'</ul></div>';};
+  return '<div class="luc"><div class="lut"><span class="lutn">'+(kitsOk?kitSwatch(t.team):"")+escA((t.team&&t.team.name)||"")+'</span>'+(t.formation?'<span class="luf">'+escA(t.formation)+'</span>':"")+'</div><ul>'+xi+'</ul></div>';};
  return '<div class="stsub">Starting XI</div><div class="stsec lineups">'+col(lu[0])+col(lu[1])+'</div>';
 }
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".statsbtn");if(!b||!b.dataset.fid)return;  /* ignore the Squads button (no fid) */
@@ -1289,7 +1294,7 @@ function renderList(){
   const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
   // knockout slots resolve to real/projected teams (same engine as the bracket); unresolved keeps the seed label
   const ksw=hex=>hex?kitSvg(hex,"Shirt colour this match")+" ":"";
-  const kit=kitFor(m.n)||{};
+  let kit=kitFor(m.n)||{};if(kitClash(kit.h,kit.a))kit={};   /* implausible pair = wrong feed data — show nothing */
   const teamRow=(d,score,kh)=>(d.done||d.prov)
    ?`<div class="trow${d.prov?" koprov":""}">${d.flag?d.flag+" ":""}${ksw(kh)}${tk(d.name)}${d.prov?'<span class="brq" title="Projected — group still being played">?</span>':""}${rkx(d.name)}${favBtn(d.name)}${score}</div>`
    :`<div class="trow koplace">${escA(d.name)}${score}</div>`;
