@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-04T03:30:13Z",
+"updated": "2026-07-04T03:40:13Z",
 "source": "api-football (via worker)",
 "scores": {
-"87": {
-"h": 1,
-"a": 0,
-"s": "IN_PLAY",
-"home": "Colombia",
-"away": "Ghana",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -477,6 +469,13 @@
 "s": "FINISHED",
 "home": "Argentina",
 "away": "Cape Verde"
+},
+"87": {
+"h": 1,
+"a": 0,
+"s": "FINISHED",
+"home": "Colombia",
+"away": "Ghana"
 }
 }
 }
