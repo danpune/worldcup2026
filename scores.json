@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-04T01:40:11Z",
+"updated": "2026-07-04T01:50:13Z",
 "source": "api-football (via worker)",
 "scores": {
 "87": {
-"h": 0,
+"h": 1,
 "a": 0,
 "s": "IN_PLAY",
 "home": "Colombia",
 "away": "Ghana",
-"min": 9
+"min": 19
 },
 "1": {
 "h": 2,
