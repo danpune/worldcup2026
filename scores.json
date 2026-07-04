@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-04T17:30:22Z",
+"updated": "2026-07-04T17:39:42Z",
 "source": "api-football (via worker)",
 "scores": {
 "90": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Canada",
 "away": "Morocco",
-"min": 26
+"min": 33
 },
 "1": {
 "h": 2,
