@@ -1,7 +1,15 @@
 {
-"updated": "2026-07-04T18:30:22Z",
+"updated": "2026-07-04T18:39:15Z",
 "source": "api-football (via worker)",
 "scores": {
+"90": {
+"h": 0,
+"a": 1,
+"s": "IN_PLAY",
+"home": "Canada",
+"away": "Morocco",
+"min": 74
+},
 "1": {
 "h": 2,
 "a": 0,
@@ -476,14 +484,6 @@
 "s": "FINISHED",
 "home": "Colombia",
 "away": "Ghana"
-},
-"90": {
-"h": 0,
-"a": 1,
-"s": "IN_PLAY",
-"home": "Canada",
-"away": "Morocco",
-"min": 63
 }
 }
 }
