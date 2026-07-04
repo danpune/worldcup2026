@@ -1,14 +1,13 @@
 {
-"updated": "2026-07-04T21:50:16Z",
+"updated": "2026-07-04T22:00:28Z",
 "source": "api-football (via worker)",
 "scores": {
 "89": {
 "h": 0,
 "a": 0,
-"s": "IN_PLAY",
+"s": "PAUSED",
 "home": "Paraguay",
-"away": "France",
-"min": 44
+"away": "France"
 },
 "1": {
 "h": 2,
