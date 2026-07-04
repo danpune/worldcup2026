@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-04T22:10:15Z",
+"updated": "2026-07-04T22:20:14Z",
 "source": "api-football (via worker)",
 "scores": {
 "89": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Paraguay",
 "away": "France",
-"min": 46
+"min": 53
 },
 "1": {
 "h": 2,
