@@ -1,14 +1,13 @@
 {
-"updated": "2026-07-04T17:50:15Z",
+"updated": "2026-07-04T18:00:24Z",
 "source": "api-football (via worker)",
 "scores": {
 "90": {
 "h": 0,
 "a": 0,
-"s": "IN_PLAY",
+"s": "PAUSED",
 "home": "Canada",
-"away": "Morocco",
-"min": 41
+"away": "Morocco"
 },
 "1": {
 "h": 2,
