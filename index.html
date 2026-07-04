@@ -228,7 +228,7 @@ body.np-open{padding-bottom:88px}
 .lineups{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .luc .lut{font-weight:700;font-size:12.5px;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;align-items:baseline}
 .luc .lutn{display:inline-flex;align-items:center;gap:5px;min-width:0}
-.kit{display:inline-block;width:11px;height:11px;border-radius:50%;flex:0 0 auto;vertical-align:middle;border:1px solid rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.kit{display:inline-block;width:15px;height:15px;flex:0 0 auto;vertical-align:-2px}
 .luc .luf{font-family:Oswald;color:var(--muted);font-size:11px;font-weight:400}
 .luc ul{list-style:none;margin:0;padding:0}
 .luc li{font-size:12.5px;line-height:1.7;color:var(--text)}
@@ -998,12 +998,17 @@ function timelineHTML(events,hname){
  return '<div class="stsub">Cards &amp; subs</div><div class="stsec timeline">'+rows+'</div>';
 }
 /* starting line-ups, two columns */
-// kit swatch from API-Football lineup colours (shirt primary), shown once lineups are live ~40 min pre-kickoff
+// kit swatch: a shirt-shaped icon filled with the team's shirt colour — self-explanatory at a glance
+// (an abstract dot read as nothing; a shirt reads as "this is what they're wearing"). Hex validated upstream.
+function kitSvg(hex,tip){if(!hex||!/^[0-9a-fA-F]{6}$/.test(hex))return "";
+ return '<svg class="kit" viewBox="0 0 20 20" role="img" aria-label="'+escA(tip||"Shirt colour")+'"><title>'+escA(tip||"Shirt colour")+'</title>'
+  +'<path d="M6.6 2.4 2.3 5l1.7 3.5 1.9-.9V17h8.2V7.6l1.9.9L17.7 5l-4.3-2.6c-.6 1.2-1.8 1.9-3.4 1.9s-2.8-.7-3.4-1.9z" fill="#'+hex+'" stroke="rgba(128,138,132,.95)" stroke-width="1.2" stroke-linejoin="round"/></svg>';}
+// line-up panel: from API-Football lineup colours (shirt primary), live ~40 min pre-kickoff
 function kitSwatch(team){var c=team&&team.colors&&team.colors.player;if(!c||!c.primary)return "";
- if(!/^[0-9a-fA-F]{6}$/.test(c.primary))return "";   /* validate hex before it touches a style attribute */
+ if(!/^[0-9a-fA-F]{6}$/.test(c.primary))return "";   /* validate hex before it touches markup */
  var gk=team.colors.goalkeeper&&team.colors.goalkeeper.primary;
- var tip=/^[0-9a-fA-F]{6}$/.test(gk||"")?("Kit #"+c.primary+" · GK #"+gk):("Kit #"+c.primary);
- return '<span class="kit" style="background:#'+c.primary+'" title="'+tip+'"></span>';}
+ var tip=/^[0-9a-fA-F]{6}$/.test(gk||"")?("Shirt #"+c.primary+" · GK #"+gk):("Shirt #"+c.primary);
+ return kitSvg(c.primary,tip);}
 function lineupsHTML(lu){
  if(!lu||lu.length<2||!lu[0].startXI||!lu[1].startXI)return "";
  const col=t=>{const xi=(t.startXI||[]).map(p=>'<li>'+(p.player&&p.player.number!=null?'<b>'+p.player.number+'</b> ':"")+escA((p.player&&p.player.name)||"")+'</li>').join("");
@@ -1283,7 +1288,7 @@ function renderList(){
   const es=cardScore(m.n),ew=koWinner(es);
   const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
   // knockout slots resolve to real/projected teams (same engine as the bracket); unresolved keeps the seed label
-  const ksw=hex=>(hex&&/^[0-9a-fA-F]{6}$/.test(hex))?`<span class="kit" style="background:#${hex}" title="Match kit"></span> `:"";
+  const ksw=hex=>hex?kitSvg(hex,"Shirt colour this match")+" ":"";
   const kit=kitFor(m.n)||{};
   const teamRow=(d,score,kh)=>(d.done||d.prov)
    ?`<div class="trow${d.prov?" koprov":""}">${d.flag?d.flag+" ":""}${ksw(kh)}${tk(d.name)}${d.prov?'<span class="brq" title="Projected — group still being played">?</span>':""}${rkx(d.name)}${favBtn(d.name)}${score}</div>`
