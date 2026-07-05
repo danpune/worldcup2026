@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-05T20:30:23Z",
+"updated": "2026-07-05T20:40:16Z",
 "source": "api-football (via worker)",
 "scores": {
 "91": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Brazil",
 "away": "Norway",
-"min": 29
+"min": 39
 },
 "1": {
 "h": 2,
