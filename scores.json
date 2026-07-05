@@ -1,13 +1,14 @@
 {
-"updated": "2026-07-05T21:00:26Z",
+"updated": "2026-07-05T21:10:16Z",
 "source": "api-football (via worker)",
 "scores": {
 "91": {
 "h": 0,
 "a": 0,
-"s": "PAUSED",
+"s": "IN_PLAY",
 "home": "Brazil",
-"away": "Norway"
+"away": "Norway",
+"min": 47
 },
 "1": {
 "h": 2,
