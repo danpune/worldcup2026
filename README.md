@@ -186,3 +186,8 @@ Commit/push and that match shows the embedded clip instead of the search link. A
 - **Share-card rendering:** [html2canvas](https://html2canvas.hertzen.com/) (MIT), vendored locally.
 
 Not affiliated with FIFA. For official confirmation of any result, check fifa.com.
+
+## License
+
+Code is [MIT-licensed](LICENSE). Match data comes from the public sources
+credited above and stays subject to their terms.
