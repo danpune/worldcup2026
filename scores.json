@@ -1,13 +1,14 @@
 {
-"updated": "2026-07-06T20:00:23Z",
+"updated": "2026-07-06T20:10:22Z",
 "source": "api-football (via worker)",
 "scores": {
 "93": {
 "h": 0,
 "a": 0,
-"s": "PAUSED",
+"s": "IN_PLAY",
 "home": "Portugal",
-"away": "Spain"
+"away": "Spain",
+"min": 47
 },
 "1": {
 "h": 2,
