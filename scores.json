@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-06T02:20:18Z",
+"updated": "2026-07-06T02:30:17Z",
 "source": "api-football (via worker)",
 "scores": {
 "92": {
 "h": 1,
-"a": 2,
+"a": 3,
 "s": "IN_PLAY",
 "home": "Mexico",
 "away": "England",
-"min": 56
+"min": 66
 },
 "1": {
 "h": 2,
