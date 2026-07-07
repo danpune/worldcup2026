@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-07T22:45:00Z",
+"updated": "2026-07-07T22:50:25Z",
 "source": "api-football (via worker)",
 "scores": {
 "1": {
@@ -531,7 +531,8 @@
 "a": 0,
 "s": "IN_PLAY",
 "home": "Switzerland",
-"away": "Colombia"
+"away": "Colombia",
+"w": "h"
 }
 }
 }
