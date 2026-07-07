@@ -1,13 +1,14 @@
 {
-"updated": "2026-07-07T17:10:21Z",
+"updated": "2026-07-07T17:20:23Z",
 "source": "api-football (via worker)",
 "scores": {
 "95": {
 "h": 0,
 "a": 1,
-"s": "PAUSED",
+"s": "IN_PLAY",
 "home": "Argentina",
-"away": "Egypt"
+"away": "Egypt",
+"min": 52
 },
 "1": {
 "h": 2,
