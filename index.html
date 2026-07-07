@@ -375,6 +375,7 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .brteam.prov .brfl{opacity:.5}
 .brq{margin-left:2px;color:var(--gold);font-weight:700;font-size:10px;vertical-align:super}
 .brmeta{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brmeta .brpred{color:#4a56c0;font-weight:600}
 .brmeta .brmn{font-family:Oswald;font-weight:600;color:var(--pitch2);letter-spacing:.02em}
 .brmeta .brcity{color:var(--text);font-weight:600}
 .brmeta .brlive{color:var(--live);font-weight:700}
@@ -1512,16 +1513,26 @@ const BR_CITY_SHORT={"New York/New Jersey":"NY/NJ","San Francisco Bay":"SF Bay"}
 const brCity=c=>BR_CITY_SHORT[c]||c;
 let brActive=0;
 function brTie(n){
- const mt=brM(n),tt=brTeams(n),sc=cardScore(n);
+ const mt=brM(n),tt=brTeams(n),sc=cardScore(n),now=new Date();
  const w=koWinner(sc),decided=!!w,homeWon=w==="h",pens=decided&&sc.h===sc.a;
  const real=s=>s.done||s.prov;
  const row=(s,score,win,lose)=>'<div class="brteam'+(real(s)?'':' tbd')+(s.prov?' prov':'')+(real(s)&&isFollowed(s.name)?' fol':'')+(win?' win':'')+(lose?' lose':'')+'">'
   +'<span class="brfl">'+(s.flag||'')+'</span><span class="brnm">'+escA(s.name)+(s.prov?'<span class="brq" title="Projected from the current group table — not yet confirmed">?</span>':'')+'</span><span class="brsc">'+(score==null?'':score)+'</span></div>';
- let meta;
+ const bothKnown=tt.home.done&&tt.away.done;   // predict only once both sides are confirmed, never against a projected/provisional team
+ let meta,showMN=true;
  if(sc&&sc.s==="FINISHED")meta=pens?"Full-time · pens":"Full-time";
- else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){const st=statusLabel(sc);meta='<span class="brlive">● </span>'+(st.text||"Live");}
- else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+' · <span class="brcity">'+escA(brCity(mt.city))+'</span>';}
- meta='<span class="brmn">M'+n+'</span> '+meta;
+ else if(sc&&(sc.s==="IN_PLAY"||sc.s==="PAUSED")){
+  // live win-probability stays on the Schedule tab (plenty of room there); the bracket's column is too
+  // narrow to also fit a live clock + an evolving percentage without overflowing on longer team names
+  const st=statusLabel(sc);
+  meta='<span class="brlive">● </span>'+(st.text||"Live");
+ }
+ else{
+  const pred=(new Date(mt.utc)>now&&bothKnown)?matchPred(tt.home.name,tt.away.name):null;
+  if(pred){meta='<span class="brpred">📊 '+escA(pred.team)+' '+pred.pct+'%</span>';showMN=false;}   // drop the M-number here — a long team name + 3-digit match number can overflow the narrow column, and the number is still on the Schedule tab
+  else{const p=dParts(mt.utc);meta=p.day.replace(/^\w+,\s*/,"")+' · <span class="brcity">'+escA(brCity(mt.city))+'</span>';}
+ }
+ meta=(showMN?'<span class="brmn">M'+n+'</span> ':'')+meta;
  const folpath=(real(tt.home)&&isFollowed(tt.home.name))||(real(tt.away)&&isFollowed(tt.away.name));
  const venueTip=mt.venue?mt.venue+", "+mt.city:mt.city;
  return '<button type="button" class="brtie'+(sc&&sc.s==="IN_PLAY"?' live':'')+(folpath?' folpath':'')+'" data-n="'+n+'" title="'+escA(venueTip)+'">'
