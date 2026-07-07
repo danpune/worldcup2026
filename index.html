@@ -1482,12 +1482,18 @@ function resolveKO(txt){let m;
  if(m=/^Loser M(\d+)$/.exec(txt))return koAdvance(+m[1],"L");
  return null;}
 // Bracket cell: resolved team, else the compact FIFA code that fits the narrow tree cells.
+// Friendly "round + position" labels for a still-pending KO slot (e.g. "QF W1" = winner of the
+// 1st Quarterfinal) — matches how ESPN/FIFA's own brackets label an unresolved semifinal/final/
+// third-place slot, instead of a bare match number a fan has to go look up to understand.
+// R32 (73-88) and R16 (89-96) never need this: by the time SF/Final/3rd-place are still pending,
+// every earlier round has already finished and resolved to real team names.
+var KO_ROUND_POS={97:["QF",1],98:["QF",2],99:["QF",3],100:["QF",4],101:["SF",1],102:["SF",2]};
 function brSlot(txt){const r=resolveKO(txt);if(r)return r;let m;
  if(m=/^Winner ([A-L])$/.exec(txt))return{name:"1"+m[1],flag:"",done:false};
  if(m=/^Runner-up ([A-L])$/.exec(txt))return{name:"2"+m[1],flag:"",done:false};
  if(m=/^Best 3rd \(([A-L/]+)\)$/.exec(txt))return{name:"3·"+m[1].replace(/\//g,""),flag:"",done:false};
- if(m=/^Winner M(\d+)$/.exec(txt))return{name:"W"+m[1],flag:"",done:false};
- if(m=/^Loser M(\d+)$/.exec(txt))return{name:"L"+m[1],flag:"",done:false};
+ if(m=/^Winner M(\d+)$/.exec(txt)){const rp=KO_ROUND_POS[+m[1]];return{name:rp?rp[0]+" W"+rp[1]:"W"+m[1],flag:"",done:false};}
+ if(m=/^Loser M(\d+)$/.exec(txt)){const rp=KO_ROUND_POS[+m[1]];return{name:rp?rp[0]+" L"+rp[1]:"L"+m[1],flag:"",done:false};}
  return{name:txt,flag:"",done:false};}
 // Real knockout matchup straight from the feed (mapped by kickoff time), once the draw is known — beats any slot guess.
 function koFeedTeams(n){const s=(typeof LIVE!=="undefined"&&LIVE.scores)?LIVE.scores[n]:null;return(s&&s.home&&s.away)?{home:s.home,away:s.away}:null;}
