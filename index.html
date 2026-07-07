@@ -808,7 +808,10 @@ function liveTag(es,n){
  const s=es.s;
  if(s==="IN_PLAY")return {cls:" ongoing",dot:true, pill:'<span class="livepill liveclock" data-n="'+n+'">'+liveClockText(n,es)+'</span>'};
  if(s==="PAUSED")  return {cls:" half",   dot:false,pill:'<span class="htpill">HT</span>'};
- if(s==="FINISHED")return {cls:"",        dot:false,pill:'<span class="ftpill">FT</span>'};
+ if(s==="FINISHED"){
+  const suffix=es.raw==="PEN"?" · pens":(es.raw==="AET"?" · a.e.t.":"");   /* distinguish a shootout/extra-time result from a normal 90-min finish */
+  return {cls:"",dot:false,pill:'<span class="ftpill">FT'+suffix+'</span>'};
+ }
  return {cls:"",dot:false,pill:""};   /* MANUAL or unknown: just the score */
 }
 
