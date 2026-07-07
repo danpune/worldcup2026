@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-07T00:40:22Z",
+"updated": "2026-07-07T00:50:26Z",
 "source": "api-football (via worker)",
 "scores": {
 "94": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "USA",
 "away": "Belgium",
-"min": 39
+"min": 44
 },
 "1": {
 "h": 2,
