@@ -1227,7 +1227,8 @@ function renderMoments(){
  }).sort((a,b)=>b.score-a.score).slice(0,10);
  const cards=scored.map(x=>{
   const m=x.m,s=x.s,fh=m.group_game?m.hf+" ":"",fa=m.group_game?m.af+" ":"";
-  return '<button class="momcard hlbtn" type="button" role="listitem" data-n="'+m.n+'" data-h="'+escA(m.home)+'" data-a="'+escA(m.away)+'" aria-label="Play highlights: '+escA(m.home)+' '+s.h+'-'+s.a+' '+escA(m.away)+'"><span class="momthumb"><img loading="lazy" src="https://i.ytimg.com/vi/'+HL[m.n].yt+'/hqdefault.jpg" alt=""><span class="momplay">▶</span><span class="momlab">'+escA(x.label)+'</span></span><span class="momcap">'+fh+escA(m.home)+' <b>'+s.h+'–'+s.a+'</b> '+fa+escA(m.away)+'</span></button>';
+  const rh=dispTeam(m,"home").name,ra=dispTeam(m,"away").name;
+  return '<button class="momcard hlbtn" type="button" role="listitem" data-n="'+m.n+'" data-h="'+escA(rh)+'" data-a="'+escA(ra)+'" aria-label="Play highlights: '+escA(rh)+' '+s.h+'-'+s.a+' '+escA(ra)+'"><span class="momthumb"><img loading="lazy" src="https://i.ytimg.com/vi/'+HL[m.n].yt+'/hqdefault.jpg" alt=""><span class="momplay">▶</span><span class="momlab">'+escA(x.label)+'</span></span><span class="momcap">'+fh+escA(rh)+' <b>'+s.h+'–'+s.a+'</b> '+fa+escA(ra)+'</span></button>';
  });
  /* Schedule = full hero (10); Highlights = short featured strip (5) since the full clip list sits right below it */
  const build=n=>'<h3 class="momh">🎬 World Cup Moments</h3><div class="momrow" role="list">'+cards.slice(0,n).join("")+'</div>';
@@ -1245,9 +1246,10 @@ function renderHighlights(){
   const teams=teamsInline(m);
   const meta=`<div class="meta"><span class="badge">${STAGE_SHORT[m.stage]}${m.group_game?" "+m.grp:""}</span> ${es.h}–${es.a} · ${m.city}</div>`;
   const cur=(HL[m.n]&&ytOk(HL[m.n].yt))?HL[m.n].yt:null;
+  const rh=dispTeam(m,"home").name,ra=dispTeam(m,"away").name;   /* resolved teams — m.home/m.away can still be a knockout placeholder like "Winner M86" */
   const p=dParts(m.utc);let head="";if(p.day!==lastDay){lastDay=p.day;head=`<div class="hlday"><span>${escA(p.day)}</span></div>`;}   /* date header — scan to the day you missed */
-  if(cur)return head+`<div class="hlcard"><button class="hlthumb" data-yt="${cur}" aria-label="Play highlights: ${escA(m.home)} versus ${escA(m.away)}"><img loading="lazy" src="https://i.ytimg.com/vi/${cur}/hqdefault.jpg" alt=""><span class="hlplay"><b>▶</b></span></button><div class="hlmeta"><div class="tline">${teams}</div>${meta}</div></div>`;
-  const q=encodeURIComponent("FIFA World Cup 2026 "+m.home+" vs "+m.away+" highlights");
+  if(cur)return head+`<div class="hlcard"><button class="hlthumb" data-yt="${cur}" aria-label="Play highlights: ${escA(rh)} versus ${escA(ra)}"><img loading="lazy" src="https://i.ytimg.com/vi/${cur}/hqdefault.jpg" alt=""><span class="hlplay"><b>▶</b></span></button><div class="hlmeta"><div class="tline">${teams}</div>${meta}</div></div>`;
+  const q=encodeURIComponent("FIFA World Cup 2026 "+rh+" vs "+ra+" highlights");
   return head+`<div class="hlcard"><div class="hlmeta"><div class="tline">${teams}</div>${meta}<a class="hlsearch" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ Highlights on YouTube <span class="ext">↗</span></a></div></div>`;
  }).join("");
  box.querySelectorAll(".hlthumb").forEach(b=>b.addEventListener("click",()=>{
@@ -1308,7 +1310,7 @@ function renderList(){
    const t=liveTag(es,m.n);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${t.pill||(es.h+"–"+es.a)}</div>`;
    if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
-   if(es.s==="FINISHED")right+=`<button class="statsbtn hlbtn" type="button" data-n="${m.n}" data-h="${escA(m.home)}" data-a="${escA(m.away)}">🎬 Highlights</button>`;
+   if(es.s==="FINISHED")right+=`<button class="statsbtn hlbtn" type="button" data-n="${m.n}" data-h="${escA(dh.name)}" data-a="${escA(da.name)}">🎬 Highlights</button>`;
   }
   if(off)right+=`<div class="result off">${off}</div>`;
   if(!es&&m.group_game)right+=`<button class="statsbtn sqbtn" type="button" data-h="${escA(m.home)}" data-a="${escA(m.away)}">👥 Squads</button>`;
