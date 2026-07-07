@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-07T17:30:31Z",
+"updated": "2026-07-07T17:40:17Z",
 "source": "api-football (via worker)",
 "scores": {
 "95": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Argentina",
 "away": "Egypt",
-"min": 61
+"min": 67
 },
 "1": {
 "h": 2,
