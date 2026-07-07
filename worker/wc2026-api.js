@@ -352,6 +352,21 @@ function kitColors(lineups, homeId, awayId) {
   return (h || a) ? { h: h, a: a } : null;
 }
 
+function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+// API-Football signals a transient problem (rate limit, etc.) as an HTTP 200 with a non-empty
+// `errors` object, not an HTTP error code. Left unretried, a single throttled cron tick freezes
+// the live scores snapshot for a full minute (the caller returns early without writing anything) —
+// give a failing call a couple of chances to recover within the same tick before giving up.
+async function fetchJSONRetry(url, headers, tries) {
+  var j = null;
+  for (var i = 0; i < (tries || 3); i++) {
+    j = await (await fetch(url, { headers: headers })).json();
+    if (!(j.errors && Object.keys(j.errors).length)) return j;
+    if (i < (tries || 3) - 1) await sleep(1500 * (i + 1));   // 1.5s, then 3s
+  }
+  return j;   // still erroring after all attempts — caller surfaces j.errors as before
+}
+
 async function runDetector(env) {
   var raw = null, state = {}; try { raw = await env.STATE.get("state"); state = JSON.parse(raw) || {}; } catch (e) {}
   state.fx = state.fx || {};
@@ -360,7 +375,7 @@ async function runDetector(env) {
   var sending = !!state.seeded, log = [], sent = 0;
   var headers = { "x-apisports-key": env.APISPORTS_KEY }, fixtures = [];
   try {
-    var fxResp = await (await fetch(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, { headers })).json();
+    var fxResp = await fetchJSONRetry(API + "/fixtures?league=" + WC_LEAGUE + "&season=" + SEASON, headers);
     // API-Football signals quota/param problems as a 200 with a non-empty errors object — surface it instead of
     // silently doing nothing (which would advance no state but emit no signal during a live match).
     if (fxResp.errors && Object.keys(fxResp.errors).length) return { error: fxResp.errors };
