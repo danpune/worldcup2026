@@ -1,14 +1,7 @@
 {
-"updated": "2026-07-07T22:40:20Z",
+"updated": "2026-07-07T22:45:00Z",
 "source": "api-football (via worker)",
 "scores": {
-"96": {
-"h": 0,
-"a": 0,
-"s": "IN_PLAY",
-"home": "Switzerland",
-"away": "Colombia"
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -532,6 +525,13 @@
 "s": "FINISHED",
 "home": "Argentina",
 "away": "Egypt"
+},
+"96": {
+"h": 0,
+"a": 0,
+"s": "IN_PLAY",
+"home": "Switzerland",
+"away": "Colombia"
 }
 }
 }
