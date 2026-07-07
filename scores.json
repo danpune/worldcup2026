@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-07T02:00:27Z",
+"updated": "2026-07-07T02:10:21Z",
 "source": "api-football (via worker)",
 "scores": {
-"94": {
-"h": 1,
-"a": 4,
-"s": "IN_PLAY",
-"home": "USA",
-"away": "Belgium",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -519,6 +511,13 @@
 "s": "FINISHED",
 "home": "Portugal",
 "away": "Spain"
+},
+"94": {
+"h": 1,
+"a": 4,
+"s": "FINISHED",
+"home": "USA",
+"away": "Belgium"
 }
 }
 }
