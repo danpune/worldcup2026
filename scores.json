@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-09T21:20:11Z",
+"updated": "2026-07-09T21:30:20Z",
 "source": "api-football (via worker)",
 "scores": {
 "97": {
-"h": 0,
+"h": 1,
 "a": 0,
 "s": "IN_PLAY",
 "home": "France",
 "away": "Morocco",
-"min": 55
+"min": 65
 },
 "1": {
 "h": 2,
