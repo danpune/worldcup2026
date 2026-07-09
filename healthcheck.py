@@ -142,6 +142,20 @@ if _cf_token and _cf_acct:
     except Exception as e:
         warns.append("Cloudflare KV check failed (query may need tuning): %s" % e)
 
+# 8) Calendar buttons use resolved team names, not raw knockout placeholders
+# (regression guard: gcalUrl/icsLink once read m.home/m.away directly, which for
+# knockout matches is static placeholder text like "Winner M89" that never resolves —
+# real fix passes the already-resolved dh.name/da.name from dispTeam(). See git log.)
+try:
+    _, body = fetch(SITE + "/")
+    if "gcalUrl(m,dh.name,da.name)" in body and "icsLink(m,dh.name,da.name)" in body:
+        oks.append("Calendar buttons pass resolved team names")
+    else:
+        fails.append("REGRESSION: calendar buttons no longer pass resolved team names "
+                     "(gcalUrl/icsLink call site changed — check for raw m.home/m.away)")
+except Exception as e:
+    warns.append("Calendar team-name check failed: %s" % e)
+
 # Report
 status = "FAIL" if fails else ("WARN" if warns else "OK")
 lines = ["## Health check: **%s** — %sZ" % (status, datetime.datetime.utcnow().isoformat(timespec="seconds")), ""]
