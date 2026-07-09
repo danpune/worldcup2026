@@ -1,7 +1,15 @@
 {
-"updated": "2026-07-09T21:54:41Z",
+"updated": "2026-07-09T22:00:14Z",
 "source": "api-football (via worker)",
 "scores": {
+"97": {
+"h": 2,
+"a": 0,
+"s": "IN_PLAY",
+"home": "France",
+"away": "Morocco",
+"min": 90
+},
 "1": {
 "h": 2,
 "a": 0,
@@ -533,14 +541,6 @@
 "home": "Switzerland",
 "away": "Colombia",
 "w": "h"
-},
-"97": {
-"h": 2,
-"a": 0,
-"s": "IN_PLAY",
-"home": "France",
-"away": "Morocco",
-"min": 90
 }
 }
 }
