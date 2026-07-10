@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-10T21:00:19Z",
+"updated": "2026-07-10T21:10:12Z",
 "source": "api-football (via worker)",
 "scores": {
-"98": {
-"h": 2,
-"a": 1,
-"s": "IN_PLAY",
-"home": "Spain",
-"away": "Belgium",
-"min": 90
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -548,6 +540,13 @@
 "s": "FINISHED",
 "home": "France",
 "away": "Morocco"
+},
+"98": {
+"h": 2,
+"a": 1,
+"s": "FINISHED",
+"home": "Spain",
+"away": "Belgium"
 }
 }
 }
