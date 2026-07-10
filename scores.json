@@ -1,14 +1,14 @@
 {
-"updated": "2026-07-10T20:50:12Z",
+"updated": "2026-07-10T21:00:19Z",
 "source": "api-football (via worker)",
 "scores": {
 "98": {
-"h": 1,
+"h": 2,
 "a": 1,
 "s": "IN_PLAY",
 "home": "Spain",
 "away": "Belgium",
-"min": 87
+"min": 90
 },
 "1": {
 "h": 2,
