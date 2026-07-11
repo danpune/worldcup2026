@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-11T22:30:16Z",
+"updated": "2026-07-11T22:40:16Z",
 "source": "api-football (via worker)",
 "scores": {
 "99": {
@@ -8,7 +8,7 @@
 "s": "IN_PLAY",
 "home": "Norway",
 "away": "England",
-"min": 67
+"min": 77
 },
 "1": {
 "h": 2,
