@@ -1776,7 +1776,8 @@ function renderHistoryTab(){
   const el=document.getElementById("histwrap");
   if(!d){el.innerHTML='<p class="note">World Cup history is unavailable right now \u2014 try again in a bit.</p>';return;}
   histTabDone=true;
-  const nm=c=>d.teams[c].name,fl=n=>FLAGMAP[n]?FLAGMAP[n]+" ":"";
+  const HFLAG={"Italy":"\ud83c\uddee\ud83c\uddf9","Hungary":"\ud83c\udded\ud83c\uddfa"};   /* champions/finalists not at WC2026; defunct states (Czechoslovakia, Yugoslavia) stay flagless on purpose */
+  const nm=c=>d.teams[c].name,fl=n=>{const f=FLAGMAP[n]||HFLAG[n];return f?f+" ":"";};
   const PENS={1994:"BRA",2006:"ITA",2022:"ARG"};   /* pen-decided finals: the dataset stores the level score, not the shootout winner */
   const wins={URY:[1950]};   /* 1950 had no final \u2014 a final-round group decided the title */
   const fin=[{y:1950,w:"URY",l:"BRA",sc:"2\u20131",note:"deciding group game"}];
