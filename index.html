@@ -1706,7 +1706,7 @@ setInterval(function(){openStats.forEach(function(n){const es=cardScore(n);if(!e
 /* ===== All-time World Cup history: head-to-head + per-team record =====
    Data: wc-history.json, pre-baked from The Fjelstul World Cup Database (CC-BY-SA 4.0).
    Lazy-loaded on first use (H2H button / squad modal) so it never weighs on page load. */
-let WCH=null,wchLoading=null;
+var WCH=null,wchLoading=null;   /* var, not let: the #hash deep-link IIFE above can call into here before this line runs (TDZ) */
 const histNorm=s=>String(s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z]/g,"");
 /* our display names -> Fjelstul names where they differ (DR Congo competed as Zaire in 1974) */
 const HIST_ALIAS={usa:"unitedstates",turkiye:"turkey",czechia:"czechrepublic",drcongo:"zaire",bosniaherzegovina:"bosniaandherzegovina"};
@@ -1769,7 +1769,7 @@ function historyHTML(home,away){
 }
 
 /* ===== History & trivia tab: every fact computed from wc-history.json at render time ===== */
-let histTabDone=false;
+var histTabDone=false;   /* var, not let: same deep-link TDZ as WCH above */
 function renderHistoryTab(){
  if(histTabDone)return;
  loadHistory().then(d=>{
