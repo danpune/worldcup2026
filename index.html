@@ -465,6 +465,8 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .info p{margin:6px 0;color:#33403a}
 .info a{color:var(--pitch2);font-weight:600;word-break:break-word}
 .info ul{margin:6px 0;padding-left:18px;color:#33403a}.info li{margin:4px 0}
+.tldrbox{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin:10px 0 6px;font-size:14.5px;line-height:1.55}
+#view-history table.st{margin:8px 0 4px;max-width:760px}#view-history table.st td.tm{white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:15px}
 footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;color:var(--muted);font-size:12.5px}
 .hide{display:none!important}
@@ -536,6 +538,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Groups</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">News</button>
+ <button class="tab" role="tab" id="tab-history" aria-controls="view-history" aria-selected="false" tabindex="-1" data-view="history">History</button>
  <button class="tab" role="tab" id="tab-info" aria-controls="view-info" aria-selected="false" tabindex="-1" data-view="info">Info</button>
 </div></nav>
 
@@ -586,6 +589,11 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
    <a class="buzzbtn" href="https://x.com/search?q=World%20Cup&f=live" target="_blank" rel="noopener">🔥 Latest: “World Cup” <span class="ext">↗</span></a>
   </div>
   <p class="note">Posts open on X — we link out rather than embed (X no longer offers a free in-page feed), which keeps this page tracker-free.</p>
+ </section>
+
+ <section id="view-history" class="hide info" role="tabpanel" aria-labelledby="tab-history" tabindex="0">
+  <h3>&#128220; World Cup history &amp; trivia</h3>
+  <div id="histwrap"><div class="newsload">Loading 96 years of World Cup history&#8230;</div></div>
  </section>
 
  <section id="view-info" class="hide info" role="tabpanel" aria-labelledby="tab-info" tabindex="0">
@@ -1611,7 +1619,8 @@ function activateTab(t,fromHash){
  document.getElementById("view-"+currentView).classList.remove("hide");
  render();
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
- if(currentView==="standings")loadTopScorers();   /* lazy: Golden Boot race only when Standings is opened */
+ if(currentView==="standings")loadTopScorers();
+ if(currentView==="history")renderHistoryTab();   /* lazy: history dataset only when the tab is opened */   /* lazy: Golden Boot race only when Standings is opened */
  if(!fromHash){const h="#"+currentView;if(location.hash!==h)location.hash=currentView;}  /* reflect the open tab in the URL so it can be shared/bookmarked + the back button moves between tabs */
 }
 tabEls.forEach((t,i)=>{
@@ -1757,6 +1766,55 @@ function historyHTML(home,away){
  out+='<div class="hactions"><button type="button" class="statsbtn sharebtn" data-home="'+escA(home)+'" data-away="'+escA(away)+'" data-sub="'+escA(sub)+'">↗ Share this matchup</button></div>';
  out+='<div class="credit">'+escA(WCH.attribution||"")+'</div>';
  return out;
+}
+
+/* ===== History & trivia tab: every fact computed from wc-history.json at render time ===== */
+let histTabDone=false;
+function renderHistoryTab(){
+ if(histTabDone)return;
+ loadHistory().then(d=>{
+  const el=document.getElementById("histwrap");
+  if(!d){el.innerHTML='<p class="note">World Cup history is unavailable right now \u2014 try again in a bit.</p>';return;}
+  histTabDone=true;
+  const nm=c=>d.teams[c].name,fl=n=>FLAGMAP[n]?FLAGMAP[n]+" ":"";
+  const PENS={1994:"BRA",2006:"ITA",2022:"ARG"};   /* pen-decided finals: the dataset stores the level score, not the shootout winner */
+  const wins={URY:[1950]};   /* 1950 had no final \u2014 a final-round group decided the title */
+  const fin=[{y:1950,w:"URY",l:"BRA",sc:"2\u20131",note:"deciding group game"}];
+  d.matches.filter(m=>m[1]==="F").forEach(m=>{
+   const y=m[0],hc=m[2],ac=m[3],hs=m[4],as_=m[5],pen=m[6];
+   const wc=pen?PENS[y]:(hs>as_?hc:ac);
+   (wins[wc]=wins[wc]||[]).push(y);
+   fin.push({y,w:wc,l:wc===hc?ac:hc,sc:Math.max(hs,as_)+"\u2013"+Math.min(hs,as_),note:pen?"pens":""});
+  });
+  fin.sort((a,b)=>b.y-a.y);
+  const champs=Object.keys(wins).map(c=>({c,yrs:wins[c].sort()})).sort((a,b)=>b.yrs.length-a.yrs.length||a.yrs[0]-b.yrs[0]);
+  const y0=d.matches.reduce((m,x)=>Math.min(m,x[0]),9999);
+  let out='<div class="tldrbox"><b>TL;DR:</b> The World Cup began in <b>'+y0+'</b> in Uruguay, who won it as hosts. It has been played <b>'+d.tournaments+' times</b> \u2014 2026 is edition '+(d.tournaments+1)+' and the first with 48 teams. Only <b>'+champs.length+' nations</b> have ever won it, led by <b>'+escA(nm(champs[0].c))+'</b> with '+champs[0].yrs.length+' titles.</div>';
+  out+='<h3>\ud83c\udfc6 Most World Cup titles</h3><table class="st"><tr><th style="text-align:left">Country</th><th>Titles</th><th style="text-align:left">Years won</th></tr>'
+   +champs.map(x=>'<tr><td class="tm">'+fl(nm(x.c))+escA(nm(x.c))+'</td><td><b>'+x.yrs.length+'</b></td><td class="tm" style="font-weight:400;white-space:normal">'+x.yrs.join(", ")+'</td></tr>').join("")+'</table>';
+  out+='<h3>\ud83e\udd47 Every final, '+y0+'\u20132022</h3><table class="st"><tr><th>Year</th><th style="text-align:left">Winner</th><th>Score</th><th style="text-align:left">Runner-up</th></tr>'
+   +fin.map(f=>'<tr><td>'+f.y+'</td><td class="tm">'+fl(nm(f.w))+escA(nm(f.w))+'</td><td>'+f.sc+(f.note?' <small>('+f.note+')</small>':'')+'</td><td class="tm">'+fl(nm(f.l))+escA(nm(f.l))+'</td></tr>').join("")+'</table>';
+  out+='<p class="note">1950 had no final match \u2014 the title was decided by a round-robin final group; Uruguay beat hosts Brazil 2\u20131 in the deciding game (the "Maracanazo").</p>';
+  const T=d.teams,codes=Object.keys(T);
+  const ever=codes.filter(c=>T[c].apps===d.tournaments);
+  const nof=codes.filter(c=>!T[c].titles&&T[c].finals).sort((a,b)=>T[b].finals-T[a].finals)[0];
+  const noa=codes.filter(c=>!T[c].titles).sort((a,b)=>T[b].apps-T[a].apps)[0];
+  const cur=[...new Set(MATCHES.filter(m=>m.group_game).flatMap(m=>[m.home,m.away]))];
+  const rows=cur.map(n=>({n,h:teamHist(n)})).sort((a,b)=>((b.h?b.h.apps:0)-(a.h?a.h.apps:0))||a.n.localeCompare(b.n));
+  const debuts=rows.filter(r=>!r.h),backs=rows.filter(r=>r.h&&r.h.last<=2002).sort((a,b)=>a.h.last-b.h.last);
+  const facts=[];
+  if(ever.length)facts.push(ever.map(c=>fl(nm(c))+"<b>"+escA(nm(c))+"</b>").join(", ")+(ever.length===1?" is the only country":" are the only countries")+" to have played in every World Cup \u2014 all "+d.tournaments+" of them.");
+  if(nof)facts.push(fl(nm(nof))+"<b>"+escA(nm(nof))+"</b> have reached "+T[nof].finals+" finals without ever lifting the trophy.");
+  if(noa)facts.push(fl(nm(noa))+"<b>"+escA(nm(noa))+"</b> have the most appearances without a title \u2014 "+T[noa].apps+".");
+  if(debuts.length)facts.push("<b>"+debuts.length+" nations</b> are playing their first-ever World Cup in 2026: "+debuts.map(r=>fl(r.n)+escA(r.n)).join(", ")+".");
+  if(backs.length)facts.push("Long waits ended in 2026: "+backs.map(r=>fl(r.n)+escA(r.n)+" (last played "+r.h.last+")").join(" \u00b7 ")+".");
+  out+='<h3>\u2728 Did you know?</h3><ul>'+facts.map(f=>"<li>"+f+"</li>").join("")+'</ul>';
+  out+='<h3>\ud83c\udf0e The 48 of 2026 \u2014 World Cup pedigree</h3><p>Every team at this World Cup and its record so far. Tap any team on a match card or in the groups for full history and head-to-head.</p>';
+  out+='<table class="st"><tr><th style="text-align:left">Team</th><th>Apps</th><th>Titles</th><th style="text-align:left">Best finish</th><th>Last</th></tr>'
+   +rows.map(r=>{const t=r.h;return '<tr><td class="tm">'+fl(r.n)+escA(r.n)+'</td>'+(t?'<td>'+t.apps+'</td><td>'+(t.titles||"\u2014")+'</td><td class="tm" style="font-weight:400;white-space:normal">'+escA(t.best)+(t.bestYear?' ('+t.bestYear+')':'')+'</td><td>'+t.last+'</td>':'<td colspan="4" class="tm" style="font-weight:400">\ud83c\udf89 First World Cup</td>')+'</tr>';}).join("")+'</table>';
+  out+='<div class="credit">'+escA(d.attribution||"")+'</div>';
+  el.innerHTML=out;
+ });
 }
 function openHistory(home,away){
  const ov=document.getElementById("sqoverlay");if(!ov)return;
