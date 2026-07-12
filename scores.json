@@ -1,13 +1,14 @@
 {
-"updated": "2026-07-12T02:00:20Z",
+"updated": "2026-07-12T02:10:15Z",
 "source": "api-football (via worker)",
 "scores": {
 "100": {
 "h": 1,
 "a": 0,
-"s": "PAUSED",
+"s": "IN_PLAY",
 "home": "Argentina",
-"away": "Switzerland"
+"away": "Switzerland",
+"min": 48
 },
 "1": {
 "h": 2,
