@@ -1,15 +1,7 @@
 {
-"updated": "2026-07-12T03:40:14Z",
+"updated": "2026-07-12T03:50:13Z",
 "source": "api-football (via worker)",
 "scores": {
-"100": {
-"h": 2,
-"a": 1,
-"s": "IN_PLAY",
-"home": "Argentina",
-"away": "Switzerland",
-"min": 120
-},
 "1": {
 "h": 2,
 "a": 0,
@@ -562,6 +554,13 @@
 "s": "FINISHED",
 "home": "Norway",
 "away": "England"
+},
+"100": {
+"h": 3,
+"a": 1,
+"s": "FINISHED",
+"home": "Argentina",
+"away": "Switzerland"
 }
 }
 }
