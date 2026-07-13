@@ -465,6 +465,11 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .info p{margin:6px 0;color:#33403a}
 .info a{color:var(--pitch2);font-weight:600;word-break:break-word}
 .info ul{margin:6px 0;padding-left:18px;color:#33403a}.info li{margin:4px 0}
+.fbform input,.fbform textarea{width:100%;max-width:560px;display:block;margin:6px 0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit}
+.fwrow{display:flex;align-items:center;gap:10px;margin:4px 0 10px;flex-wrap:wrap}
+.fwc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;max-width:560px}
+.fwc b{color:var(--pitch2)}.fwc .fwt{color:var(--muted);font-size:12px;margin-left:6px}.fwc p{margin:4px 0 0}
+.fwdel{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11.5px;cursor:pointer;padding:2px 7px;margin-left:8px}
 .tldrbox{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin:10px 0 6px;font-size:14.5px;line-height:1.55}
 #view-history table.st{margin:8px 0 4px;max-width:760px}#view-history table.st td.tm{white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:15px}
@@ -515,6 +520,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  td.pts{color:#7fcfa2}
  .meta .pred,.pm{color:#8b97f0}
  .info h3{color:#7fcfa2}
+ .fwc b{color:#7fcfa2}
  .info a{color:#8fd3ab}
  .info p,.info ul{color:#c4d2cb}
 }
@@ -691,6 +697,15 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <h3>💬 Feedback</h3>
   <p>Spotted a wrong kickoff time, hit a bug, or have an idea? I'd genuinely love to hear it — this is a one-person project, and your feedback shapes what gets built next. It goes straight to my inbox (a real person reads every note).</p>
   <button type="button" class="cal" id="fbbtn" onclick="sendFeedback()">💬 Send feedback</button>
+  <h3>&#128483;&#65039; Fan wall</h3>
+  <p class="note">Leave a public comment &#8212; say hi, hot takes welcome. Every comment is <b>reviewed before it appears</b> (usually within a day). No account needed &#183; no links &#183; 500 characters.</p>
+  <div class="fbform">
+   <input id="fwname" maxlength="40" placeholder="Name (optional)" aria-label="Your name (optional)">
+   <textarea id="fwtext" maxlength="500" rows="3" placeholder="Your comment&#8230;" aria-label="Your comment"></textarea>
+   <div class="fwrow"><button type="button" class="cal" onclick="fwSubmit()">Post comment</button><span id="fwmsg" class="note" role="status"></span></div>
+  </div>
+  <div id="fwpend"></div>
+  <div id="fwlist"></div>
   <h3>Open source</h3>
   <p>The whole thing is one transparent web page — nothing hidden. You can read every line, suggest a feature, or report an issue on GitHub: <a href="https://github.com/danpune/worldcup2026" target="_blank" rel="noopener">github.com/danpune/worldcup2026</a>.</p>
  </section>
@@ -1620,7 +1635,8 @@ function activateTab(t,fromHash){
  render();
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
  if(currentView==="standings")loadTopScorers();
- if(currentView==="history")renderHistoryTab();   /* lazy: history dataset only when the tab is opened */   /* lazy: Golden Boot race only when Standings is opened */
+ if(currentView==="history")renderHistoryTab();   /* lazy: history dataset only when the tab is opened */
+ if(currentView==="info")fwLoad();   /* lazy: fan-wall comments only when Info is opened */   /* lazy: Golden Boot race only when Standings is opened */
  if(!fromHash){const h="#"+currentView;if(location.hash!==h)location.hash=currentView;}  /* reflect the open tab in the URL so it can be shared/bookmarked + the back button moves between tabs */
 }
 tabEls.forEach((t,i)=>{
@@ -1816,6 +1832,52 @@ function renderHistoryTab(){
   out+='<div class="credit">'+escA(d.attribution||"")+'</div>';
   el.innerHTML=out;
  });
+}
+
+/* ===== Fan wall: public comments with approve-first publishing (worker /comments).
+   Everything hoists (function decls + var) because a #info deep-link can call fwLoad()
+   from the tab IIFE before this point in the script runs — same TDZ trap as the History tab. */
+var fwLoaded=false;
+function fwAgo(ts){const m=(Date.now()-ts)/60000;return m<60?Math.max(1,Math.round(m))+"m ago":m<1440?Math.round(m/60)+"h ago":Math.round(m/1440)+"d ago";}
+function fwRender(list){
+ const el=document.getElementById("fwlist"),admin=localStorage.getItem("wcAdminKey");
+ if(!list.length){el.innerHTML='<p class="note">No comments yet \u2014 be the first!</p>';return;}
+ el.innerHTML=list.map(c=>'<div class="fwc"><b>'+escA(c.n)+'</b><span class="fwt">'+fwAgo(c.ts)+'</span>'+(admin?'<button type="button" class="fwdel" data-id="'+escA(c.id)+'">\u2715 remove</button>':'')+'<p>'+escA(c.t)+'</p></div>').join("");
+ el.querySelectorAll(".fwdel").forEach(b=>b.addEventListener("click",()=>fwMod(b.dataset.id,"remove")));
+}
+function fwLoad(force){
+ if(fwLoaded&&!force)return;fwLoaded=true;
+ fetch("https://wc2026-api.footy26.workers.dev/comments").then(r=>r.json()).then(fwRender).catch(()=>{});
+ if(localStorage.getItem("wcAdminKey"))fwPending();
+}
+async function fwSubmit(){
+ const t=document.getElementById("fwtext"),n=document.getElementById("fwname"),m=document.getElementById("fwmsg");
+ if(t.value.trim().length<2){m.textContent="Write something first \ud83d\ude42";return;}
+ m.textContent="Posting\u2026";
+ try{
+  const r=await fetch("https://wc2026-api.footy26.workers.dev/comments",{method:"POST",body:JSON.stringify({name:n.value,text:t.value})});
+  const d=await r.json();
+  if(d.ok){t.value="";m.textContent="Thanks! Your comment will appear once it\u2019s reviewed. \u2705";}
+  else m.textContent=d.error||"Something went wrong \u2014 try again.";
+ }catch(e){m.textContent="Network hiccup \u2014 try again.";}
+}
+/* Admin moderation: on your own device run localStorage.setItem("wcAdminKey","<ADMIN_KEY>") once in the
+   console, then open the Info tab \u2014 the review queue renders with Approve / Reject / Block buttons. */
+async function fwMod(id,action){
+ const key=localStorage.getItem("wcAdminKey");if(!key)return;
+ await fetch("https://wc2026-api.footy26.workers.dev/comments/mod",{method:"POST",headers:{authorization:"Bearer "+key},body:JSON.stringify({id,action})}).catch(()=>{});
+ fwPending();fwLoad(true);
+}
+async function fwPending(){
+ const key=localStorage.getItem("wcAdminKey");if(!key)return;
+ const el=document.getElementById("fwpend");
+ try{
+  const r=await fetch("https://wc2026-api.footy26.workers.dev/comments/pending",{headers:{authorization:"Bearer "+key}});
+  if(!r.ok){el.innerHTML='<p class="note">Admin key rejected (or expired) \u2014 re-set wcAdminKey.</p>';return;}
+  const d=await r.json();
+  el.innerHTML='<h3>\ud83d\udee1\ufe0f Review queue ('+d.pending.length+')</h3>'+(d.pending.length?d.pending.map(c=>'<div class="fwc"><b>'+escA(c.n)+'</b><span class="fwt">'+fwAgo(c.ts)+'</span><p>'+escA(c.t)+'</p><div class="fwrow"><button type="button" class="cal" data-a="approve" data-id="'+escA(c.id)+'">\u2705 Approve</button><button type="button" class="cal" data-a="reject" data-id="'+escA(c.id)+'">\ud83d\uddd1 Reject</button><button type="button" class="cal" data-a="block" data-id="'+escA(c.id)+'">\ud83d\udeab Block user</button></div></div>').join(""):'<p class="note">Queue is empty \u2705</p>');
+  el.querySelectorAll("button[data-a]").forEach(b=>b.addEventListener("click",()=>fwMod(b.dataset.id,b.dataset.a)));
+ }catch(e){}
 }
 function openHistory(home,away){
  const ov=document.getElementById("sqoverlay");if(!ov)return;
