@@ -470,6 +470,7 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .fwc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;max-width:560px}
 .fwc b{color:var(--pitch2)}.fwc .fwt{color:var(--muted);font-size:12px;margin-left:6px}.fwc p{margin:4px 0 0}
 .fwdel{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11.5px;cursor:pointer;padding:2px 7px;margin-left:8px}
+.nxcal{display:flex;gap:8px;margin-top:7px}
 .tldrbox{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin:10px 0 6px;font-size:14.5px;line-height:1.55}
 #view-history table.st{margin:8px 0 4px;max-width:760px}#view-history table.st td.tm{white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:15px}
@@ -1140,6 +1141,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":MATCHES.some(m=>Date.now()<Date.parse(m.utc)+108e5)?"left":"knockout",q="";
 const CHIPS=[["all","All"],["today","Today"],["left","\u23f3 Remaining"],["knockout","🏆 Knockouts"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
+function pickChip(v){const i=CHIPS.findIndex(c=>c[0]===v);const b=chipBox.children[i];if(b)b.click();}
 CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
 document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
 function todayStr(){return new Date().toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"});}
@@ -1315,7 +1317,7 @@ function renderLive(){
 function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
  const rows=MATCHES.filter(passes).sort((a,b)=>new Date(a.utc)-new Date(b.utc));   // always chronological by kickoff (match numbers aren't strictly in time order)
- if(!rows.length){const msg=(filter==="fav"&&FOLLOWS.size===0)?'No teams followed yet — tap the ☆ next to any team and their matches will collect here.':'No matches match that filter. Try clearing the search.';list.innerHTML='<div class="empty">'+msg+'</div>';renderDateStrip([]);return;}
+ if(!rows.length){const msg=(filter==="fav"&&FOLLOWS.size===0)?'No teams followed yet — tap the ☆ next to any team and their matches will collect here.':(filter==="today"&&!q)?'No matches today — the calendar buttons on each upcoming match add it to your calendar. <button type="button" class="cal" onclick="pickChip(\'left\')">\u23f3 See the remaining matches</button>':q?'No matches match that search — try clearing it.':'No matches match that filter.';list.innerHTML='<div class="empty">'+msg+'</div>';renderDateStrip([]);return;}
  let lastDay=null;const now=new Date();const days=[];
  rows.forEach(m=>{
   const p=dParts(m.utc);
@@ -1410,7 +1412,8 @@ function renderNext(){
  const p=dParts(up.utc);const diff=new Date(up.utc)-now;const h=Math.floor(diff/36e5),mn=Math.floor((diff%36e5)/6e4);
  const cd=h>24?Math.floor(h/24)+"d "+(h%24)+"h":h+"h "+mn+"m";
  const tm=teamsInline(up);
- box.innerHTML=`<div class="next"><div><div class="lab">Next match</div><div class="m">${tm}</div></div><div class="cd">${p.time} · in ${cd}</div></div>`;
+ const uh=dispTeam(up,"home").name,ua=dispTeam(up,"away").name;
+ box.innerHTML=`<div class="next"><div><div class="lab">Next match</div><div class="m">${tm}</div><div class="nxcal"><a class="cal" href="${gcalUrl(up,uh,ua)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(up,uh,ua)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a></div></div><div class="cd">${p.time} · in ${cd}</div></div>`;
 }
 function computeGroup(g){
  const teams={};
