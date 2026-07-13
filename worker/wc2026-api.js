@@ -258,6 +258,7 @@ export default {
       if (!/^\d{8}T\d{6}Z$/.test(ds) || !/^\d{8}T\d{6}Z$/.test(de)) return new Response("invalid dates", { status: 400, headers: cors() });
       var dnow = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");   // YYYYMMDDTHHMMSSZ
       var uid = (qp.get("uid") || "").replace(/[\r\n,;]/g, "").slice(0, 120) || ("wc2026-" + ds + "@danpune.github.io");
+      var fnm = String(qp.get("t") || "").normalize("NFKD").replace(/[^A-Za-z0-9 ]/g, "").trim().replace(/ +/g, "-").slice(0, 60) || "wc2026-match";   // "France vs Morocco  World Cup 2026" -> France-vs-Morocco-World-Cup-2026.ics
       var icsBody = [
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WC2026 companion//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
         "BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + dnow, "DTSTART:" + ds, "DTEND:" + de,
@@ -267,7 +268,7 @@ export default {
       ].join("\r\n");
       return new Response(icsBody, { headers: Object.assign({}, cors(), {
         "content-type": "text/calendar; charset=utf-8",
-        "content-disposition": 'inline; filename="wc2026-match.ics"',
+        "content-disposition": 'inline; filename="' + fnm + '.ics"',
         "cache-control": "max-age=3600"
       }) });
     }
