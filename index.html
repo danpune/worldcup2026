@@ -546,6 +546,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  <button class="tab" role="tab" id="tab-buzz" aria-controls="view-buzz" aria-selected="false" tabindex="-1" data-view="buzz">News</button>
  <button class="tab" role="tab" id="tab-history" aria-controls="view-history" aria-selected="false" tabindex="-1" data-view="history">History</button>
  <button class="tab" role="tab" id="tab-info" aria-controls="view-info" aria-selected="false" tabindex="-1" data-view="info">Info</button>
+ <button class="tab" role="tab" id="tab-feedback" aria-controls="view-feedback" aria-selected="false" tabindex="-1" data-view="feedback">💬 Feedback</button>
 </div></nav>
 
 <main class="wrap">
@@ -694,10 +695,12 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p class="note">Not affiliated with FIFA or Polymarket. Live data accuracy depends on the feeds; for official confirmation of a result, check fifa.com.</p>
   <h3>Privacy</h3>
   <p>This site sets <b>no cookies</b> and collects <b>no personal information</b> — there's no sign-up or login. It uses <b>privacy-friendly, cookieless analytics</b> (Cloudflare) and a simple visit counter to gauge interest. Like any website, it loads some third-party resources — fonts from Google, and (only when you open those tabs) live odds from Polymarket and video from YouTube via privacy-mode embeds — so those providers may see your IP address. Your timezone choice stays in your browser.</p>
-  <h3>💬 Feedback</h3>
-  <p>Spotted a wrong kickoff time, hit a bug, or have an idea? I'd genuinely love to hear it — this is a one-person project, and your feedback shapes what gets built next. It goes straight to my inbox (a real person reads every note).</p>
-  <button type="button" class="cal" id="fbbtn" onclick="sendFeedback()">💬 Send feedback</button>
-  <h3>&#128483;&#65039; Fan wall</h3>
+  <h3>Open source</h3>
+  <p>The whole thing is one transparent web page — nothing hidden. You can read every line, suggest a feature, or report an issue on GitHub: <a href="https://github.com/danpune/worldcup2026" target="_blank" rel="noopener">github.com/danpune/worldcup2026</a>.</p>
+ </section>
+
+ <section id="view-feedback" class="hide info" role="tabpanel" aria-labelledby="tab-feedback" tabindex="0">
+  <h3>&#128483;&#65039; Fan wall &#8212; public comments</h3>
   <p class="note">Leave a public comment &#8212; say hi, hot takes welcome. Every comment is <b>reviewed before it appears</b> (usually within a day). No account needed &#183; no links &#183; 500 characters.</p>
   <div class="fbform">
    <input id="fwname" maxlength="40" placeholder="Name (optional)" aria-label="Your name (optional)">
@@ -706,8 +709,9 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   </div>
   <div id="fwpend"></div>
   <div id="fwlist"></div>
-  <h3>Open source</h3>
-  <p>The whole thing is one transparent web page — nothing hidden. You can read every line, suggest a feature, or report an issue on GitHub: <a href="https://github.com/danpune/worldcup2026" target="_blank" rel="noopener">github.com/danpune/worldcup2026</a>.</p>
+  <h3>💬 Private feedback</h3>
+  <p>Spotted a wrong kickoff time, hit a bug, or have an idea? I'd genuinely love to hear it — this is a one-person project, and your feedback shapes what gets built next. It goes straight to my inbox (a real person reads every note), not to the public wall.</p>
+  <button type="button" class="cal" id="fbbtn" onclick="sendFeedback()">💬 Send feedback</button>
  </section>
 </main>
 
@@ -1636,7 +1640,7 @@ function activateTab(t,fromHash){
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
  if(currentView==="standings")loadTopScorers();
  if(currentView==="history")renderHistoryTab();   /* lazy: history dataset only when the tab is opened */
- if(currentView==="info")fwLoad();   /* lazy: fan-wall comments only when Info is opened */   /* lazy: Golden Boot race only when Standings is opened */
+ if(currentView==="feedback")fwLoad();   /* lazy: fan-wall comments only when the Feedback tab is opened */   /* lazy: Golden Boot race only when Standings is opened */
  if(!fromHash){const h="#"+currentView;if(location.hash!==h)location.hash=currentView;}  /* reflect the open tab in the URL so it can be shared/bookmarked + the back button moves between tabs */
 }
 tabEls.forEach((t,i)=>{
