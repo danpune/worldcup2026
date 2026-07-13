@@ -310,6 +310,73 @@ export default {
       return new Response(say, { headers: Object.assign({}, cors(), { "content-type": "text/plain; charset=utf-8", "cache-control": "max-age=30" }) });
     }
 
+    // ===== Fan wall: public submissions held for review; only admin-approved comments publish =====
+    //   POST /comments {name,text}          -> pending queue (rate-limited, link-free, daily-capped)
+    //   GET  /comments                      -> approved list (public, cached)
+    //   GET  /comments/pending              -> admin: review queue
+    //   POST /comments/mod {id,action}      -> admin: approve | reject | block | remove (remove = un-publish)
+    if (url.pathname === "/comments" && request.method === "GET") {
+      var oklist = await env.STATE.get("cmt:ok");
+      return new Response(oklist || "[]", { headers: Object.assign({}, cors(), { "content-type": "application/json", "cache-control": "max-age=60" }) });
+    }
+    if (url.pathname === "/comments" && request.method === "POST") {
+      var cb; try { cb = await request.json(); } catch (e) { return json({ error: "bad json" }); }
+      var ctext = String((cb && cb.text) || "").replace(/\s+/g, " ").trim().slice(0, 500);
+      var cname = String((cb && cb.name) || "").replace(/\s+/g, " ").trim().slice(0, 40) || "Anonymous";
+      if (ctext.length < 2) return json({ error: "Comment is empty." });
+      if (/https?:|www\./i.test(ctext + " " + cname)) return json({ error: "Links aren't allowed." });
+      var chash = await ipHash(request.headers.get("cf-connecting-ip") || "0", env);
+      if (await env.STATE.get("cmt:block:" + chash)) return json({ error: "Posting is disabled for this connection." });
+      var crk = "cmt:rl:" + chash, crn = parseInt(await env.STATE.get(crk) || "0", 10);
+      if (crn >= 5) return json({ error: "Rate limit: 5 comments per hour." });
+      var cday = "cmt:day:" + new Date().toISOString().slice(0, 10);
+      var cdn = parseInt(await env.STATE.get(cday) || "0", 10);
+      if (cdn >= 50) return json({ error: "The wall is full for today - try tomorrow!" });   // caps KV writes so comments can never starve goal alerts
+      var cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      await env.STATE.put("cmt:p:" + cid, JSON.stringify({ id: cid, n: cname, t: ctext, ts: Date.now(), h: chash }), { expirationTtl: 60 * 86400 });
+      ctx.waitUntil(env.STATE.put(crk, String(crn + 1), { expirationTtl: 3600 }));
+      ctx.waitUntil(env.STATE.put(cday, String(cdn + 1), { expirationTtl: 172800 }));
+      return json({ ok: true });
+    }
+    if (url.pathname === "/comments/pending" || url.pathname === "/comments/mod") {
+      var cak = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!env.ADMIN_KEY || cak !== env.ADMIN_KEY) return new Response("forbidden", { status: 403, headers: cors() });
+    }
+    if (url.pathname === "/comments/pending") {
+      var cls = await env.STATE.list({ prefix: "cmt:p:" });
+      var pend = [];
+      for (var ci = 0; ci < cls.keys.length && ci < 100; ci++) {
+        var cpv = await env.STATE.get(cls.keys[ci].name);
+        if (cpv) pend.push(JSON.parse(cpv));
+      }
+      pend.sort(function (a, b) { return b.ts - a.ts; });
+      return json({ pending: pend });
+    }
+    if (url.pathname === "/comments/mod" && request.method === "POST") {
+      var mb; try { mb = await request.json(); } catch (e) { return json({ error: "bad json" }); }
+      var mid = String((mb && mb.id) || "").replace(/[^a-z0-9]/gi, "").slice(0, 30);
+      var mact = String((mb && mb.action) || "");
+      if (mact === "remove") {   // un-publish an already-approved comment
+        var cur0 = JSON.parse(await env.STATE.get("cmt:ok") || "[]");
+        await env.STATE.put("cmt:ok", JSON.stringify(cur0.filter(function (x) { return x.id !== mid; })));
+        return json({ ok: true, action: "remove" });
+      }
+      var praw = await env.STATE.get("cmt:p:" + mid);
+      if (!praw) return json({ error: "not found" });
+      var pc = JSON.parse(praw);
+      if (mact === "approve") {
+        var cur = JSON.parse(await env.STATE.get("cmt:ok") || "[]");
+        cur.unshift({ id: pc.id, n: pc.n, t: pc.t, ts: pc.ts });
+        await env.STATE.put("cmt:ok", JSON.stringify(cur.slice(0, 200)));
+      } else if (mact === "block") {
+        await env.STATE.put("cmt:block:" + pc.h, "1");   // silently drops future posts from this connection
+      } else if (mact !== "reject") {
+        return json({ error: "unknown action" });
+      }
+      await env.STATE.delete("cmt:p:" + mid);
+      return json({ ok: true, action: mact });
+    }
+
     // Admin routes can send pushes / wipe detector state — require a secret key (set ADMIN_KEY as a Worker secret).
     // Fails closed: if ADMIN_KEY is unset or the Bearer token doesn't match, these routes return 403. (Cron is unaffected.)
     if (url.pathname === "/testpush" || url.pathname === "/run" || url.pathname === "/reset") {
@@ -512,6 +579,10 @@ async function sendPush(env, title, body, teams, tier) {
 }
 function tagKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, "_"); }
 function cors() { return { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "*" }; }
+async function ipHash(ip, env) {   // salted so raw IPs are never stored (privacy) yet blocks are stable
+  var d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip + "|" + (env.ADMIN_KEY || "wc26")));
+  return Array.prototype.map.call(new Uint8Array(d.slice(0, 8)), function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+}
 function json(obj) { return new Response(JSON.stringify(obj, null, 2), { headers: Object.assign({}, cors(), { "content-type": "application/json" }) }); }
 // Merge two match-detail payloads keeping the MORE COMPLETE value of each list. The provider's feed flaps —
 // events/stats can momentarily return empty then reappear — so a naive overwrite wipes goals we'd already
