@@ -1537,6 +1537,12 @@ function dispTeam(m,side){const raw=m[side];
  const ft=koFeedTeams(m.n);if(ft){const nm=side==="home"?ft.home:ft.away;return{name:nm,flag:FLAGMAP[nm]||"",done:true};}
  const r=resolveKO(raw);
  if(r)return{name:r.name,flag:r.flag,done:r.done,prov:r.prov};
+ /* pending Winner/Loser slot whose feeder match-up IS known: name the teams instead of the match number
+    ("France/Spain winner", not "Winner M101") — resolves to the real team once the feeder match ends */
+ const km=/^(Winner|Loser) M(\d+)$/.exec(raw);
+ if(km){const ref=MATCHES[+km[2]-1];
+  if(ref){const a=dispTeam(ref,"home"),b=dispTeam(ref,"away");
+   if(a.done&&b.done)return{name:a.name+"/"+b.name+(km[1]==="Winner"?" winner":" loser"),flag:"",done:false};}}
  return{name:raw,flag:"",done:false};}
 // inline "🇿🇦 South Africa v 🇨🇦 Canada" for the LIVE NOW / Next-match banners (resolves knockout slots)
 function teamsInline(m){const one=d=>(d.flag?d.flag+" ":"")+escA(d.name)+(d.prov?'<span class="brq">?</span>':"");return one(dispTeam(m,"home"))+' <span class="vs">v</span> '+one(dispTeam(m,"away"));}
