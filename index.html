@@ -1137,8 +1137,8 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 
 /* filters */
 /* default to the Today view when today actually has matches; otherwise fall back to All (rest days / off-season) */
-let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":MATCHES.some(m=>!m.group_game)?"knockout":"all",q="";
-const CHIPS=[["all","All"],["today","Today"],["knockout","🏆 Knockouts"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
+let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":MATCHES.some(m=>Date.now()<Date.parse(m.utc)+108e5)?"left":"knockout",q="";
+const CHIPS=[["all","All"],["today","Today"],["left","\u23f3 Remaining"],["knockout","🏆 Knockouts"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
 CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
 document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
@@ -1148,6 +1148,7 @@ function passes(m){
  if(filter==="all")return true;
  if(filter==="today")return dParts(m.utc).day===todayStr();
  if(filter==="fav")return isFollowed(m.home)||isFollowed(m.away);
+ if(filter==="left")return Date.now()<Date.parse(m.utc)+108e5;
  if(filter==="knockout")return !m.group_game;
  if(filter==="near")return m.near;
  if(filter==="USA"||filter==="Mexico"||filter==="Canada")return m.home===filter||m.away===filter;
