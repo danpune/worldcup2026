@@ -1413,7 +1413,7 @@ function renderNext(){
  const cd=h>24?Math.floor(h/24)+"d "+(h%24)+"h":h+"h "+mn+"m";
  const tm=teamsInline(up);
  const uh=dispTeam(up,"home").name,ua=dispTeam(up,"away").name;
- box.innerHTML=`<div class="next"><div><div class="lab">Next match</div><div class="m">${tm}</div><div class="nxcal"><a class="cal" href="${gcalUrl(up,uh,ua)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(up,uh,ua)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a></div></div><div class="cd">${p.time} · in ${cd}</div></div>`;
+ box.innerHTML=`<div class="next"><div><div class="lab">Next match${up.group_game?"":" \u00b7 "+(up.stage==="FINAL"?"THE FINAL":up.stage)}</div><div class="m">${tm}</div><div class="nxcal"><a class="cal" href="${gcalUrl(up,uh,ua)}" target="_blank" rel="noopener" aria-label="Add to Google Calendar">${calSvg} Gcal</a><a class="cal" href="${icsLink(up,uh,ua)}" rel="noopener" aria-label="Add to Apple Calendar / iCal (.ics)">${calSvg} iCal</a></div></div><div class="cd">${p.day} · ${p.time} · in ${cd}</div></div>`;
 }
 function computeGroup(g){
  const teams={};
