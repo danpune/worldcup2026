@@ -20,6 +20,7 @@ A single web page — no build step, no framework, just `index.html` — that yo
 - ↗ **Share cards** — turn a result or matchup into a clean image (Web Share on mobile, download on desktop). Generated in your browser; nothing is uploaded.
 - 📺 **Where to watch** — a dedicated tab with the official broadcaster for your country (auto-detected from your time zone, free-to-air channels flagged), curated from FIFA's media-rights list.
 - 🌤️ **Per-match weather** — kickoff-time forecast on upcoming matches (Open-Meteo, in-browser, no extra API load).
+- 🗣️ **Fan wall** — leave a public comment, no account needed; every submission is held for review and only appears after the admin approves it (rate-limited, link-free, spam-capped).
 - 📱 **Installable & fast** — add it to your home screen like an app (web manifest); the page is a single ~58 KB file, so opens are near-instant. No offline cache by design — live scores should never be stale.
 - **Ad-free, no accounts, no money handled.** No cross-site tracking, cookies, fingerprinting, or ad networks; the only analytics is [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) — cookieless and aggregate-only (page-view counts, no per-user identifiers).
 
