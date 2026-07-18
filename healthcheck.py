@@ -81,7 +81,9 @@ try:
     sub, req = r.get("subscription", {}), r.get("requests", {})
     cur, lim = req.get("current", 0), req.get("limit_day", 0) or 0
     if not sub.get("active"):
-        fails.append("API-Football plan is NOT active")
+        # Accepted state since Jul 14 2026: the plan lapsed mid-tournament by choice;
+        # fetch_scores.py carries scores via the ESPN fallback. Warn, don't page.
+        warns.append("API-Football plan inactive (accepted — ESPN fallback carries scores)")
     else:
         oks.append("API-Football plan active (%s)" % sub.get("plan"))
     if lim:

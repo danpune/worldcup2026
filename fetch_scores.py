@@ -115,16 +115,61 @@ def build_scores(matches):
         scores[str(no)] = entry
     return scores, unresolved
 
+# ESPN free public scoreboard — merged as a second source Jul 18 2026, when the
+# API-Football plan lapsed mid-tournament and the worker feed froze with the
+# semifinals unplayed. No key, fail-safe. Whole-tournament date range: one call,
+# no date math, backfills any gap.
+ESPN_SB = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200"
+
+def espn_fix(ev):
+    """One ESPN scoreboard event -> a worker-shaped fixture dict, or None if not started/parseable."""
+    try:
+        comp = ev["competitions"][0]
+        sides = {x.get("homeAway"): x for x in comp.get("competitors", [])}
+        hm, aw = sides.get("home"), sides.get("away")
+        st = (comp.get("status") or {}).get("type") or {}
+        state, sname = st.get("state"), st.get("name", "")
+        if not hm or not aw or state == "pre":
+            return None
+        short = "FT" if state == "post" else ("HT" if "HALFTIME" in sname else "1H")
+        t = int(datetime.strptime(ev["date"], "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc).timestamp())
+        fx = {"home": hm["team"]["displayName"], "away": aw["team"]["displayName"],
+              "h": int(hm.get("score") or 0), "a": int(aw.get("score") or 0),
+              "status": short, "t": t, "minute": None}
+        clock = (comp.get("status") or {}).get("displayClock") or ""
+        digits = "".join(c for c in clock.split("+")[0] if c.isdigit())
+        if short == "1H" and digits:
+            fx["minute"] = int(digits)
+        sh, sa = hm.get("shootoutScore"), aw.get("shootoutScore")
+        if fx["h"] == fx["a"] and sh is not None and sa is not None:
+            fx["w"] = "h" if int(sh) > int(sa) else "a"
+        return fx
+    except Exception:
+        return None
+
+def espn_fixtures():
+    try:
+        req = urllib.request.Request(ESPN_SB, headers={"User-Agent": "wc2026-scores/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.load(r)
+    except Exception as e:
+        print(f"ESPN fetch failed ({e}); continuing without it.", file=sys.stderr)
+        return []
+    return [fx for fx in (espn_fix(ev) for ev in data.get("events", [])) if fx]
+
 def main():
     req = urllib.request.Request(WORKER_SCORES, headers={"User-Agent": "wc2026-scores/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             payload = json.load(r)
+        matches = payload.get("matches", [])
     except Exception as e:
-        # Don't overwrite a good file if the feed is down — just exit cleanly.
-        print(f"Fetch failed ({e}); leaving existing scores.json untouched.", file=sys.stderr)
-        sys.exit(0)
-    matches = payload.get("matches", [])
+        # Worker down is no longer fatal — ESPN can carry the tournament alone.
+        print(f"Worker fetch failed ({e}); trying ESPN alone.", file=sys.stderr)
+        matches = []
+    # ESPN entries come AFTER the worker list, so for the same match number the
+    # fresher ESPN result overwrites the (possibly frozen) worker snapshot.
+    matches = matches + espn_fixtures()
     scores, unresolved = build_scores(matches)
     if unresolved:
         print("Unmatched team names (add to ALIAS):", sorted(unresolved), file=sys.stderr)
@@ -134,7 +179,7 @@ def main():
         sys.exit(0)
     out = {
         "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "source": "api-football (via worker)",
+        "source": "api-football (worker) + espn",
         "scores": scores,
     }
     with open("scores.json", "w", encoding="utf-8") as f:

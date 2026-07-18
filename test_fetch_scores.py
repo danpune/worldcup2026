@@ -191,5 +191,31 @@ class TestKnockoutMapping(unittest.TestCase):
         self.assertNotIn("w", scores["76"])
 
 
+class TestEspnFix(unittest.TestCase):
+    """espn_fix: ESPN scoreboard event -> worker-shaped fixture (added with the Jul 18 ESPN fallback)."""
+    def _ev(self, state="post", name="STATUS_FULL_TIME", hs="2", as_="0", clock="90'+6'", so=(None, None)):
+        return {"date": "2026-07-14T19:00Z", "competitions": [{
+            "status": {"type": {"state": state, "name": name}, "displayClock": clock},
+            "competitors": [
+                {"homeAway": "home", "team": {"displayName": "France"}, "score": hs, "shootoutScore": so[0]},
+                {"homeAway": "away", "team": {"displayName": "Spain"}, "score": as_, "shootoutScore": so[1]}]}]}
+
+    def test_finished(self):
+        fx = fs.espn_fix(self._ev())
+        self.assertEqual((fx["home"], fx["away"], fx["h"], fx["a"], fx["status"]), ("France", "Spain", 2, 0, "FT"))
+        self.assertEqual(fx["t"], 1784055600)  # 2026-07-14T19:00Z
+
+    def test_pre_skipped(self):
+        self.assertIsNone(fs.espn_fix(self._ev(state="pre", name="STATUS_SCHEDULED", hs="0", as_="0")))
+
+    def test_in_play_minute(self):
+        fx = fs.espn_fix(self._ev(state="in", name="STATUS_SECOND_HALF", hs="1", as_="1", clock="67'"))
+        self.assertEqual((fx["status"], fx["minute"]), ("1H", 67))
+
+    def test_shootout_winner(self):
+        fx = fs.espn_fix(self._ev(hs="1", as_="1", so=("3", "4")))
+        self.assertEqual(fx["w"], "a")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

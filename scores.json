@@ -1,6 +1,6 @@
 {
-"updated": "2026-07-18T17:50:09Z",
-"source": "api-football (via worker)",
+"updated": "2026-07-18T17:50:39Z",
+"source": "api-football (worker) + espn",
 "scores": {
 "1": {
 "h": 2,
@@ -561,6 +561,20 @@
 "s": "FINISHED",
 "home": "Argentina",
 "away": "Switzerland"
+},
+"101": {
+"h": 0,
+"a": 2,
+"s": "FINISHED",
+"home": "France",
+"away": "Spain"
+},
+"102": {
+"h": 1,
+"a": 2,
+"s": "FINISHED",
+"home": "England",
+"away": "Argentina"
 }
 }
 }
