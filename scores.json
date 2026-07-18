@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-18T22:20:08Z",
+"updated": "2026-07-18T22:30:21Z",
 "source": "api-football (worker) + espn",
 "scores": {
 "1": {
@@ -577,12 +577,12 @@
 "away": "Argentina"
 },
 "103": {
-"h": 2,
+"h": 3,
 "a": 4,
 "s": "IN_PLAY",
 "home": "France",
 "away": "England",
-"min": 56
+"min": 67
 }
 }
 }
