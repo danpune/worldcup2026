@@ -1,285 +1,312 @@
 {
-"updated": "2026-07-06",
-"_howto": "Add an entry per match: \"<matchNumber>\": {\"yt\": \"<YouTube video ID>\"}. Use OFFICIAL FIFA uploads — verify via the YouTube oEmbed endpoint and check author_url == \"https://www.youtube.com/@fifa\" (NOT author_name: a spam channel renamed itself 'FIFA' to spoof the name check). The official title format is 'Highlights | <Home> <score> <Away> | FIFA World Cup 2026™'.",
-"highlights": {
-"1": {
-"yt": "PmevGCkUtM8"
-},
-"2": {
-"yt": "6k18EJY8zIc"
-},
-"3": {
-"yt": "w-_rY5morQY"
-},
-"4": {
-"yt": "0PVo3bk-TMk"
-},
-"5": {
-"yt": "KVz43-eddIQ"
-},
-"6": {
-"yt": "ECnK7UzAjIs"
-},
-"7": {
-"yt": "TcCufmPCsu4"
-},
-"8": {
-"yt": "5eqzEDe8wHs"
-},
-"9": {
-"yt": "B6-Z5ul2ccQ"
-},
-"10": {
-"yt": "r8SvHZxALQs"
-},
-"11": {
-"yt": "84xvEwRc0iQ"
-},
-"12": {
-"yt": "MM5hUuEzH3g"
-},
-"13": {
-"yt": "W9Z4ER9oX0k"
-},
-"14": {
-"yt": "i8sD2Aea9_M"
-},
-"15": {
-"yt": "XrDExPcLCXY"
-},
-"16": {
-"yt": "memCfdob60w"
-},
-"17": {
-"yt": "n3JDGlOwMJ4"
-},
-"18": {
-"yt": "UzSswKnmpgk"
-},
-"19": {
-"yt": "JH_WRKTCPK4"
-},
-"20": {
-"yt": "pU-mPZcuENY"
-},
-"21": {
-"yt": "fJrctBM0poE"
-},
-"22": {
-"yt": "ynqGWHJPkuQ"
-},
-"23": {
-"yt": "gy8h5JJ2b_E"
-},
-"24": {
-"yt": "cjsFUxVHAX0"
-},
-"25": {
-"yt": "C_2Lx8Wg1kg"
-},
-"26": {
-"yt": "c9wbxaKBu2E"
-},
-"27": {
-"yt": "HTR0DIvBYlg"
-},
-"28": {
-"yt": "o_AAtfdVp3Y"
-},
-"29": {
-"yt": "tXxvgvgMiRg"
-},
-"30": {
-"yt": "ACKeXJdm5us"
-},
-"31": {
-"yt": "lz3_atghfmY"
-},
-"32": {
-"yt": "atWtyemTWQ0"
-},
-"33": {
-"yt": "tm1PRvtp1PM"
-},
-"34": {
-"yt": "_3PYS5oCgvQ"
-},
-"35": {
-"yt": "nYoSztBShPE"
-},
-"36": {
-"yt": "V7z6uzD91Ao"
-},
-"37": {
-"yt": "j0BQN0nJ7mM"
-},
-"38": {
-"yt": "4zYJyJY57i8"
-},
-"39": {
-"yt": "eh20EVuWFFI"
-},
-"40": {
-"yt": "8OYG-yIFbFI"
-},
-"41": {
-"yt": "M4Ccsmk3gcE"
-},
-"42": {
-"yt": "XejscwNpvLU"
-},
-"43": {
-"yt": "nlghqbCqbe0"
-},
-"44": {
-"yt": "Ydxmm_-PUo0"
-},
-"45": {
-"yt": "kwbH2dm1AXo"
-},
-"46": {
-"yt": "Qe-fptt6wXs"
-},
-"47": {
-"yt": "Y5PJGL-8qyM"
-},
-"48": {
-"yt": "JTGXHmxlXHc"
-},
-"49": {
-"yt": "C4XX3Crp5Uk"
-},
-"50": {
-"yt": "-E4Mtblw9es"
-},
-"51": {
-"yt": "oj5LlMvV0qk"
-},
-"52": {
-"yt": "ZU2ssk6Bmg8"
-},
-"53": {
-"yt": "h9wH7diGNC0"
-},
-"54": {
-"yt": "cZoaEEYtKhE"
-},
-"55": {
-"yt": "vDLtuaCoIb0"
-},
-"56": {
-"yt": "TImmPYoLE-8"
-},
-"57": {
-"yt": "BppGXEZbiy4"
-},
-"58": {
-"yt": "oHYtLWbrwUo"
-},
-"59": {
-"yt": "XnDs5rgXgFM"
-},
-"60": {
-"yt": "wZVzHTl__ck"
-},
-"61": {
-"yt": "ABdniNBWtRs"
-},
-"62": {
-"yt": "6N2BzwoMrCw"
-},
-"63": {
-"yt": "JE0dqNUIOg4"
-},
-"64": {
-"yt": "Petu_ouNzr4"
-},
-"65": {
-"yt": "EeLUP57yMn4"
-},
-"66": {
-"yt": "zpWO1X2yFjY"
-},
-"67": {
-"yt": "FHcXnueraKc"
-},
-"68": {
-"yt": "D1wfxmJhA04"
-},
-"69": {
-"yt": "QhI0dUq1FKY"
-},
-"70": {
-"yt": "_effg5dZWZc"
-},
-"71": {
-"yt": "5Mvh0mqY8ik"
-},
-"72": {
-"yt": "M6mpXtMm93M"
-},
-"73": {
-"yt": "uv-FSqzHXAo"
-},
-"74": {
-"yt": "Gw6vNwAvkTs"
-},
-"75": {
-"yt": "vdnhUnGHwco"
-},
-"76": {
-"yt": "Fd_KYjbmws4"
-},
-"77": {
-"yt": "A7pgChEIFTg"
-},
-"78": {
-"yt": "ATzmoebQMj0"
-},
-"79": {
-"yt": "t-miz8tN7Qw"
-},
-"80": {
-"yt": "T6MYUQgpCv8"
-},
-"81": {
-"yt": "SGQpzA9qcwk"
-},
-"82": {
-"yt": "PsPQkfngzV8"
-},
-"83": {
-"yt": "jxU1VT5YXXE"
-},
-"84": {
-"yt": "p_j4aMfNQyI"
-},
-"85": {
-"yt": "-q-nO0sz18s"
-},
-"86": {
-"yt": "hzvEZ2Vxb94"
-},
-"87": {
-"yt": "I43WUQJFfCw"
-},
-"88": {
-"yt": "olBx2GK7kZI"
-},
-"89": {
-"yt": "4HZCeb88uSI"
-},
-"90": {
-"yt": "sAYjtcpoaf0"
-},
-"91": {
-"yt": "42ovN5rW79U"
-},
-"92": {
-"yt": "ydx1L0aDj_c"
-},
-"93": {
-"yt": "iwE1D_JQSQ8"
-}
-}
+ "updated": "2026-07-06",
+ "_howto": "Add an entry per match: \"<matchNumber>\": {\"yt\": \"<YouTube video ID>\"}. Use OFFICIAL FIFA uploads — verify via the YouTube oEmbed endpoint and check author_url == \"https://www.youtube.com/@fifa\" (NOT author_name: a spam channel renamed itself 'FIFA' to spoof the name check). The official title format is 'Highlights | <Home> <score> <Away> | FIFA World Cup 2026™'.",
+ "highlights": {
+  "1": {
+   "yt": "PmevGCkUtM8"
+  },
+  "2": {
+   "yt": "6k18EJY8zIc"
+  },
+  "3": {
+   "yt": "w-_rY5morQY"
+  },
+  "4": {
+   "yt": "0PVo3bk-TMk"
+  },
+  "5": {
+   "yt": "KVz43-eddIQ"
+  },
+  "6": {
+   "yt": "ECnK7UzAjIs"
+  },
+  "7": {
+   "yt": "TcCufmPCsu4"
+  },
+  "8": {
+   "yt": "5eqzEDe8wHs"
+  },
+  "9": {
+   "yt": "B6-Z5ul2ccQ"
+  },
+  "10": {
+   "yt": "r8SvHZxALQs"
+  },
+  "11": {
+   "yt": "84xvEwRc0iQ"
+  },
+  "12": {
+   "yt": "MM5hUuEzH3g"
+  },
+  "13": {
+   "yt": "W9Z4ER9oX0k"
+  },
+  "14": {
+   "yt": "i8sD2Aea9_M"
+  },
+  "15": {
+   "yt": "XrDExPcLCXY"
+  },
+  "16": {
+   "yt": "memCfdob60w"
+  },
+  "17": {
+   "yt": "n3JDGlOwMJ4"
+  },
+  "18": {
+   "yt": "UzSswKnmpgk"
+  },
+  "19": {
+   "yt": "JH_WRKTCPK4"
+  },
+  "20": {
+   "yt": "pU-mPZcuENY"
+  },
+  "21": {
+   "yt": "fJrctBM0poE"
+  },
+  "22": {
+   "yt": "ynqGWHJPkuQ"
+  },
+  "23": {
+   "yt": "gy8h5JJ2b_E"
+  },
+  "24": {
+   "yt": "cjsFUxVHAX0"
+  },
+  "25": {
+   "yt": "C_2Lx8Wg1kg"
+  },
+  "26": {
+   "yt": "c9wbxaKBu2E"
+  },
+  "27": {
+   "yt": "HTR0DIvBYlg"
+  },
+  "28": {
+   "yt": "o_AAtfdVp3Y"
+  },
+  "29": {
+   "yt": "tXxvgvgMiRg"
+  },
+  "30": {
+   "yt": "ACKeXJdm5us"
+  },
+  "31": {
+   "yt": "lz3_atghfmY"
+  },
+  "32": {
+   "yt": "atWtyemTWQ0"
+  },
+  "33": {
+   "yt": "tm1PRvtp1PM"
+  },
+  "34": {
+   "yt": "_3PYS5oCgvQ"
+  },
+  "35": {
+   "yt": "nYoSztBShPE"
+  },
+  "36": {
+   "yt": "V7z6uzD91Ao"
+  },
+  "37": {
+   "yt": "j0BQN0nJ7mM"
+  },
+  "38": {
+   "yt": "4zYJyJY57i8"
+  },
+  "39": {
+   "yt": "eh20EVuWFFI"
+  },
+  "40": {
+   "yt": "8OYG-yIFbFI"
+  },
+  "41": {
+   "yt": "M4Ccsmk3gcE"
+  },
+  "42": {
+   "yt": "XejscwNpvLU"
+  },
+  "43": {
+   "yt": "nlghqbCqbe0"
+  },
+  "44": {
+   "yt": "Ydxmm_-PUo0"
+  },
+  "45": {
+   "yt": "kwbH2dm1AXo"
+  },
+  "46": {
+   "yt": "Qe-fptt6wXs"
+  },
+  "47": {
+   "yt": "Y5PJGL-8qyM"
+  },
+  "48": {
+   "yt": "JTGXHmxlXHc"
+  },
+  "49": {
+   "yt": "C4XX3Crp5Uk"
+  },
+  "50": {
+   "yt": "-E4Mtblw9es"
+  },
+  "51": {
+   "yt": "oj5LlMvV0qk"
+  },
+  "52": {
+   "yt": "ZU2ssk6Bmg8"
+  },
+  "53": {
+   "yt": "h9wH7diGNC0"
+  },
+  "54": {
+   "yt": "cZoaEEYtKhE"
+  },
+  "55": {
+   "yt": "vDLtuaCoIb0"
+  },
+  "56": {
+   "yt": "TImmPYoLE-8"
+  },
+  "57": {
+   "yt": "BppGXEZbiy4"
+  },
+  "58": {
+   "yt": "oHYtLWbrwUo"
+  },
+  "59": {
+   "yt": "XnDs5rgXgFM"
+  },
+  "60": {
+   "yt": "wZVzHTl__ck"
+  },
+  "61": {
+   "yt": "ABdniNBWtRs"
+  },
+  "62": {
+   "yt": "6N2BzwoMrCw"
+  },
+  "63": {
+   "yt": "JE0dqNUIOg4"
+  },
+  "64": {
+   "yt": "Petu_ouNzr4"
+  },
+  "65": {
+   "yt": "EeLUP57yMn4"
+  },
+  "66": {
+   "yt": "zpWO1X2yFjY"
+  },
+  "67": {
+   "yt": "FHcXnueraKc"
+  },
+  "68": {
+   "yt": "D1wfxmJhA04"
+  },
+  "69": {
+   "yt": "QhI0dUq1FKY"
+  },
+  "70": {
+   "yt": "_effg5dZWZc"
+  },
+  "71": {
+   "yt": "5Mvh0mqY8ik"
+  },
+  "72": {
+   "yt": "M6mpXtMm93M"
+  },
+  "73": {
+   "yt": "uv-FSqzHXAo"
+  },
+  "74": {
+   "yt": "Gw6vNwAvkTs"
+  },
+  "75": {
+   "yt": "vdnhUnGHwco"
+  },
+  "76": {
+   "yt": "Fd_KYjbmws4"
+  },
+  "77": {
+   "yt": "A7pgChEIFTg"
+  },
+  "78": {
+   "yt": "ATzmoebQMj0"
+  },
+  "79": {
+   "yt": "t-miz8tN7Qw"
+  },
+  "80": {
+   "yt": "T6MYUQgpCv8"
+  },
+  "81": {
+   "yt": "SGQpzA9qcwk"
+  },
+  "82": {
+   "yt": "PsPQkfngzV8"
+  },
+  "83": {
+   "yt": "jxU1VT5YXXE"
+  },
+  "84": {
+   "yt": "p_j4aMfNQyI"
+  },
+  "85": {
+   "yt": "-q-nO0sz18s"
+  },
+  "86": {
+   "yt": "hzvEZ2Vxb94"
+  },
+  "87": {
+   "yt": "I43WUQJFfCw"
+  },
+  "88": {
+   "yt": "olBx2GK7kZI"
+  },
+  "89": {
+   "yt": "4HZCeb88uSI"
+  },
+  "90": {
+   "yt": "sAYjtcpoaf0"
+  },
+  "91": {
+   "yt": "42ovN5rW79U"
+  },
+  "92": {
+   "yt": "ydx1L0aDj_c"
+  },
+  "93": {
+   "yt": "iwE1D_JQSQ8"
+  },
+  "94": {
+   "yt": "b5HCJV5DFnw"
+  },
+  "95": {
+   "yt": "-LHb5yN-OzI"
+  },
+  "96": {
+   "yt": "pZ1Fh5Dnk3U"
+  },
+  "97": {
+   "yt": "Lfo49ZbV4WU"
+  },
+  "98": {
+   "yt": "VHoctq0AOg8"
+  },
+  "99": {
+   "yt": "PnFUiq8m9os"
+  },
+  "100": {
+   "yt": "zZxxDbLxEi4"
+  },
+  "101": {
+   "yt": "_cV8QcKp3GU"
+  },
+  "102": {
+   "yt": "oB2mK8eJli4"
+  }
+ }
 }
