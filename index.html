@@ -791,6 +791,7 @@ async function fetchLive(){
     if(!n&&f.t){n=TIME2N[Math.round(f.t)];if(n)ko={home:normTeam(f.home),away:normTeam(f.away)};}  /* knockout: map the real fixture by kickoff time + capture the teams the placeholder pair can't match */
     if(!n)return;if(f.kh||f.ka)kitmap[n]={h:f.kh||null,a:f.ka||null};const st=mapApiStatus(f.status);
     if(st.s==="SCHEDULED"&&f.h==null&&!ko&&!OFFLABEL[f.status])return;          /* keep scoreless knockout + postponed/off fixtures so their status shows */
+    const b0=base[String(n)];if(st.s==="SCHEDULED"&&f.h==null&&b0&&b0.h!=null)return;   /* a stale scoreless overlay must never erase a real result already in the base layer (worker feed froze when the API plan lapsed Jul 14) */
     /* coerce feed values to numbers (or null) at ingestion so no feed string ever reaches innerHTML */
     const H=f.h==null?null:(Number.isFinite(+f.h)?+f.h:null),A=f.a==null?null:(Number.isFinite(+f.a)?+f.a:null),MN=f.minute==null?null:(Number.isInteger(+f.minute)?+f.minute:null);
     overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(ko){overlay[n].home=ko.home;overlay[n].away=ko.away;}if(f.w==="h"||f.w==="a")overlay[n].w=f.w;if(st.live)anyLive=true;});}
