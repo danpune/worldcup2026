@@ -471,6 +471,9 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .fwc b{color:var(--pitch2)}.fwc .fwt{color:var(--muted);font-size:12px;margin-left:6px}.fwc p{margin:4px 0 0}
 .fwdel{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11.5px;cursor:pointer;padding:2px 7px;margin-left:8px}
 .nxcal{display:flex;gap:8px;margin-top:7px}
+.fday{margin-top:10px;padding:10px 12px;background:color-mix(in srgb,var(--gold) 9%,var(--card));border:1px solid var(--gold-soft);border-radius:10px;font-size:12.5px;line-height:1.55;color:var(--text)}
+.fday b{color:var(--pitch2)}.fday .ft{font-weight:700;white-space:nowrap}.fday .fdnote{color:var(--muted);font-size:11px;margin-top:4px}
+@media(prefers-color-scheme:dark){.fday{background:#2a2418;border-color:#4a3f22}.fday b{color:#e8c25f}}
 .tldrbox{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin:10px 0 6px;font-size:14.5px;line-height:1.55}
 #view-history table.st{margin:8px 0 4px;max-width:760px}#view-history table.st td.tm{white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:15px}
@@ -1356,7 +1359,14 @@ function renderList(){
   const ll=WX_COORDS[m.venue],koD=new Date(m.utc);
   const wx=(ll&&koD>now&&(koD-now)<=16*864e5)?`<span class="wx" data-lat="${ll[0]}" data-lon="${ll[1]}" data-date="${m.utc.slice(0,10)}" data-hr="${m.utc.slice(0,13)}" title="Forecast at kickoff"></span>`:"";
   const wxNow=(ll&&((es&&isOngoing(es.s))||off))?`<span class="wxnow" data-lat="${ll[0]}" data-lon="${ll[1]}" title="Weather at the venue now"></span>`:"";
-  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${stageLabel(m)}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${lp?` · <span class="pred" title="Live win probability — score, time left and FIFA ranks; informational only, not betting odds">📊 ${lp.team} ${lp.pct}%</span>`:""}${wx}${wxNow}</div></div><div class="right">${right}</div>`;
+  /* Final day only (M104): verified pre-game + half-time programme, times in the viewer's timezone.
+     Sources: FIFA announcements via Al Jazeera/ESPN/olympics.com, Jul 19 2026. */
+  const fday=(m.n===104)?`<div class="fday">🎤 <b>Final day at MetLife Stadium</b> — ~82,500 expected (capacity crowd)<br>
+<span class="ft">${dParts("2026-07-19T17:30:00Z").time}</span> Closing ceremony — <b>Post Malone</b> · Laura Pausini · Nicole Scherzinger · Robbie Williams · IShowSpeed · Tom Cruise appearance<br>
+<span class="ft">${dParts("2026-07-19T18:55:00Z").time}</span> US anthem — <b>Jennifer Hudson</b>, then kickoff<br>
+<span class="ft">~${dParts("2026-07-19T19:45:00Z").time}</span> Half-time show (first ever in a World Cup final, ~11 min) — <b>Justin Bieber · Madonna · Shakira · BTS</b> with Burna Boy, Gustavo Dudamel &amp; the PS22 Chorus · curated by Chris Martin
+<div class="fdnote">Per FIFA announcements — exact times approximate; the break may run 20–25 min for the on-pitch stage.</div></div>`:"";
+  c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${stageLabel(m)}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${lp?` · <span class="pred" title="Live win probability — score, time left and FIFA ranks; informational only, not betting odds">📊 ${lp.team} ${lp.pct}%</span>`:""}${wx}${wxNow}</div>${fday}</div><div class="right">${right}</div>`;
   list.appendChild(c);
   if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid,m);list.appendChild(sp);maybeRetryStats(es.fid);}
  });
