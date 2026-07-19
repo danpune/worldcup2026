@@ -1362,9 +1362,9 @@ function renderList(){
   /* Final day only (M104): verified pre-game + half-time programme, times in the viewer's timezone.
      Sources: FIFA announcements via Al Jazeera/ESPN/olympics.com, Jul 19 2026. */
   const fday=(m.n===104)?`<div class="fday">🎤 <b>Final day at MetLife Stadium</b> — ~82,500 expected (capacity crowd)<br>
-<span class="ft">${dParts("2026-07-19T17:30:00Z").time}</span> Closing ceremony — <b>Post Malone</b> · Laura Pausini · Nicole Scherzinger · Robbie Williams · IShowSpeed · Tom Cruise appearance<br>
+<span class="ft">${dParts("2026-07-19T17:30:00Z").time}</span> Pre-game closing ceremony — headliner <b>Post Malone</b>, with Laura Pausini, Nicole Scherzinger, Robbie Williams &amp; IShowSpeed · special appearance by <b>Tom Cruise</b> · produced by Balich Wonder Studio<br>
 <span class="ft">${dParts("2026-07-19T18:55:00Z").time}</span> US anthem — <b>Jennifer Hudson</b>, then kickoff<br>
-<span class="ft">~${dParts("2026-07-19T19:45:00Z").time}</span> Half-time show (first ever in a World Cup final, ~11 min) — <b>Justin Bieber · Madonna · Shakira · BTS</b> with Burna Boy, Gustavo Dudamel &amp; the PS22 Chorus · curated by Chris Martin
+<span class="ft">~${dParts("2026-07-19T19:45:00Z").time}</span> Half-time show (first ever in a World Cup final, ~11 min) — <b>Justin Bieber · Madonna · Shakira · BTS</b> with Burna Boy, Gustavo Dudamel &amp; the PS22 Chorus · curated by Chris Martin · incl. official song "Dai Dai" (Burna Boy &amp; Shakira) · proceeds support FIFA's Global Citizen Education Fund
 <div class="fdnote">Per FIFA announcements — exact times approximate; the break may run 20–25 min for the on-pitch stage.</div></div>`:"";
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${stageLabel(m)}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${lp?` · <span class="pred" title="Live win probability — score, time left and FIFA ranks; informational only, not betting odds">📊 ${lp.team} ${lp.pct}%</span>`:""}${wx}${wxNow}</div>${fday}</div><div class="right">${right}</div>`;
   list.appendChild(c);
