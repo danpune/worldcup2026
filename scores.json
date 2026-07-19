@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-19T21:23:30Z",
+"updated": "2026-07-19T21:30:10Z",
 "source": "api-football (worker) + espn",
 "scores": {
 "1": {
@@ -589,7 +589,7 @@
 "s": "IN_PLAY",
 "home": "Spain",
 "away": "Argentina",
-"min": 92
+"min": 99
 }
 }
 }
