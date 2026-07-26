@@ -471,6 +471,8 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .fwc b{color:var(--pitch2)}.fwc .fwt{color:var(--muted);font-size:12px;margin-left:6px}.fwc p{margin:4px 0 0}
 .fwdel{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11.5px;cursor:pointer;padding:2px 7px;margin-left:8px}
 .nxcal{display:flex;gap:8px;margin-top:7px}
+.next.champ{background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 22%,var(--card)),var(--card));border-color:var(--gold)}
+.next.champ .m{font-size:clamp(19px,4vw,26px)}
 .fday{margin-top:10px;padding:10px 12px;background:color-mix(in srgb,var(--gold) 9%,var(--card));border:1px solid var(--gold-soft);border-radius:10px;font-size:12.5px;line-height:1.55;color:var(--text)}
 .fday b{color:var(--pitch2)}.fday .ft{font-weight:700;white-space:nowrap}.fday .fdnote{color:var(--muted);font-size:11px;margin-top:4px}
 @media(prefers-color-scheme:dark){.fday{background:#2a2418;border-color:#4a3f22}.fday b{color:#e8c25f}}
@@ -800,7 +802,8 @@ async function fetchLive(){
     overlay[n]={h:H,a:A,s:st.s,min:MN,fid:f.id,raw:f.status};if(ko){overlay[n].home=ko.home;overlay[n].away=ko.away;}if(f.w==="h"||f.w==="a")overlay[n].w=f.w;if(st.live)anyLive=true;});}
  }catch(e){}
  const usingApi=apiOk&&Object.keys(overlay).length>0;
- LIVE={scores:Object.assign({},base,overlay),kits:kitmap,updated:usingApi?apiUpdated:baseUpdated,source:"api-football",ok:(apiOk||Object.keys(base).length>0)};
+ const newerUpdated=(function(){const a=apiUpdated?Date.parse(apiUpdated):0,b=baseUpdated?Date.parse(baseUpdated):0;return b>a?baseUpdated:(apiUpdated||baseUpdated);})();
+ LIVE={scores:Object.assign({},base,overlay),kits:kitmap,updated:usingApi?newerUpdated:baseUpdated,source:"api-football",ok:(apiOk||Object.keys(base).length>0)};
  Object.keys(LIVE.scores).forEach(function(k){noteClock(k,LIVE.scores[k]);});
  var sig=scoreSig();
  if(sig!==_scoreSig){_scoreSig=sig;render();}      /* full re-render only when the live scores changed */
@@ -1146,8 +1149,9 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 let filter=MATCHES.some(m=>dParts(m.utc).day===todayStr())?"today":MATCHES.some(m=>Date.now()<Date.parse(m.utc)+108e5)?"left":"knockout",q="";
 const CHIPS=[["all","All"],["today","Today"],["left","\u23f3 Remaining"],["knockout","🏆 Knockouts"],["fav","⭐ Following"],["USA","🇺🇸 USA"],["Mexico","🇲🇽 Mexico"],["Canada","🇨🇦 Canada"],["near","🚗 Near Austin"],...["A","B","C","D","E","F","G","H","I","J","K","L"].map(g=>["g"+g,"Group "+g])];
 const chipBox=document.getElementById("chips");
-function pickChip(v){const i=CHIPS.findIndex(c=>c[0]===v);const b=chipBox.children[i];if(b)b.click();}
-CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
+function pickChip(v){const i=VIS_CHIPS.findIndex(c=>c[0]===v);const b=chipBox.children[i];if(b)b.click();}
+const VIS_CHIPS=CHIPS.filter(([v])=>v!=="left"||MATCHES.some(m=>Date.now()<Date.parse(m.utc)+108e5));
+VIS_CHIPS.forEach(([v,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",v===filter);b.onclick=()=>{filter=v;[...chipBox.children].forEach(c=>c.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");render();};chipBox.appendChild(b);});
 document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
 function todayStr(){return new Date().toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"});}
 function passes(m){
@@ -1184,7 +1188,8 @@ function updateProv(){
  const on=LIVE.ok&&Object.keys(LIVE.scores).length>0;
  const live=Object.values(LIVE.scores).some(s=>isOngoing(s.s));
  let txt;
- if(LIVE.ok){const sl='Scores: <a href="https://www.api-football.com/" target="_blank" rel="noopener">API-Football</a>'+(live?' <span class="livepill">LIVE</span>':'');txt=`<span class="dot"></span><span><span class="src">${sl}</span>${LIVE.updated?" · updated "+relTime(LIVE.updated):""} · schedule per FIFA</span>`;}
+ if(LIVE.ok){const sl='Scores: <a href="https://www.api-football.com/" target="_blank" rel="noopener">API-Football</a>'+(live?' <span class="livepill">LIVE</span>':'');const over=Date.now()>Date.UTC(2026,6,20);
+  txt=`<span class="dot"></span><span><span class="src">${sl}</span>${over?" · final results":(LIVE.updated?" · updated "+relTime(LIVE.updated):"")} · schedule per FIFA</span>`;}
  else{txt=`<span class="dot"></span><span><span class="src">Scores unavailable</span> — couldn't reach the live feed right now. Schedule and times still work; tap Refresh to retry.</span>`;}
  [document.getElementById("prov"),document.getElementById("prov2")].forEach(el=>{if(!el)return;el.className="prov"+(live?" on":"");el.innerHTML=txt+'<button class="rfr" type="button" onclick="fetchLive()">Refresh</button>';});
 }
@@ -1196,7 +1201,19 @@ function tournamentStatus(){
  const START=Date.UTC(2026,5,11),END=Date.UTC(2026,6,20),now=Date.now(),day=86400000;   /* Jun 11 → Jul 19, 2026 */
  if(now<START){const d=Math.max(1,Math.ceil((START-now)/day));el.innerHTML='Kicks off June 11 · in <b>'+d+' day'+(d!==1?'s':'')+'</b>';}
  else if(now<END){const d=Math.floor((now-START)/day)+1;el.innerHTML='<span class="dot"></span><b>Underway</b> · Day '+d+' · Final Sun, July 19';}
- else el.innerHTML='Completed · the final was played July 19, 2026';
+ else{const ch=champion();el.innerHTML=ch?('\ud83c\udfc6 <b>'+(ch.flag?ch.flag+" ":"")+escA(ch.name)+'</b> are world champions \u00b7 beat '+escA(ch.runnerUp)+' '+ch.score+' in the final'):'Completed \u00b7 the final was played July 19, 2026';}
+}
+/* Winner of match 104, read from the feed (never hard-coded) — null until the final is final. */
+function champion(){
+ const m=MATCHES[103];if(!m)return null;
+ const es=cardScore(104);if(!es||es.s!=="FINISHED")return null;
+ const dh=dispTeam(m,"home"),da=dispTeam(m,"away");
+ const homeWon=(es.w==="h")||(es.w!=="a"&&es.h>es.a);
+ if(es.h===es.a&&!es.w)return null;
+ const w=homeWon?dh:da,l=homeWon?da:dh;
+ const hi=Math.max(es.h,es.a),lo=Math.min(es.h,es.a);
+ const suf=es.raw==="PEN"?" on pens":(es.raw==="AET"?" a.e.t.":"");
+ return{name:w.name,flag:w.flag,runnerUp:l.name,score:hi+"\u2013"+lo+suf};
 }
 function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="knockouts")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
@@ -1361,11 +1378,15 @@ function renderList(){
   const wxNow=(ll&&((es&&isOngoing(es.s))||off))?`<span class="wxnow" data-lat="${ll[0]}" data-lon="${ll[1]}" title="Weather at the venue now"></span>`:"";
   /* Final day only (M104): verified pre-game + half-time programme, times in the viewer's timezone.
      Sources: FIFA announcements via Al Jazeera/ESPN/olympics.com, Jul 19 2026. */
-  const fday=(m.n===104)?`<div class="fday">🎤 <b>Final day at MetLife Stadium</b> — ~82,500 expected (capacity crowd)<br>
-<span class="ft">${dParts("2026-07-19T17:30:00Z").time}</span> Pre-game closing ceremony — headliner <b>Post Malone</b>, with Laura Pausini, Nicole Scherzinger, Robbie Williams &amp; IShowSpeed · special appearance by <b>Tom Cruise</b> · produced by Balich Wonder Studio<br>
+  /* Final-day programme (M104 only). Flips to past tense once the final is played, with the
+     official attendance, so it never reads as an upcoming event. Sources: FIFA announcements
+     (Al Jazeera/ESPN/olympics.com Jul 19 2026); attendance per ESPN match report. */
+  const fdone=(m.n===104)&&es&&es.s==="FINISHED";
+  const fday=(m.n===104)?`<div class="fday">🎤 <b>Final day at MetLife Stadium</b> — ${fdone?"official attendance <b>80,663</b>":"~82,500 expected (capacity crowd)"}<br>
+<span class="ft">${dParts("2026-07-19T17:30:00Z").time}</span> Pre-game closing ceremony — headlined by <b>Post Malone</b>, with Laura Pausini, Nicole Scherzinger, Robbie Williams &amp; IShowSpeed · special appearance by <b>Tom Cruise</b> · produced by Balich Wonder Studio<br>
 <span class="ft">${dParts("2026-07-19T18:55:00Z").time}</span> US anthem — <b>Jennifer Hudson</b>, then kickoff<br>
-<span class="ft">~${dParts("2026-07-19T19:45:00Z").time}</span> Half-time show (first ever in a World Cup final, ~11 min) — <b>Justin Bieber · Madonna · Shakira · BTS</b> with Burna Boy, Gustavo Dudamel &amp; the PS22 Chorus · curated by Chris Martin · incl. official song "Dai Dai" (Burna Boy &amp; Shakira) · proceeds support FIFA's Global Citizen Education Fund
-<div class="fdnote">Per FIFA announcements — exact times approximate; the break may run 20–25 min for the on-pitch stage.</div></div>`:"";
+<span class="ft">~${dParts("2026-07-19T19:45:00Z").time}</span> Half-time show (the first ever in a World Cup final, ~11 min) — <b>Justin Bieber · Madonna · Shakira · BTS</b> with Burna Boy, Gustavo Dudamel &amp; the PS22 Chorus · curated by Chris Martin · incl. official song "Dai Dai" (Burna Boy &amp; Shakira) · proceeds to FIFA's Global Citizen Education Fund
+<div class="fdnote">${fdone?"Programme as staged on July 19, 2026.":"Per FIFA announcements — exact times approximate; the break may run 20–25 min for the on-pitch stage."}</div></div>`:"";
   c.innerHTML=`<div class="time">${p.time}</div><div class="teams"><div class="tline tcol">${teams}</div><div class="meta"><span class="badge">${stageLabel(m)}</span> <span class="mno">#${m.n}</span> ${m.venue}, ${m.city}${driveTxt}${pred?` · <span class="pred" title="Estimated from FIFA ranks — not betting odds">📊 ${pred.team} ${pred.pct}%</span>`:""}${lp?` · <span class="pred" title="Live win probability — score, time left and FIFA ranks; informational only, not betting odds">📊 ${lp.team} ${lp.pct}%</span>`:""}${wx}${wxNow}</div>${fday}</div><div class="right">${right}</div>`;
   list.appendChild(c);
   if(es&&es.fid&&openStats.has(m.n)){const sp=document.createElement("div");sp.className="statswrap";sp.id="stats-"+m.n;sp.setAttribute("role","region");sp.setAttribute("aria-label","Match details");sp.innerHTML=statHeaderHTML(m,es)+statsPanelHTML(es.fid,m);list.appendChild(sp);maybeRetryStats(es.fid);}
@@ -1420,6 +1441,9 @@ if(!window.__daySyncBound){window.__daySyncBound=true;let tick=false;
 function renderNext(){
  const box=document.getElementById("nextup");const now=new Date();
  const up=MATCHES.find(m=>new Date(m.utc)>now);
+ if(!up&&currentView==="schedule"){const ch=champion();   /* tournament over: the result is the headline */
+  box.innerHTML=ch?`<div class="next champ"><div><div class="lab">\ud83c\udfc6 World Cup 2026 champions</div><div class="m">${ch.flag?ch.flag+" ":""}${escA(ch.name)}</div></div><div class="cd">beat ${escA(ch.runnerUp)} ${ch.score}</div></div>`:"";
+  return;}
  if(!up||currentView!=="schedule"){box.innerHTML="";return;}
  const p=dParts(up.utc);const diff=new Date(up.utc)-now;const h=Math.floor(diff/36e5),mn=Math.floor((diff%36e5)/6e4);
  const cd=h>24?Math.floor(h/24)+"d "+(h%24)+"h":h+"h "+mn+"m";

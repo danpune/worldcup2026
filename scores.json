@@ -1,5 +1,5 @@
 {
-"updated": "2026-07-26T02:10:09Z",
+"updated": "2026-07-26T02:14:52Z",
 "source": "api-football (worker) + espn",
 "scores": {
 "1": {
@@ -380,6 +380,7 @@
 "h": 1,
 "a": 1,
 "s": "FINISHED",
+"raw": "PEN",
 "home": "Germany",
 "away": "Paraguay",
 "w": "a"
@@ -388,6 +389,7 @@
 "h": 1,
 "a": 1,
 "s": "FINISHED",
+"raw": "PEN",
 "home": "Netherlands",
 "away": "Morocco",
 "w": "a"
@@ -424,6 +426,7 @@
 "h": 3,
 "a": 2,
 "s": "FINISHED",
+"raw": "AET",
 "home": "Belgium",
 "away": "Senegal"
 },
@@ -459,6 +462,7 @@
 "h": 1,
 "a": 1,
 "s": "FINISHED",
+"raw": "PEN",
 "home": "Australia",
 "away": "Egypt",
 "w": "a"
@@ -467,6 +471,7 @@
 "h": 3,
 "a": 2,
 "s": "FINISHED",
+"raw": "AET",
 "home": "Argentina",
 "away": "Cape Verde"
 },
@@ -530,6 +535,7 @@
 "h": 0,
 "a": 0,
 "s": "FINISHED",
+"raw": "PEN",
 "home": "Switzerland",
 "away": "Colombia",
 "w": "h"
@@ -552,6 +558,7 @@
 "h": 1,
 "a": 2,
 "s": "FINISHED",
+"raw": "AET",
 "home": "Norway",
 "away": "England"
 },
@@ -559,6 +566,7 @@
 "h": 3,
 "a": 1,
 "s": "FINISHED",
+"raw": "AET",
 "home": "Argentina",
 "away": "Switzerland"
 },
@@ -587,6 +595,7 @@
 "h": 1,
 "a": 0,
 "s": "FINISHED",
+"raw": "AET",
 "home": "Spain",
 "away": "Argentina"
 }

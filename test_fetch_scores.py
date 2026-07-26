@@ -212,6 +212,20 @@ class TestEspnFix(unittest.TestCase):
         fx = fs.espn_fix(self._ev(state="in", name="STATUS_SECOND_HALF", hs="1", as_="1", clock="67'"))
         self.assertEqual((fx["status"], fx["minute"]), ("1H", 67))
 
+    def test_aet_preserved(self):
+        fx = fs.espn_fix(self._ev(name="STATUS_FINAL_AET", clock="120'+5'"))
+        self.assertEqual(fx["status"], "AET")
+
+    def test_shootout_marks_pen(self):
+        fx = fs.espn_fix(self._ev(hs="1", as_="1", so=("3", "4")))
+        self.assertEqual(fx["status"], "PEN")
+
+    def test_raw_carried_into_entry(self):
+        fixtures = [{"home": "Spain", "away": "Argentina", "h": 1, "a": 0,
+                     "status": "AET", "t": fs._epoch("2026-07-19T19:00:00Z"), "minute": None}]
+        scores, _ = fs.build_scores(fixtures)
+        self.assertEqual(scores["104"]["raw"], "AET")
+
     def test_shootout_winner(self):
         fx = fs.espn_fix(self._ev(hs="1", as_="1", so=("3", "4")))
         self.assertEqual(fx["w"], "a")

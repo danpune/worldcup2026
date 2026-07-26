@@ -100,6 +100,9 @@ def build_scores(matches):
         if gh is None or ga is None: continue
         if status not in ("FINISHED", "IN_PLAY", "PAUSED"): continue
         entry = {"h": gh, "a": ga, "s": status}
+        raw = m.get("status")
+        if raw in ("AET", "PEN"):
+            entry["raw"] = raw
         if is_ko:                                  # carry the real teams so the page shows them (koFeedTeams)
             entry["home"], entry["away"] = h, a
             if gh == ga:                           # level score -> who advanced is decided by the shootout
@@ -131,7 +134,10 @@ def espn_fix(ev):
         state, sname = st.get("state"), st.get("name", "")
         if not hm or not aw or state == "pre":
             return None
-        short = "FT" if state == "post" else ("HT" if "HALFTIME" in sname else "1H")
+        if state == "post":
+            short = "AET" if "AET" in sname or "EXTRA" in sname else "FT"
+        else:
+            short = "HT" if "HALFTIME" in sname else "1H"
         t = int(datetime.strptime(ev["date"], "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc).timestamp())
         fx = {"home": hm["team"]["displayName"], "away": aw["team"]["displayName"],
               "h": int(hm.get("score") or 0), "a": int(aw.get("score") or 0),
@@ -143,6 +149,7 @@ def espn_fix(ev):
         sh, sa = hm.get("shootoutScore"), aw.get("shootoutScore")
         if fx["h"] == fx["a"] and sh is not None and sa is not None:
             fx["w"] = "h" if int(sh) > int(sa) else "a"
+            fx["status"] = "PEN"     # level after 120' -> decided on penalties
         return fx
     except Exception:
         return None
