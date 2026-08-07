@@ -1241,7 +1241,7 @@ function champion(){
  const suf=es.raw==="PEN"?" on pens":(es.raw==="AET"?" a.e.t.":"");
  return{name:w.name,flag:w.flag,runnerUp:l.name,score:hi+"\u2013"+lo+suf};
 }
-function render(){updateProv();if(currentView==="recap")renderRecap();   /* retries harmlessly until the async score load lands (recapDone latches only on success) */
+function render(){updateProv();if(currentView==="recap")renderRecap();if(currentView==="history")renderHistoryTab();   /* both wait on scores: history merges this tournament in */   /* retries harmlessly until the async score load lands (recapDone latches only on success) */
  if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="knockouts")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
 let PM={},pmLoaded=false;
@@ -1810,12 +1810,12 @@ var WCH=null,wchLoading=null;   /* var, not let: the #hash deep-link IIFE above 
 const histNorm=s=>String(s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z]/g,"");
 /* our display names -> Fjelstul names where they differ (DR Congo competed as Zaire in 1974) */
 const HIST_ALIAS={usa:"unitedstates",turkiye:"turkey",czechia:"czechrepublic",drcongo:"zaire",bosniaherzegovina:"bosniaandherzegovina"};
-const HSTAGE={GS:"Group stage",G2:"2nd group stage",FR:"Final round",R16:"Round of 16",QF:"Quarter-final",SF:"Semi-final","3P":"Third place",F:"Final"};
+const HSTAGE={GS:"Group stage",G2:"2nd group stage",FR:"Final round",R32:"Round of 32",R16:"Round of 16",QF:"Quarter-final",SF:"Semi-final","3P":"Third place",F:"Final"};
 function loadHistory(){
  if(WCH)return Promise.resolve(WCH);
  if(wchLoading)return wchLoading;
  wchLoading=fetch("wc-history.json").then(r=>r.ok?r.json():null).then(d=>{
-  if(d&&d.teams){d._byName={};for(const c in d.teams)d._byName[histNorm(d.teams[c].name)]=c;WCH=d;}
+  if(d&&d.teams){d._byName={};for(const c in d.teams)d._byName[histNorm(d.teams[c].name)]=c;WCH=d;mergeThisTournament(WCH);}
   return WCH;
  }).catch(()=>null);
  return wchLoading;
@@ -1869,12 +1869,65 @@ function historyHTML(home,away){
 }
 
 /* ===== History & trivia tab: every fact computed from wc-history.json at render time ===== */
+/* wc-history.json is an academic dataset that ends at 2022, so the moment this tournament
+   finished the History tab (and H2H) started under-reporting: Spain still showed one title,
+   the roll of finals stopped at 2022, and the 48 sides were a tournament light. Rather than
+   wait for the dataset to be republished, fold THIS tournament's own results — the same feed
+   the rest of the site reads — into the loaded copy. Runs once, and only after the final. */
+function ordN(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+var merged2026=false;
+function mergeThisTournament(d){
+ if(merged2026||!d||!d.teams)return d;
+ const ch=champion();if(!ch)return d;                       /* nothing to merge until the final is final */
+ const YEAR=2026,SC={"Group Stage":"GS","Round of 32":"R32","Round of 16":"R16","Quarterfinal":"QF","Semifinal":"SF","Third-Place":"3P","FINAL":"F"};
+ const BEST={"Champions":9,"Runners-up":8,"Third place":7,"Fourth place":6,"Quarter-finals":5,"Round of 16":4,"Round of 32":3,"2nd group stage":2,"Group stage":1};
+ const fin=[];MATCHES.forEach(m=>{const es=cardScore(m.n);if(es&&es.s==="FINISHED")fin.push({m,es,h:dispTeam(m,"home"),a:dispTeam(m,"away")});});
+ if(!fin.length)return d;
+ const winnerOf=x=>x.es.w==="h"?x.h:(x.es.w==="a"?x.a:(x.es.h>x.es.a?x.h:(x.es.a>x.es.h?x.a:null)));
+ /* deepest round each side reached, in this dataset's vocabulary */
+ const best={},played={};
+ fin.forEach(x=>{[x.h,x.a].forEach(s=>{if(!s.done)return;played[s.name]=1;
+  let lbl="Group stage";
+  if(x.m.stage==="FINAL")lbl=(winnerOf(x)&&winnerOf(x).name===s.name)?"Champions":"Runners-up";
+  else if(x.m.stage==="Third-Place")lbl=(winnerOf(x)&&winnerOf(x).name===s.name)?"Third place":"Fourth place";
+  else if(x.m.stage==="Quarterfinal")lbl="Quarter-finals";
+  else if(x.m.stage==="Round of 16")lbl="Round of 16";
+  else if(x.m.stage==="Round of 32")lbl="Round of 32";
+  else if(x.m.stage==="Semifinal")lbl="Quarter-finals";      /* every SF loser also plays the 3rd-place game, which sets the real label */
+  if(!best[s.name]||BEST[lbl]>BEST[best[s.name]])best[s.name]=lbl;});});
+ const f=fin.find(x=>x.m.n===104);
+ Object.keys(played).forEach(name=>{
+  const code=histCode(name);
+  const isCh=name===ch.name,isRu=!!f&&(f.h.name===name||f.a.name===name)&&!isCh;
+  const t=code?d.teams[code]:null;
+  if(t){
+   t.prev=t.last;t.apps++;t.last=YEAR;   /* remember the previous appearance: the "long wait" fact needs it */
+   if(isCh)t.titles++;
+   if(isCh||isRu)t.finals++;
+   if(BEST[best[name]]>BEST[t.best]){t.best=best[name];t.bestYear=YEAR;}
+  }else{                                                     /* debutants: 2026 is their whole record */
+   const nc=(FLAGMAP[name]?name:name).slice(0,3).toUpperCase()+"26";
+   d.teams[nc]={name:name,apps:1,titles:isCh?1:0,finals:(isCh||isRu)?1:0,best:best[name]||"Group stage",bestYear:YEAR,last:YEAR};
+   d._byName[histNorm(name)]=nc;
+  }});
+ /* every finished match, so H2H and the finals roll are current too */
+ fin.forEach(x=>{const ca=histCode(x.h.name),cb=histCode(x.a.name);if(!ca||!cb)return;
+  d.matches.push([YEAR,SC[x.m.stage]||"GS",ca,cb,x.es.h,x.es.a,x.es.raw==="PEN"?1:0]);});
+ if(f&&f.es.raw==="PEN"){}                                   /* pen finals are flagged above via raw */
+ d.tournaments=(d.tournaments||0)+1;
+ merged2026=true;
+ return d;
+}
 var histTabDone=false;   /* var, not let: same deep-link TDZ as WCH above */
 function renderHistoryTab(){
  if(histTabDone)return;
  loadHistory().then(d=>{
   const el=document.getElementById("histwrap");
   if(!d){el.innerHTML='<p class="note">World Cup history is unavailable right now \u2014 try again in a bit.</p>';return;}
+  mergeThisTournament(d);
+  /* after the final, don't latch a render that still predates this tournament — the scores it
+     needs may not have arrived yet; render() calls back in until the merge lands. */
+  if(Date.now()>Date.UTC(2026,6,20)&&!merged2026)return;
   histTabDone=true;
   const HFLAG={"Italy":"\ud83c\uddee\ud83c\uddf9","Hungary":"\ud83c\udded\ud83c\uddfa"};   /* champions/finalists not at WC2026; defunct states (Czechoslovakia, Yugoslavia) stay flagless on purpose */
   const nm=c=>d.teams[c].name,fl=n=>{const f=FLAGMAP[n]||HFLAG[n];return f?f+" ":"";};
@@ -1890,7 +1943,7 @@ function renderHistoryTab(){
   fin.sort((a,b)=>b.y-a.y);
   const champs=Object.keys(wins).map(c=>({c,yrs:wins[c].sort()})).sort((a,b)=>b.yrs.length-a.yrs.length||a.yrs[0]-b.yrs[0]);
   const y0=d.matches.reduce((m,x)=>Math.min(m,x[0]),9999);
-  let out='<div class="tldrbox"><b>TL;DR:</b> The World Cup began in <b>'+y0+'</b> in Uruguay, who won it as hosts. It has been played <b>'+d.tournaments+' times</b> \u2014 2026 is edition '+(d.tournaments+1)+' and the first with 48 teams. Only <b>'+champs.length+' nations</b> have ever won it, led by <b>'+escA(nm(champs[0].c))+'</b> with '+champs[0].yrs.length+' titles.</div>';
+  let out='<div class="tldrbox"><b>TL;DR:</b> The World Cup began in <b>'+y0+'</b> in Uruguay, who won it as hosts. It has been played <b>'+d.tournaments+' times</b> \u2014 '+(merged2026?('the 2026 edition was the '+ordN(d.tournaments)+' and the first with 48 teams, won by <b>'+escA(nm(champs.find(c=>c.yrs.indexOf(2026)>=0).c))+'</b>'):('2026 is edition '+(d.tournaments+1)+' and the first with 48 teams'))+'. Only <b>'+champs.length+' nations</b> have ever won it, led by <b>'+escA(nm(champs[0].c))+'</b> with '+champs[0].yrs.length+' titles.</div>';
   out+='<h3>\ud83c\udfc6 Most World Cup titles</h3><table class="st"><tr><th style="text-align:left">Country</th><th>Titles</th><th style="text-align:left">Years won</th></tr>'
    +champs.map(x=>'<tr><td class="tm">'+fl(nm(x.c))+escA(nm(x.c))+'</td><td><b>'+x.yrs.length+'</b></td><td class="tm" style="font-weight:400;white-space:normal">'+x.yrs.join(", ")+'</td></tr>').join("")+'</table>';
   out+='<h3>\ud83e\udd47 Every final, '+y0+'\u20132022</h3><table class="st"><tr><th>Year</th><th style="text-align:left">Winner</th><th>Score</th><th style="text-align:left">Runner-up</th></tr>'
@@ -1902,13 +1955,13 @@ function renderHistoryTab(){
   const noa=codes.filter(c=>!T[c].titles).sort((a,b)=>T[b].apps-T[a].apps)[0];
   const cur=[...new Set(MATCHES.filter(m=>m.group_game).flatMap(m=>[m.home,m.away]))];
   const rows=cur.map(n=>({n,h:teamHist(n)})).sort((a,b)=>((b.h?b.h.apps:0)-(a.h?a.h.apps:0))||a.n.localeCompare(b.n));
-  const debuts=rows.filter(r=>!r.h),backs=rows.filter(r=>r.h&&r.h.last<=2002).sort((a,b)=>a.h.last-b.h.last);
+  const debuts=rows.filter(r=>!r.h||(r.h.apps===1&&r.h.last===2026)),backs=rows.map(r=>({r,ly:r.h?(merged2026?r.h.prev:r.h.last):null})).filter(x=>x.ly&&x.ly<=2002).sort((a,b)=>a.ly-b.ly);
   const facts=[];
   if(ever.length)facts.push(ever.map(c=>fl(nm(c))+"<b>"+escA(nm(c))+"</b>").join(", ")+(ever.length===1?" is the only country":" are the only countries")+" to have played in every World Cup \u2014 all "+d.tournaments+" of them.");
   if(nof)facts.push(fl(nm(nof))+"<b>"+escA(nm(nof))+"</b> have reached "+T[nof].finals+" finals without ever lifting the trophy.");
   if(noa)facts.push(fl(nm(noa))+"<b>"+escA(nm(noa))+"</b> have the most appearances without a title \u2014 "+T[noa].apps+".");
-  if(debuts.length)facts.push("<b>"+debuts.length+" nations</b> are playing their first-ever World Cup in 2026: "+debuts.map(r=>fl(r.n)+escA(r.n)).join(", ")+".");
-  if(backs.length)facts.push("Long waits ended in 2026: "+backs.map(r=>fl(r.n)+escA(r.n)+" (last played "+r.h.last+")").join(" \u00b7 ")+".");
+  if(debuts.length)facts.push("<b>"+debuts.length+" nations</b> "+(merged2026?"made their World Cup debut in 2026":"are playing their first-ever World Cup in 2026")+": "+debuts.map(r=>fl(r.n)+escA(r.n)).join(", ")+".");
+  if(backs.length)facts.push((merged2026?"Long waits ended in 2026: ":"Long waits ending in 2026: ")+backs.map(x=>fl(x.r.n)+escA(x.r.n)+" (previously "+x.ly+")").join(" \u00b7 ")+".");
   out+='<h3>\u2728 Did you know?</h3><ul>'+facts.map(f=>"<li>"+f+"</li>").join("")+'</ul>';
   out+='<h3>\ud83c\udf0e The 48 of 2026 \u2014 World Cup pedigree</h3><p>Every team at this World Cup and its record so far. Tap any team on a match card or in the groups for full history and head-to-head.</p>';
   out+='<table class="st"><tr><th style="text-align:left">Team</th><th>Apps</th><th>Titles</th><th style="text-align:left">Best finish</th><th>Last</th></tr>'
