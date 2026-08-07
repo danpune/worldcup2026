@@ -184,6 +184,20 @@ def main():
         # An empty result mid-tournament means the upstream feed hiccuped — never wipe a good file.
         print("No scores parsed; leaving existing scores.json untouched.", file=sys.stderr)
         sys.exit(0)
+    # Never regress: if one source is down (ESPN started 403-ing CI runners on Aug 6 2026) the
+    # remaining feed can be an older snapshot, and writing it would DELETE finished results —
+    # that silently erased the semifinals and the final from the live site. A write must never
+    # reduce the set of finished matches we already have committed.
+    try:
+        old = json.load(open("scores.json", encoding="utf-8")).get("scores", {})
+    except Exception:
+        old = {}
+    fin = lambda d: {k for k, v in d.items() if v.get("s") == "FINISHED"}
+    lost = fin(old) - fin(scores)
+    if lost:
+        print(f"Refusing to write: would drop {len(lost)} finished match(es) "
+              f"{sorted(lost, key=int)} — keeping the existing file.", file=sys.stderr)
+        sys.exit(0)
     out = {
         "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": "api-football (worker) + espn",

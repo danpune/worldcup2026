@@ -231,5 +231,28 @@ class TestEspnFix(unittest.TestCase):
         self.assertEqual(fx["w"], "a")
 
 
+class TestNoRegression(unittest.TestCase):
+    """A partial fetch must never delete finished results already committed (Aug 6 2026:
+    ESPN 403s left only the frozen worker feed, wiping matches 101-104 from the live site)."""
+    def test_dropping_finished_matches_is_refused(self):
+        import io as _io, json as _json, os as _os, tempfile, contextlib
+        old = {"updated": "x", "scores": {"104": {"h": 1, "a": 0, "s": "FINISHED"}}}
+        cwd = _os.getcwd()
+        with tempfile.TemporaryDirectory() as td:
+            _os.chdir(td)
+            try:
+                with open("scores.json", "w") as f:
+                    _json.dump(old, f)
+                # feed missing 104 entirely -> main() must exit 0 without rewriting
+                fixtures = [{"home": "Mexico", "away": "South Africa", "h": 2, "a": 0,
+                             "status": "FT", "t": fs._epoch("2026-06-11T19:00:00Z"), "minute": None}]
+                scores, _ = fs.build_scores(fixtures)
+                self.assertNotIn("104", scores)
+                fin = lambda d: {k for k, v in d.items() if v.get("s") == "FINISHED"}
+                self.assertTrue(fin(old["scores"]) - fin(scores), "guard should see a dropped match")
+            finally:
+                _os.chdir(cwd)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
