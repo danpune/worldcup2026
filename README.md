@@ -4,6 +4,10 @@
 
 **Live site:** https://danpune.github.io/worldcup2026/
 
+> **🏆 Tournament complete — Spain beat Argentina 1–0 (a.e.t.) in the final at MetLife Stadium, 19 July 2026.**
+> The site is now a finished archive: every match, result, bracket, and official highlight stays online,
+> but the scheduled jobs that polled live data have been retired (see [Archive mode](#archive-mode)).
+
 A single web page — no build step, no framework, just `index.html` — that you can host for free on GitHub Pages.
 
 ## What it does
@@ -28,7 +32,7 @@ A single web page — no build step, no framework, just `index.html` — that yo
 
 The site is split into a free base anyone can run, and a live layer that runs on the maintainer's own keys.
 
-- **Free base — this repo, fully reproducible.** `index.html` + a small GitHub Action that pulls final & in-play **group** scores from [football-data.org](https://www.football-data.org/) (free tier) into `scores.json`. This is what the setup steps below get you: schedule, your-timezone times, calendar buttons, standings, and finished/in-play scores.
+- **Free base — this repo, fully reproducible.** `index.html` + a small GitHub Action that writes `scores.json`. It needs **no API key**: `fetch_scores.py` reads this project's own public Worker route and [ESPN](https://www.espn.com/)'s public scoreboard, preferring whichever is fresher, and refuses to write a snapshot that would drop an already-finished match. This is what the setup steps below get you: schedule, your-timezone times, calendar buttons, standings, and results.
 - **Live layer — optional, runs on 3rd-party accounts.** A **Cloudflare Worker** ([`worker/wc2026-api.js`](worker/wc2026-api.js)) proxies [API-Football](https://www.api-football.com/) for minute-by-minute scores, match stats, the event timeline, line-ups and team squads, and runs a cron job that sends **OneSignal** push alerts. This needs paid/third-party accounts (API-Football, Cloudflare, OneSignal), so it isn't part of the basic clone — see [The live layer](#the-live-layer-optional-advanced).
 
 ### Architecture at a glance
@@ -49,7 +53,7 @@ flowchart TD
         Cron["cron · every 1 min<br/>writer + alert detector"]
     end
 
-    FD["⚽ football-data.org<br/>free · delayed"]
+    FD["⚽ ESPN public scoreboard<br/>free · no key"]
     AF["⚡ API-Football<br/>paid · cron-only"]
     OS["🔔 OneSignal<br/>web push"]
 
@@ -86,7 +90,7 @@ A deliberately lean, **no-framework, no-build-step** stack — and one language 
 |---|---|---|
 | `index.html` | The web page itself | repo root |
 | `scores.json` | The scores the page reads (starts empty; the Action overwrites it) | repo root |
-| `fetch_scores.py` | Pulls scores from football-data.org and writes `scores.json` | repo root |
+| `fetch_scores.py` | Writes `scores.json` from the Worker feed + ESPN's public scoreboard (no key). Fail-safe: never overwrites good data with an empty or regressed fetch | repo root |
 | `update-scores.yml` | The scheduled job that runs the fetcher | **`.github/workflows/update-scores.yml`** |
 | `highlights.json` | Optional curated highlight clips for the Highlights tab | repo root |
 | `worker/wc2026-api.js` | (Live layer) Cloudflare Worker: live-score/stats proxy + push-alert detector | Cloudflare, not GitHub Pages |
@@ -104,35 +108,30 @@ A deliberately lean, **no-framework, no-build-step** stack — and one language 
 | `html2canvas.min.js` | Vendored library for the in-browser share-card images (loaded only when you tap Share) | repo root |
 | `wrangler.toml` / `deploy-worker.yml` | Worker config + GitHub Action that auto-deploys the Worker on push | repo root / **`.github/workflows/`** |
 | `healthcheck.py` | Pings the site/Worker/feed and checks API quota — used by the monitoring Action, runnable locally | repo root |
-| `healthcheck.yml` | Hourly health-check workflow (alerts + tracking issue on failure) | **`.github/workflows/healthcheck.yml`** |
+| `healthcheck.yml` | Weekly health-check workflow (alerts + tracking issue on failure; hourly during the tournament) | **`.github/workflows/healthcheck.yml`** |
+| `build_history.py` / `build_squads.py` | One-off builders for `wc-history.json` (Fjelstul dataset) and `squads.json` (Wikipedia) | repo root |
 | `LICENSE` | MIT license | repo root |
 
 ## Run your own copy (the free base, ~10 minutes)
 
-You don't need to write any code — upload these files and turn two switches on.
+You don't need to write any code, and you don't need an API key — upload these files and turn two switches on.
 
-### 1. Get a free scores key
-- Sign up at **https://www.football-data.org/client/register** (free tier).
-- Copy the **API token** they email/show you. Keep it handy.
-
-### 2. Make a GitHub repo
+### 1. Make a GitHub repo
 - New repo → name it e.g. `worldcup2026` → **Public** → Create.
 - Upload `index.html`, `scores.json`, and `fetch_scores.py` (drag-and-drop on the repo page → Commit).
 - Add the workflow: **Add file → Create new file**, and for the filename type exactly:
   `.github/workflows/update-scores.yml` — paste the contents of `update-scores.yml` → Commit.
   (Typing the slashes creates the folders for you.)
 
-### 3. Store your key as a secret (so it's never shown on the page)
-- Repo **Settings → Secrets and variables → Actions → New repository secret**.
-- Name: `FOOTBALL_DATA_API_KEY`  ·  Value: *your token from step 1* → Add secret.
-
-### 4. Turn on the page (GitHub Pages)
+### 2. Turn on the page (GitHub Pages)
 - **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main` / `root`** → Save.
 - After a minute your page is live at `https://<your-username>.github.io/worldcup2026/`. That's the link you share.
 
-### 5. Run the scores job once
+### 3. Run the scores job once
 - **Actions** tab → if prompted, enable workflows → pick **Update World Cup scores** → **Run workflow**.
-- It runs in ~30s and commits a fresh `scores.json`. After that it runs itself every ~10 minutes.
+- It runs in ~30s and commits a fresh `scores.json`. **No API key or secret is needed** — the fetcher
+  uses public feeds. To poll automatically during a tournament, add a `schedule:` block back to
+  `update-scores.yml` (see [Archive mode](#archive-mode)).
 
 Done. Open your Pages link on your phone — flags, your-timezone times, calendar buttons, live standings.
 
@@ -144,7 +143,7 @@ Minute-by-minute scores, match stats, the event timeline, line-ups, and push ale
 - **Cloudflare Worker** running [`worker/wc2026-api.js`](worker/wc2026-api.js) — with the API-Football key, a OneSignal REST key, and an `ADMIN_KEY` (guards the `/testpush` `/run` `/reset` routes) stored as encrypted **secrets** (never in the repo), a **KV** namespace for alert state, and a one-minute **cron trigger**,
 - **[OneSignal](https://onesignal.com/) app** (free Hobby plan) for delivering web push.
 
-The page automatically falls back to the free football-data.org feed if the Worker isn't configured, so the base site works fine without any of this. The Worker file is documented at the top of [`worker/wc2026-api.js`](worker/wc2026-api.js).
+The page automatically falls back to the committed `scores.json` if the Worker isn't configured, so the base site works fine without any of this. The Worker file is documented at the top of [`worker/wc2026-api.js`](worker/wc2026-api.js).
 
 ## Highlights
 
@@ -167,20 +166,43 @@ Commit/push and that match shows the embedded clip instead of the search link. A
 - Scores are **read-only** — they come straight from the feed; there's no manual editing. If a feed is ever down, the job never overwrites a good `scores.json` with a failed fetch, so the last known scores stay put.
 
 ## Good to know / troubleshooting
-- **Refresh cadence (free base):** every ~10 min (GitHub's scheduler can add a few minutes' delay under load). You can lower it in `update-scores.yml` (`cron`), but football-data.org's free tier allows ~10 calls/minute, so don't go below ~5 min.
-- **403 / no data:** the free tier uses competition code `WC`. If you get a 403, confirm the World Cup is enabled on your football-data.org dashboard.
+- **Refresh cadence (free base):** the schedule is currently off (see [Archive mode](#archive-mode)); during a tournament a `*/10 * * * *` cron in `update-scores.yml` was the sweet spot. GitHub's scheduler can add a few minutes' delay under load.
+- **403 / no data:** ESPN rate-limits datacentre IPs and can start returning 403 to CI runners if you poll hard — that is exactly why `fetch_scores.py` refuses to write a snapshot that drops already-finished matches. Don't poll more often than every ~10 min.
 - **Knockout scores:** the standings are group-stage (that's where a points table applies). Knockout team names appear once decided; auto-scoring those is a later add-on.
 - **Hosting elsewhere:** you can serve the page on Netlify instead, but keep the repo on GitHub so the Action can write `scores.json`. GitHub Pages is simplest because it's all in one place.
 
 ## Monitoring & health
-- **Hourly health check** — [`healthcheck.py`](healthcheck.py), run by [`.github/workflows/healthcheck.yml`](.github/workflows/healthcheck.yml), verifies the site is up, the Worker is up and serving scores, the admin routes are still locked, the API-Football plan/quota is healthy, and `scores.json` is fresh. On a hard failure it fails the run (GitHub emails the owner) and opens/updates a `[health]` tracking issue. Run it yourself any time: `python3 healthcheck.py`.
+- **Weekly health check** (hourly during the tournament) — [`healthcheck.py`](healthcheck.py), run by [`.github/workflows/healthcheck.yml`](.github/workflows/healthcheck.yml), verifies the site is up, the Worker is up and serving scores, the admin routes are still locked, the API-Football plan/quota is healthy, and `scores.json` is fresh. On a hard failure it fails the run (GitHub emails the owner) and opens/updates a `[health]` tracking issue. Run it yourself any time: `python3 healthcheck.py`.
 - **Worker errors** — the Worker `console.log`s detector failures and a privacy-safe client error beacon (`/log`); view them in the Cloudflare dashboard (**Workers → Observability → Logs**) or live with `wrangler tail`.
 - **Uptime** — for instant outage alerts, point a free uptime monitor (e.g. UptimeRobot) at the site URL and the Worker's `/scores`.
 - **Error beacon** — the page reports anonymous JS errors (message + source line + browser only — no IP, no identifiers, no third-party tracker) to the Worker `/log` route, so real user-facing bugs can be triaged from the Cloudflare logs.
 
+## Archive mode
+
+The tournament finished on **19 July 2026**, so every scheduled job has been switched off and the
+site is served as a static archive. Nothing polls, nothing writes, and nothing can silently change
+the recorded results.
+
+| What | Was | Now |
+|---|---|---|
+| `update-scores.yml` | `*/10 * * * *` cron | `workflow_dispatch` only |
+| `wrangler.toml` (Worker cron) | `* * * * *` | `crons = []` |
+| `healthcheck.yml` | hourly | weekly |
+
+**Why it matters:** on 6 August 2026 the still-running score cron met an ESPN 403 (they block
+datacentre IPs), fell back to the Worker's snapshot — frozen since the API-Football plan lapsed on
+14 July — and rewrote `scores.json` *without* matches 101–104, erasing both semifinals, the
+third-place play-off and the final from the live site. The churn also caused rebase conflicts and
+queue-cancelled Action runs. `fetch_scores.py` now refuses any write that would drop a match already
+recorded as finished, and the schedules are off.
+
+**To revive it for another tournament:** restore the `schedule:` block in
+[`update-scores.yml`](.github/workflows/update-scores.yml) and `crons` in
+[`wrangler.toml`](wrangler.toml). Both files carry comments explaining exactly what to put back.
+
 ## Sources & credits
 - **Official (source of truth):** FIFA — https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026
-- **Live scores & stats:** [API-Football](https://www.api-football.com/) (live layer) and [football-data.org](https://www.football-data.org/) (free base).
+- **Live scores & stats:** [API-Football](https://www.api-football.com/) (live layer, paid — the plan was retired on 14 July 2026) and [ESPN](https://www.espn.com/)'s public scoreboard (free base, no key). Both unofficial; FIFA is the source of truth.
 - **Schedule curated from:** NBC Sports, cross-checked against World Cup Wiki and FIFA host-city sites (Dallas, NY/NJ, Atlanta).
 - **TV (USA):** FOX Sports — https://www.foxsports.com/soccer/fifa-world-cup
 - **Historical World Cup data (head-to-head & records):** The Fjelstul World Cup Database — [github.com/jfjelstul/worldcup](https://github.com/jfjelstul/worldcup), © Joshua C. Fjelstul, Ph.D., licensed [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The derived `wc-history.json` is likewise CC-BY-SA 4.0.
