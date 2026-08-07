@@ -1784,7 +1784,12 @@ function observeWx(){
  if(!wxObserver)wxObserver=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){fillWxEl(e.target);wxObserver.unobserve(e.target);}});},{rootMargin:"250px"});
  els.forEach(el=>wxObserver.observe(el));
 }
-(function(){const v=location.hash.slice(1);if(v&&v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}})();  /* open the tab from a shared #hash on load (e.g. .../worldcup2026/#highlights) */
+(function(){const v=location.hash.slice(1);
+ if(v){const t=document.getElementById("tab-"+v);if(t&&v!==currentView)activateTab(t,true);return;}   /* shared #hash wins (e.g. .../worldcup2026/#highlights) */
+ /* No hash: during the tournament the schedule is what people came for; once it's over the
+    story is. Land on the recap instead of a list of matches that have all been played. */
+ if(Date.now()>Date.UTC(2026,6,20)){const t=document.getElementById("tab-recap");if(t)activateTab(t,true);}
+})();
 render();fetchLive();fetchHighlights();
 /* fun footer visit counter (free Abacus API; counts page views; fails silently if the service is down) */
 fetch("https://abacus.jasoncameron.dev/hit/danpune-worldcup2026/visits").then(r=>r.json()).then(d=>{if(d&&d.value!=null)document.getElementById("visits").textContent=" · 👀 "+d.value.toLocaleString()+" visits";}).catch(()=>{});
