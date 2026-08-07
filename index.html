@@ -1224,7 +1224,10 @@ function tournamentStatus(){
  const START=Date.UTC(2026,5,11),END=Date.UTC(2026,6,20),now=Date.now(),day=86400000;   /* Jun 11 → Jul 19, 2026 */
  if(now<START){const d=Math.max(1,Math.ceil((START-now)/day));el.innerHTML='Kicks off June 11 · in <b>'+d+' day'+(d!==1?'s':'')+'</b>';}
  else if(now<END){const d=Math.floor((now-START)/day)+1;el.innerHTML='<span class="dot"></span><b>Underway</b> · Day '+d+' · Final Sun, July 19';}
- else{const ch=champion();el.innerHTML=ch?('\ud83c\udfc6 <b>'+(ch.flag?ch.flag+" ":"")+escA(ch.name)+'</b> are world champions \u00b7 beat '+escA(ch.runnerUp)+' '+ch.score+' in the final'):'Completed \u00b7 the final was played July 19, 2026';}
+ else{const ch=champion();
+  /* one <span> so .twstat's flex layout treats this as a single wrapping item — otherwise the
+     <b> and the surrounding text become separate flex children and break mid-sentence on mobile */
+  el.innerHTML=ch?('<span>\ud83c\udfc6 <b>'+(ch.flag?ch.flag+" ":"")+escA(ch.name)+'</b> are world champions \u00b7 beat '+escA(ch.runnerUp)+' '+ch.score+' in the final</span>'):'<span>Completed \u00b7 the final was played July 19, 2026</span>';}
 }
 /* Winner of match 104, read from the feed (never hard-coded) — null until the final is final. */
 function champion(){
