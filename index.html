@@ -1944,7 +1944,8 @@ function renderHistoryTab(){
   fin.sort((a,b)=>b.y-a.y);
   const champs=Object.keys(wins).map(c=>({c,yrs:wins[c].sort()})).sort((a,b)=>b.yrs.length-a.yrs.length||a.yrs[0]-b.yrs[0]);
   const y0=d.matches.reduce((m,x)=>Math.min(m,x[0]),9999);
-  let out='<div class="tldrbox"><b>TL;DR:</b> The World Cup began in <b>'+y0+'</b> in Uruguay, who won it as hosts. It has been played <b>'+d.tournaments+' times</b> \u2014 '+(merged2026?('the 2026 edition was the '+ordN(d.tournaments)+' and the first with 48 teams, won by <b>'+escA(nm(champs.find(c=>c.yrs.indexOf(2026)>=0).c))+'</b>'):('2026 is edition '+(d.tournaments+1)+' and the first with 48 teams'))+'. Only <b>'+champs.length+' nations</b> have ever won it, led by <b>'+escA(nm(champs[0].c))+'</b> with '+champs[0].yrs.length+' titles.</div>';
+  const champ26=champs.find(c=>c.yrs.indexOf(2026)>=0)||null;   /* read the data, never assume a flag */
+  let out='<div class="tldrbox"><b>TL;DR:</b> The World Cup began in <b>'+y0+'</b> in Uruguay, who won it as hosts. It has been played <b>'+d.tournaments+' times</b> \u2014 '+((d._m26&&champ26)?('the 2026 edition was the '+ordN(d.tournaments)+' and the first with 48 teams, won by <b>'+escA(nm(champ26.c))+'</b>'):('2026 is edition '+(d.tournaments+1)+' and the first with 48 teams'))+'. Only <b>'+champs.length+' nations</b> have ever won it, led by <b>'+escA(nm(champs[0].c))+'</b> with '+champs[0].yrs.length+' titles.</div>';
   out+='<h3>\ud83c\udfc6 Most World Cup titles</h3><table class="st"><tr><th style="text-align:left">Country</th><th>Titles</th><th style="text-align:left">Years won</th></tr>'
    +champs.map(x=>'<tr><td class="tm">'+fl(nm(x.c))+escA(nm(x.c))+'</td><td><b>'+x.yrs.length+'</b></td><td class="tm" style="font-weight:400;white-space:normal">'+x.yrs.join(", ")+'</td></tr>').join("")+'</table>';
   out+='<h3>\ud83e\udd47 Every final, '+y0+'\u20132022</h3><table class="st"><tr><th>Year</th><th style="text-align:left">Winner</th><th>Score</th><th style="text-align:left">Runner-up</th></tr>'
@@ -1956,13 +1957,13 @@ function renderHistoryTab(){
   const noa=codes.filter(c=>!T[c].titles).sort((a,b)=>T[b].apps-T[a].apps)[0];
   const cur=[...new Set(MATCHES.filter(m=>m.group_game).flatMap(m=>[m.home,m.away]))];
   const rows=cur.map(n=>({n,h:teamHist(n)})).sort((a,b)=>((b.h?b.h.apps:0)-(a.h?a.h.apps:0))||a.n.localeCompare(b.n));
-  const debuts=rows.filter(r=>!r.h||(r.h.apps===1&&r.h.last===2026)),backs=rows.map(r=>({r,ly:r.h?(merged2026?r.h.prev:r.h.last):null})).filter(x=>x.ly&&x.ly<=2002).sort((a,b)=>a.ly-b.ly);
+  const debuts=rows.filter(r=>!r.h||(r.h.apps===1&&r.h.last===2026)),backs=rows.map(r=>({r,ly:r.h?(d._m26?(r.h.prev||r.h.last):r.h.last):null})).filter(x=>x.ly&&x.ly<=2002).sort((a,b)=>a.ly-b.ly);
   const facts=[];
   if(ever.length)facts.push(ever.map(c=>fl(nm(c))+"<b>"+escA(nm(c))+"</b>").join(", ")+(ever.length===1?" is the only country":" are the only countries")+" to have played in every World Cup \u2014 all "+d.tournaments+" of them.");
   if(nof)facts.push(fl(nm(nof))+"<b>"+escA(nm(nof))+"</b> have reached "+T[nof].finals+" finals without ever lifting the trophy.");
   if(noa)facts.push(fl(nm(noa))+"<b>"+escA(nm(noa))+"</b> have the most appearances without a title \u2014 "+T[noa].apps+".");
-  if(debuts.length)facts.push("<b>"+debuts.length+" nations</b> "+(merged2026?"made their World Cup debut in 2026":"are playing their first-ever World Cup in 2026")+": "+debuts.map(r=>fl(r.n)+escA(r.n)).join(", ")+".");
-  if(backs.length)facts.push((merged2026?"Long waits ended in 2026: ":"Long waits ending in 2026: ")+backs.map(x=>fl(x.r.n)+escA(x.r.n)+" (previously "+x.ly+")").join(" \u00b7 ")+".");
+  if(debuts.length)facts.push("<b>"+debuts.length+" nations</b> "+(d._m26?"made their World Cup debut in 2026":"are playing their first-ever World Cup in 2026")+": "+debuts.map(r=>fl(r.n)+escA(r.n)).join(", ")+".");
+  if(backs.length)facts.push((d._m26?"Long waits ended in 2026: ":"Long waits ending in 2026: ")+backs.map(x=>fl(x.r.n)+escA(x.r.n)+" (previously "+x.ly+")").join(" \u00b7 ")+".");
   out+='<h3>\u2728 Did you know?</h3><ul>'+facts.map(f=>"<li>"+f+"</li>").join("")+'</ul>';
   out+='<h3>\ud83c\udf0e The 48 of 2026 \u2014 World Cup pedigree</h3><p>Every team at this World Cup and its record so far. Tap any team on a match card or in the groups for full history and head-to-head.</p>';
   out+='<table class="st"><tr><th style="text-align:left">Team</th><th>Apps</th><th>Titles</th><th style="text-align:left">Best finish</th><th>Last</th></tr>'
