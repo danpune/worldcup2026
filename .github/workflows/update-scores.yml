@@ -5,7 +5,11 @@ name: Update World Cup scores
 # 6 Aug ESPN began 403-ing CI runners — the partial fetch then rewrote scores.json WITHOUT the
 # semifinals and final, wiping the champion from the live site, while the churn caused rebase
 # conflicts and queue-cancelled runs (the "All jobs were cancelled" emails).
-# Re-enable the schedule only for a future tournament; until then run it by hand if needed.
+# NOTE: this workflow is also DISABLED in the Actions tab (gh workflow disable). Removing the
+# cron alone was not enough - something outside this repo kept dispatching it every 10 minutes
+# (real cron runs report event "schedule"; these reported "workflow_dispatch"). Disabling blocks
+# dispatch too. Re-enable with:  gh workflow enable "Update World Cup scores"
+# ...and restore the schedule below, only for a future tournament.
 on:
   workflow_dispatch:           # manual runs only, from the Actions tab
 
