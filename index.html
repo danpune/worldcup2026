@@ -1820,9 +1820,10 @@ function loadHistory(){
  }).catch(()=>null);
  return wchLoading;
 }
+function histReady(){if(WCH&&!WCH._m26)mergeThisTournament(WCH);return WCH;}   /* cheap: no-ops once merged */
 function histCode(name){if(!WCH)return null;let k=histNorm(name);k=HIST_ALIAS[k]||k;return WCH._byName[k]||null;}
-function teamHist(name){const c=histCode(name);return c?WCH.teams[c]:null;}
-function h2h(aName,bName){
+function teamHist(name){histReady();const c=histCode(name);return c?WCH.teams[c]:null;}
+function h2h(aName,bName){histReady();
  const ca=histCode(aName),cb=histCode(bName);if(!ca||!cb)return null;
  const list=[];let aw=0,d=0,bw=0;
  WCH.matches.forEach(m=>{const[yr,st,h,a,hs,as_,pen]=m;if(!((h===ca&&a===cb)||(h===cb&&a===ca)))return;
@@ -1877,7 +1878,7 @@ function historyHTML(home,away){
 function ordN(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 var merged2026=false;
 function mergeThisTournament(d){
- if(merged2026||!d||!d.teams)return d;
+ if(!d||!d.teams||d._m26)return d;   /* guard lives ON the object: a global latch could be set by one copy while WCH was another */
  const ch=champion();if(!ch)return d;                       /* nothing to merge until the final is final */
  const YEAR=2026,SC={"Group Stage":"GS","Round of 32":"R32","Round of 16":"R16","Quarterfinal":"QF","Semifinal":"SF","Third-Place":"3P","FINAL":"F"};
  const BEST={"Champions":9,"Runners-up":8,"Third place":7,"Fourth place":6,"Quarter-finals":5,"Round of 16":4,"Round of 32":3,"2nd group stage":2,"Group stage":1};
@@ -1915,7 +1916,7 @@ function mergeThisTournament(d){
   d.matches.push([YEAR,SC[x.m.stage]||"GS",ca,cb,x.es.h,x.es.a,x.es.raw==="PEN"?1:0]);});
  if(f&&f.es.raw==="PEN"){}                                   /* pen finals are flagged above via raw */
  d.tournaments=(d.tournaments||0)+1;
- merged2026=true;
+ d._m26=true;merged2026=true;
  return d;
 }
 var histTabDone=false;   /* var, not let: same deep-link TDZ as WCH above */
