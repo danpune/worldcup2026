@@ -1281,6 +1281,7 @@ let HL={};
 async function fetchHighlights(){
  try{const r=await fetch("highlights.json?t="+Date.now(),{cache:"no-store"});if(r.ok){const j=await r.json();HL=j.highlights||{};}}catch(e){}
  if(currentView==="highlights")renderHighlights();
+ if(currentView==="recap")renderRecap();
 }
 const ytOk=id=>/^[\w-]{11}$/.test(id||"");  /* valid YouTube video ID only — defensive against malformed entries */
 /* featured "Moments" reel — a curated carousel of the best official FIFA clips (data-ranked: goals, margin,
@@ -1928,6 +1929,7 @@ function renderRecap(){
  const box=document.getElementById("recapwrap");if(!box)return;
  const ch=champion();
  if(!ch){box.innerHTML='<p class="note">The recap appears once the final has been played.</p>';return;}
+ if(!Object.keys(HL).length)return;   /* highlights.json still in flight — retry rather than latch an imageless collage */
  recapDone=true;
  const fin=[];MATCHES.forEach(m=>{const es=cardScore(m.n);if(es&&es.s==="FINISHED")fin.push({n:m.n,m,es});});
  const goals=fin.reduce((s,x)=>s+x.es.h+x.es.a,0);
