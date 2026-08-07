@@ -1,5 +1,5 @@
 {
-"updated": "2026-08-07T04:40:10Z",
+"updated": "2026-07-26T02:14:52Z",
 "source": "api-football (worker) + espn",
 "scores": {
 "1": {
@@ -569,6 +569,35 @@
 "raw": "AET",
 "home": "Argentina",
 "away": "Switzerland"
+},
+"101": {
+"h": 0,
+"a": 2,
+"s": "FINISHED",
+"home": "France",
+"away": "Spain"
+},
+"102": {
+"h": 1,
+"a": 2,
+"s": "FINISHED",
+"home": "England",
+"away": "Argentina"
+},
+"103": {
+"h": 4,
+"a": 6,
+"s": "FINISHED",
+"home": "France",
+"away": "England"
+},
+"104": {
+"h": 1,
+"a": 0,
+"s": "FINISHED",
+"raw": "AET",
+"home": "Spain",
+"away": "Argentina"
 }
 }
 }

@@ -7,7 +7,9 @@ name: Health check
 
 on:
   schedule:
-    - cron: "17 * * * *"     # hourly, at :17 (GitHub may delay a few min under load)
+    - cron: "17 8 * * 1"     # weekly, Mondays 08:17 UTC. Was hourly during the tournament;
+                             # the site is a finished archive now, so hourly checks (and their
+                             # failure emails on transient blips) were pure noise.
   workflow_dispatch:           # lets you run it on demand from the Actions tab
 
 permissions:

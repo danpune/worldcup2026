@@ -1,9 +1,13 @@
 name: Update World Cup scores
 
+# The tournament finished on 19 July 2026, so there is nothing left to poll. The 10-minute
+# cron kept running into August: it burned Actions minutes, added ~144 commits a day, and on
+# 6 Aug ESPN began 403-ing CI runners — the partial fetch then rewrote scores.json WITHOUT the
+# semifinals and final, wiping the champion from the live site, while the churn caused rebase
+# conflicts and queue-cancelled runs (the "All jobs were cancelled" emails).
+# Re-enable the schedule only for a future tournament; until then run it by hand if needed.
 on:
-  schedule:
-    - cron: "*/10 * * * *"   # every 10 minutes (UTC). GitHub may delay a few min under load.
-  workflow_dispatch:           # lets you run it on demand from the Actions tab
+  workflow_dispatch:           # manual runs only, from the Actions tab
 
 permissions:
   contents: write              # needed to commit scores.json
@@ -31,5 +35,11 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add scores.json
           git diff --staged --quiet || git commit -m "Update scores $(date -u +%FT%TZ)"
-          git pull --rebase origin main
+          # scores.json is generated, so a concurrent update is not a real conflict:
+          # keep the copy this run just produced instead of failing the job.
+          git pull --rebase origin main || {
+            git checkout --ours scores.json
+            git add scores.json
+            GIT_EDITOR=true git rebase --continue
+          }
           git push
