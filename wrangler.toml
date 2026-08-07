@@ -17,8 +17,12 @@ compatibility_date = "2025-01-01"
 
 # Every-minute cron: runs the alert detector AND writes the scores / match:<fid> KV
 # snapshots (the decoupled-reads architecture). Declared here so deploys preserve it.
+# Tournament finished 19 July 2026 — the once-a-minute writer/alert cron has nothing left to
+# poll (its API-Football plan lapsed on 14 July and the KV snapshot has been frozen since).
+# It was still firing ~1,440 times a day for no effect. Restore the schedule for a future
+# tournament; the read routes (/scores, /comments, /ics …) are unaffected.
 [triggers]
-crons = ["* * * * *"]
+crons = []
 
 # KV namespace: detector `state` + `scores` snapshot + per-fixture `match:<fid>` detail.
 [[kv_namespaces]]

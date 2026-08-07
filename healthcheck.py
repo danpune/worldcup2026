@@ -110,7 +110,12 @@ try:
     if u:
         age = (datetime.datetime.now(datetime.timezone.utc)
                - datetime.datetime.fromisoformat(u.replace("Z", "+00:00"))).total_seconds() / 60
-        (warns if age > 120 else oks).append("scores.json updated %.0f min ago" % age)
+        if datetime.date.today() > FINAL:
+            # Tournament over: the feed is deliberately frozen (score cron retired), so a stale
+            # file is the correct state, not an incident. Report it without raising a warning.
+            oks.append("scores.json final (%.0f days after the final)" % (age / 1440))
+        else:
+            (warns if age > 120 else oks).append("scores.json updated %.0f min ago" % age)
 except Exception as e:
     warns.append("scores.json freshness check failed: %s" % e)
 
