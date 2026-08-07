@@ -471,6 +471,24 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .fwc b{color:var(--pitch2)}.fwc .fwt{color:var(--muted);font-size:12px;margin-left:6px}.fwc p{margin:4px 0 0}
 .fwdel{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11.5px;cursor:pointer;padding:2px 7px;margin-left:8px}
 .nxcal{display:flex;gap:8px;margin-top:7px}
+.rcHero{background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 26%,var(--card)),var(--card));border:1px solid var(--gold);border-radius:14px;padding:18px 16px;margin:10px 0 16px;text-align:center}
+.rcHero .rcTrophy{font-size:40px;line-height:1}
+.rcHero h2{margin:6px 0 2px;font-size:clamp(26px,6vw,44px);text-transform:uppercase;color:var(--pitch)}
+.rcHero .rcSub{color:var(--muted);font-size:13.5px}
+.rcNums{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;margin:12px 0 18px}
+.rcNum{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+.rcNum b{display:block;font-family:Oswald;font-size:26px;color:var(--pitch2);line-height:1.1}
+.rcNum span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.rcRoad{display:flex;flex-direction:column;gap:6px;margin:8px 0 18px;max-width:640px}
+.rcStep{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:9px;padding:8px 11px;font-size:13.5px}
+.rcStep .rcRd{font-family:Oswald;font-size:11px;color:var(--muted);text-transform:uppercase;min-width:82px}
+.rcStep .rcOpp{flex:1}.rcStep .rcSc{font-weight:700;font-variant-numeric:tabular-nums}
+.rcGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin:8px 0 6px}
+.rcCard{background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.rcCard .rcCap{padding:8px 10px}
+.rcCard .rcTag{font-family:Oswald;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold-ink,#a07d1e)}
+.rcCard .rcLine{font-size:13px;font-weight:600;margin-top:1px}
+@media(prefers-color-scheme:dark){.rcHero h2{color:#e8c25f}.rcNum b{color:#7fcfa2}.rcCard .rcTag{color:#e8c25f}}
 .next.champ{background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 22%,var(--card)),var(--card));border-color:var(--gold)}
 .next.champ .m{font-size:clamp(19px,4vw,26px)}
 .fday{margin-top:10px;padding:10px 12px;background:color-mix(in srgb,var(--gold) 9%,var(--card));border:1px solid var(--gold-soft);border-radius:10px;font-size:12.5px;line-height:1.55;color:var(--text)}
@@ -546,6 +564,7 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
 </header>
 <nav class="tabs"><div class="tabs-in" role="tablist">
  <button class="tab" role="tab" id="tab-schedule" aria-controls="view-schedule" aria-selected="true" tabindex="0" data-view="schedule">Schedule</button>
+ <button class="tab" role="tab" id="tab-recap" aria-controls="view-recap" aria-selected="false" tabindex="-1" data-view="recap"><span aria-hidden="true">🏆</span> Recap</button>
  <button class="tab" role="tab" id="tab-knockouts" aria-controls="view-knockouts" aria-selected="false" tabindex="-1" data-view="knockouts"><span aria-hidden="true">🏆</span> Knockouts</button>
  <button class="tab" role="tab" id="tab-standings" aria-controls="view-standings" aria-selected="false" tabindex="-1" data-view="standings">Groups</button>
  <button class="tab" role="tab" id="tab-highlights" aria-controls="view-highlights" aria-selected="false" tabindex="-1" data-view="highlights">Highlights</button>
@@ -566,6 +585,10 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <div id="livenow"></div>
   <div id="nextup"></div>
   <div id="list"></div>
+ </section>
+
+ <section id="view-recap" class="hide info" role="tabpanel" aria-labelledby="tab-recap" tabindex="0">
+  <div id="recapwrap"><div class="newsload">Building the story of World Cup 2026&#8230;</div></div>
  </section>
 
  <section id="view-standings" class="hide" role="tabpanel" aria-labelledby="tab-standings" tabindex="0">
@@ -1215,7 +1238,8 @@ function champion(){
  const suf=es.raw==="PEN"?" on pens":(es.raw==="AET"?" a.e.t.":"");
  return{name:w.name,flag:w.flag,runnerUp:l.name,score:hi+"\u2013"+lo+suf};
 }
-function render(){updateProv();if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="knockouts")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
+function render(){updateProv();if(currentView==="recap")renderRecap();   /* retries harmlessly until the async score load lands (recapDone latches only on success) */
+ if(currentView==="schedule")renderList();if(currentView==="standings")renderStandings();if(currentView==="knockouts")renderBracket();if(currentView==="highlights")renderHighlights();renderLive();renderNext();renderMoments();tournamentStatus();}
 /* Polymarket "to win group" odds — lazy-loaded when the Standings tab opens (gamma-api allows CORS) */
 let PM={},pmLoaded=false;
 function pmNorm(s){return (s||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
@@ -1685,6 +1709,7 @@ function activateTab(t,fromHash){
  render();
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
  if(currentView==="standings")loadTopScorers();
+ if(currentView==="recap")renderRecap();
  if(currentView==="history")renderHistoryTab();   /* lazy: history dataset only when the tab is opened */
  if(currentView==="feedback")fwLoad();   /* lazy: fan-wall comments only when the Feedback tab is opened */   /* lazy: Golden Boot race only when Standings is opened */
  if(!fromHash){const h="#"+currentView;if(location.hash!==h)location.hash=currentView;}  /* reflect the open tab in the URL so it can be shared/bookmarked + the back button moves between tabs */
@@ -1882,6 +1907,76 @@ function renderHistoryTab(){
   out+='<div class="credit">'+escA(d.attribution||"")+'</div>';
   el.innerHTML=out;
  });
+}
+
+/* ===== Recap: the story of the tournament, computed from the same feed the rest of the
+   site reads (scores + official-FIFA highlight ids). No new data files, no new requests,
+   nothing hard-coded — if a result changed, this page changes with it.
+   Imagery is official FIFA video artwork via YouTube's thumbnail CDN (same source the
+   Highlights tab uses); no press photos are hosted or hot-linked. ===== */
+var recapDone=false;
+function rcTeams(n){const m=MATCHES[n-1],es=cardScore(n);
+ return{m,es,home:dispTeam(m,"home"),away:dispTeam(m,"away")};}
+function rcThumb(n,tag){
+ const id=(HL[n]&&ytOk(HL[n].yt))?HL[n].yt:null;const t=rcTeams(n);if(!t.es)return"";
+ const line=(t.home.flag?t.home.flag+" ":"")+escA(t.home.name)+" "+t.es.h+"–"+t.es.a+" "+(t.away.flag?t.away.flag+" ":"")+escA(t.away.name);
+ const img=id?'<button class="hlthumb" data-yt="'+id+'" aria-label="Play official highlights: '+escA(t.home.name)+' versus '+escA(t.away.name)+'"><img loading="lazy" src="https://i.ytimg.com/vi/'+id+'/hqdefault.jpg" alt=""><span class="hlplay"><b>▶</b></span></button>':"";
+ return '<div class="rcCard">'+img+'<div class="rcCap"><div class="rcTag">'+escA(tag)+'</div><div class="rcLine">'+line+'</div></div></div>';
+}
+function renderRecap(){
+ if(recapDone)return;
+ const box=document.getElementById("recapwrap");if(!box)return;
+ const ch=champion();
+ if(!ch){box.innerHTML='<p class="note">The recap appears once the final has been played.</p>';return;}
+ recapDone=true;
+ const fin=[];MATCHES.forEach(m=>{const es=cardScore(m.n);if(es&&es.s==="FINISHED")fin.push({n:m.n,m,es});});
+ const goals=fin.reduce((s,x)=>s+x.es.h+x.es.a,0);
+ const pens=fin.filter(x=>x.es.raw==="PEN"),aet=fin.filter(x=>x.es.raw==="AET");
+ const f=rcTeams(104);
+ /* champion's own run — every match they played, in order */
+ const road=fin.filter(x=>{const t=rcTeams(x.n);return t.home.name===ch.name||t.away.name===ch.name;});
+ let gf=0,ga=0;
+ const steps=road.map(x=>{const t=rcTeams(x.n),home=t.home.name===ch.name;
+  const our=home?x.es.h:x.es.a,their=home?x.es.a:x.es.h;gf+=our;ga+=their;
+  const opp=home?t.away:t.home;
+  const suf=x.es.raw==="PEN"?" (pens)":(x.es.raw==="AET"?" (a.e.t.)":"");
+  return '<div class="rcStep"><span class="rcRd">'+escA(stageLabel(x.m))+'</span><span class="rcOpp">'+(opp.flag?opp.flag+" ":"")+escA(opp.name)+'</span><span class="rcSc">'+our+'–'+their+escA(suf)+'</span></div>';}).join("");
+ /* defining moments, chosen by the data rather than by hand */
+ const byMargin=fin.slice().sort((a,b)=>Math.abs(b.es.h-b.es.a)-Math.abs(a.es.h-a.es.a))[0];
+ const byGoals=fin.slice().sort((a,b)=>(b.es.h+b.es.a)-(a.es.h+a.es.a))[0];
+ /* knockout-only: a group-stage rank gap can be larger but changes nothing, whereas a
+    knockout upset eliminates a favourite — that is what people remember. */
+ const upset=fin.slice().filter(x=>{const t=rcTeams(x.n);return !x.m.group_game&&RANK[t.home.name]&&RANK[t.away.name]&&x.es.h!==x.es.a;})
+   .map(x=>{const t=rcTeams(x.n),hw=x.es.h>x.es.a;const w=hw?t.home.name:t.away.name,l=hw?t.away.name:t.home.name;
+    return{x,gap:RANK[w]-RANK[l]};}).sort((a,b)=>b.gap-a.gap)[0];
+ const picks=[[104,"The final"],[101,"Semi-final 1"],[102,"Semi-final 2"]];
+ if(byMargin)picks.push([byMargin.n,"Biggest win of the tournament"]);
+ if(byGoals&&byGoals.n!==byMargin.n)picks.push([byGoals.n,"Highest-scoring match"]);
+ if(upset)picks.push([upset.x.n,"Biggest knockout upset"]);
+ pens.slice(0,2).forEach(p=>picks.push([p.n,"Decided on penalties"]));
+ const seen={},cards=picks.filter(p=>!seen[p[0]]&&(seen[p[0]]=1)).map(p=>rcThumb(p[0],p[1])).join("");
+ box.innerHTML=
+  '<div class="rcHero"><div class="rcTrophy">🏆</div><h2>'+(ch.flag?ch.flag+" ":"")+escA(ch.name)+'</h2>'
+  +'<div class="rcSub">World Cup 2026 champions · beat '+escA(ch.runnerUp)+' '+ch.score+' in the final at '+escA(f.m.venue)+', '+escA(f.m.city)+' · 80,663 in attendance</div></div>'
+  +'<div class="rcNums">'
+  +'<div class="rcNum"><b>'+fin.length+'</b><span>matches</span></div>'
+  +'<div class="rcNum"><b>'+goals+'</b><span>goals</span></div>'
+  +'<div class="rcNum"><b>'+(goals/fin.length).toFixed(2)+'</b><span>per match</span></div>'
+  +'<div class="rcNum"><b>48</b><span>teams</span></div>'
+  +'<div class="rcNum"><b>'+aet.length+'</b><span>extra time</span></div>'
+  +'<div class="rcNum"><b>'+pens.length+'</b><span>shootouts</span></div></div>'
+  +'<h3>🛣️ '+escA(ch.name)+'’s road to the title</h3>'
+  +'<p class="note">'+gf+' scored, <b>'+ga+' conceded</b> across '+road.length+' matches.</p>'
+  +'<div class="rcRoad">'+steps+'</div>'
+  +'<h3>🎬 Defining moments</h3>'
+  +'<p class="note">Tap any clip to watch the official FIFA highlights. Picked by the data — biggest win, highest score, biggest upset and every shootout.</p>'
+  +'<div class="rcGrid">'+cards+'</div>'
+  +'<p class="note">Every match, bracket and clip is still on the <a href="#knockouts">Knockouts</a> and <a href="#highlights">Highlights</a> tabs · all-time records on <a href="#history">History</a>.</p>';
+ box.querySelectorAll(".hlthumb").forEach(b=>b.addEventListener("click",()=>{
+  const id=b.dataset.yt,e=document.createElement("div");e.className="hlembed";
+  e.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0" title="Match highlights" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowfullscreen></iframe>';
+  b.replaceWith(e);
+ }));
 }
 
 /* ===== Fan wall: public comments with approve-first publishing (worker /comments).
