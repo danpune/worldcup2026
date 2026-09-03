@@ -122,7 +122,7 @@ def build_scores(matches):
 # API-Football plan lapsed mid-tournament and the worker feed froze with the
 # semifinals unplayed. No key, fail-safe. Whole-tournament date range: one call,
 # no date math, backfills any gap.
-ESPN_SB = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200"
+ESPN_SB = "https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200"
 
 def espn_fix(ev):
     """One ESPN scoreboard event -> a worker-shaped fixture dict, or None if not started/parseable."""

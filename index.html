@@ -486,9 +486,9 @@ table.st tr.cutline td{background:none;border-bottom:0;padding:2px 4px}
 .rcGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin:8px 0 6px}
 .rcCard{background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden}
 .rcCard .rcCap{padding:8px 10px}
-.rcCard .rcTag{font-family:Oswald;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold-ink,#a07d1e)}
+.rcCard .rcTag{font-family:Oswald;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#7a5e12}
 .rcCard .rcLine{font-size:13px;font-weight:600;margin-top:1px}
-@media(prefers-color-scheme:dark){.rcHero h2{color:#e8c25f}.rcNum b{color:#7fcfa2}.rcCard .rcTag{color:#e8c25f}}
+@media(prefers-color-scheme:dark){.rcHero h2{color:#e8c25f}.rcHero .rcSub{color:#c4d2cb}.rcNum b{color:#7fcfa2}.rcCard .rcTag{color:#e8c25f}}
 .next.champ{background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 22%,var(--card)),var(--card));border-color:var(--gold)}
 .next.champ .m{font-size:clamp(19px,4vw,26px)}
 .fday{margin-top:10px;padding:10px 12px;background:color-mix(in srgb,var(--gold) 9%,var(--card));border:1px solid var(--gold-soft);border-radius:10px;font-size:12.5px;line-height:1.55;color:var(--text)}
@@ -832,7 +832,8 @@ async function fetchLive(){
  if(sig!==_scoreSig){_scoreSig=sig;render();}      /* full re-render only when the live scores changed */
  else{updateProv();renderLive();renderNext();}     /* unchanged poll: refresh prov/live/next-up, skip the 104-card rebuild */
  if(!initialScrollDone){initialScrollDone=true;if(!userInteracted&&currentView==="schedule")requestAnimationFrame(jumpToToday);}
- clearTimeout(livePollTimer);livePollTimer=setTimeout(fetchLive,anyLive?20000:120000);  /* poll fast while live, slow otherwise */
+ clearTimeout(livePollTimer);   /* archive: nothing can change after the final, so stop polling (Refresh still works) */
+ if(Date.now()<Date.UTC(2026,6,20))livePollTimer=setTimeout(fetchLive,anyLive?20000:120000);
 }
 function liveScore(n){const s=LIVE.scores[n];if(s&&s.h!=null&&s.a!=null)return s;return null;}
 function kitFor(n){return (LIVE.kits&&LIVE.kits[n])||null;}   /* {h,a} shirt-primary hex for the card, present ~40 min pre-KO once line-ups publish */
@@ -1367,7 +1368,7 @@ function renderLive(){
 function renderList(){
  const list=document.getElementById("list");list.innerHTML="";
  const rows=MATCHES.filter(passes).sort((a,b)=>new Date(a.utc)-new Date(b.utc));   // always chronological by kickoff (match numbers aren't strictly in time order)
- if(!rows.length){const msg=(filter==="fav"&&FOLLOWS.size===0)?'No teams followed yet — tap the ☆ next to any team and their matches will collect here.':(filter==="today"&&!q)?'No matches today — the calendar buttons on each upcoming match add it to your calendar. <button type="button" class="cal" onclick="pickChip(\'left\')">\u23f3 See the remaining matches</button>':q?'No matches match that search — try clearing it.':'No matches match that filter.';list.innerHTML='<div class="empty">'+msg+'</div>';renderDateStrip([]);return;}
+ if(!rows.length){const msg=(filter==="fav"&&FOLLOWS.size===0)?'No teams followed yet — tap the ☆ next to any team and their matches will collect here.':(filter==="today"&&!q)?(MATCHES.some(m=>Date.now()<Date.parse(m.utc)+108e5)?'No matches today — the calendar buttons on each upcoming match add it to your calendar. <button type="button" class="cal" onclick="pickChip(\'left\')">\u23f3 See the remaining matches</button>':'The tournament is over. <button type="button" class="cal" onclick="pickChip(\'all\')">\ud83d\udcc5 See every match</button>'):q?'No matches match that search — try clearing it.':'No matches match that filter.';list.innerHTML='<div class="empty">'+msg+'</div>';renderDateStrip([]);return;}
  let lastDay=null;const now=new Date();const days=[];
  rows.forEach(m=>{
   const p=dParts(m.utc);
@@ -1729,7 +1730,9 @@ tabEls.forEach((t,i)=>{
  });
 });
 /* deep-linking: #highlights, #bracket, #standings … share or bookmark a tab; back/forward moves between tabs */
-addEventListener("hashchange",()=>{let v=location.hash.slice(1)||"schedule";if(v==="watch"||v==="tickets")v="info";if(v==="bracket")v="knockouts";if(v!==currentView){const t=document.getElementById("tab-"+v);if(t)activateTab(t,true);}});
+const HASH_ALIAS={watch:"info",tickets:"info",bracket:"knockouts"};
+function tabFor(v){return document.getElementById("tab-"+(HASH_ALIAS[v]||v));}
+addEventListener("hashchange",()=>{const v=location.hash.slice(1)||"schedule";const t=tabFor(v);if(t&&t.dataset.view!==currentView)activateTab(t,true);});
 /* land on "All" so the pinned date strip shows; renderDateStrip auto-scrolls to today's matches */
 /* ===== Per-match weather: kickoff forecast from Open-Meteo (free, no key, client-side).
    Chips fill lazily as cards scroll into view; cached per venue+date+unit. Defined before
@@ -1788,7 +1791,7 @@ function observeWx(){
  els.forEach(el=>wxObserver.observe(el));
 }
 (function(){const v=location.hash.slice(1);
- if(v){const t=document.getElementById("tab-"+v);if(t&&v!==currentView)activateTab(t,true);return;}   /* shared #hash wins (e.g. .../worldcup2026/#highlights) */
+ if(v){const t=tabFor(v);if(t){if(v!==currentView)activateTab(t,true);return;}}   /* shared #hash wins (e.g. .../worldcup2026/#highlights); unknown hash falls through */
  /* No hash: during the tournament the schedule is what people came for; once it's over the
     story is. Land on the recap instead of a list of matches that have all been played. */
  if(Date.now()>Date.UTC(2026,6,20)){const t=document.getElementById("tab-recap");if(t)activateTab(t,true);}
@@ -1948,7 +1951,7 @@ function renderHistoryTab(){
   let out='<div class="tldrbox"><b>TL;DR:</b> The World Cup began in <b>'+y0+'</b> in Uruguay, who won it as hosts. It has been played <b>'+d.tournaments+' times</b> \u2014 '+((d._m26&&champ26)?('the 2026 edition was the '+ordN(d.tournaments)+' and the first with 48 teams, won by <b>'+escA(nm(champ26.c))+'</b>'):('2026 is edition '+(d.tournaments+1)+' and the first with 48 teams'))+'. Only <b>'+champs.length+' nations</b> have ever won it, led by <b>'+escA(nm(champs[0].c))+'</b> with '+champs[0].yrs.length+' titles.</div>';
   out+='<h3>\ud83c\udfc6 Most World Cup titles</h3><table class="st"><tr><th style="text-align:left">Country</th><th>Titles</th><th style="text-align:left">Years won</th></tr>'
    +champs.map(x=>'<tr><td class="tm">'+fl(nm(x.c))+escA(nm(x.c))+'</td><td><b>'+x.yrs.length+'</b></td><td class="tm" style="font-weight:400;white-space:normal">'+x.yrs.join(", ")+'</td></tr>').join("")+'</table>';
-  out+='<h3>\ud83e\udd47 Every final, '+y0+'\u20132022</h3><table class="st"><tr><th>Year</th><th style="text-align:left">Winner</th><th>Score</th><th style="text-align:left">Runner-up</th></tr>'
+  out+='<h3>\ud83e\udd47 Every final, '+y0+'\u2013'+fin[0].y+'</h3><table class="st"><tr><th>Year</th><th style="text-align:left">Winner</th><th>Score</th><th style="text-align:left">Runner-up</th></tr>'
    +fin.map(f=>'<tr><td>'+f.y+'</td><td class="tm">'+fl(nm(f.w))+escA(nm(f.w))+'</td><td>'+f.sc+(f.note?' <small>('+f.note+')</small>':'')+'</td><td class="tm">'+fl(nm(f.l))+escA(nm(f.l))+'</td></tr>').join("")+'</table>';
   out+='<p class="note">1950 had no final match \u2014 the title was decided by a round-robin final group; Uruguay beat hosts Brazil 2\u20131 in the deciding game (the "Maracanazo").</p>';
   const T=d.teams,codes=Object.keys(T);
@@ -1991,9 +1994,10 @@ function renderRecap(){
  if(recapDone)return;
  const box=document.getElementById("recapwrap");if(!box)return;
  const ch=champion();
- if(!ch){box.innerHTML='<p class="note">The recap appears once the final has been played.</p>';return;}
- if(!Object.keys(HL).length)return;   /* highlights.json still in flight — retry rather than latch an imageless collage */
- recapDone=true;
+ /* only claim there is no recap once scores have actually arrived — otherwise keep the loader */
+ if(!ch){if(LIVE.ok&&Object.keys(LIVE.scores).length)box.innerHTML='<p class="note">The recap appears once the final has been played.</p>';return;}
+ const hasHL=Object.keys(HL).length>0;   /* collage needs highlight ids; the rest of the page does not */
+ recapDone=hasHL;                        /* latch only when complete, so a late fetchHighlights() can upgrade it */
  const fin=[];MATCHES.forEach(m=>{const es=cardScore(m.n);if(es&&es.s==="FINISHED")fin.push({n:m.n,m,es});});
  const goals=fin.reduce((s,x)=>s+x.es.h+x.es.a,0);
  const pens=fin.filter(x=>x.es.raw==="PEN"),aet=fin.filter(x=>x.es.raw==="AET");
@@ -2033,9 +2037,9 @@ function renderRecap(){
   +'<h3>🛣️ '+escA(ch.name)+'’s road to the title</h3>'
   +'<p class="note">'+gf+' scored, <b>'+ga+' conceded</b> across '+road.length+' matches.</p>'
   +'<div class="rcRoad">'+steps+'</div>'
-  +'<h3>🎬 Defining moments</h3>'
+  +(hasHL?('<h3>🎬 Defining moments</h3>'
   +'<p class="note">Tap any clip to watch the official FIFA highlights. Picked by the data — biggest win, highest score, biggest upset and every shootout.</p>'
-  +'<div class="rcGrid">'+cards+'</div>'
+  +'<div class="rcGrid">'+cards+'</div>'):'')
   +'<p class="note">Every match, bracket and clip is still on the <a href="#knockouts">Knockouts</a> and <a href="#highlights">Highlights</a> tabs · all-time records on <a href="#history">History</a>.</p>';
  box.querySelectorAll(".hlthumb").forEach(b=>b.addEventListener("click",()=>{
   const id=b.dataset.yt,e=document.createElement("div");e.className="hlembed";
