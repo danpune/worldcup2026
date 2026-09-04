@@ -123,7 +123,7 @@ try:
         if datetime.date.today() > FINAL:
             # Tournament over: the feed is deliberately frozen (score cron retired), so a stale
             # file is the correct state, not an incident. Report it without raising a warning.
-            oks.append("scores.json final (%.0f days after the final)" % (age / 1440))
+            oks.append("scores.json frozen (last written %.0f days ago)" % (age / 1440))
         else:
             (warns if age > 120 else oks).append("scores.json updated %.0f min ago" % age)
 except Exception as e:
