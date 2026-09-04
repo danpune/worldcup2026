@@ -106,7 +106,17 @@ except Exception as e:
 # 6) Scores feed freshness (the GitHub Action that writes scores.json)
 try:
     _, body = fetch(SITE + "/scores.json")
-    u = json.loads(body).get("updated")
+    _sj = json.loads(body)
+    # The 6 Aug 2026 incident (a partial fetch deleted matches 101-104, wiping the champion
+    # from the live site) passed every check here because they only looked at freshness.
+    _sc = _sj.get("scores") or {}
+    _fin = sum(1 for v in _sc.values() if v.get("s") == "FINISHED")
+    if datetime.date.today() > FINAL and (_fin < 104 or "104" not in _sc):
+        fails.append("scores.json INCOMPLETE: %d finished, final present=%s (expected 104)"
+                     % (_fin, "104" in _sc))
+    else:
+        oks.append("scores.json complete (%d finished results)" % _fin)
+    u = _sj.get("updated")
     if u:
         age = (datetime.datetime.now(datetime.timezone.utc)
                - datetime.datetime.fromisoformat(u.replace("Z", "+00:00"))).total_seconds() / 60

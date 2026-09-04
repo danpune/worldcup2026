@@ -1,6 +1,6 @@
 name: Health check
 
-# Hourly (and on-demand) monitoring of the live site, the Cloudflare Worker, the
+# Weekly (and on-demand) monitoring of the live site, the Cloudflare Worker, the
 # scores feed, and the API-Football quota/plan. On a hard failure it fails the run
 # (GitHub emails the repo owner) AND opens/updates a tracking issue, so there's a
 # persistent log of incidents. Run logs are retained ~90 days under the Actions tab.
