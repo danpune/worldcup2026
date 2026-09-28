@@ -1,0 +1,53 @@
+name: Tracker staleness
+
+# Watches whether the OTHER tracker sites are still publishing fresh data.
+#
+# It lives here because this repo is a finished archive: its own workflows are quiet,
+# so an alert from it is always about the trackers and never lost in build noise. It
+# reads each live data.json, so it does not care why a tracker went quiet — crashed
+# fetcher, cron that never fired, self-check rejecting every tick, or a repo out of
+# Actions minutes all look the same from outside: no new data.
+#
+# On failure GitHub emails the owner AND the run opens/comments a tracking issue, so
+# a missed email still leaves a trail.
+
+on:
+  schedule:
+    - cron: "40 12 * * *"      # daily, 12:40 UTC (~7:40am Chicago) — catches an
+                               # outage the next morning instead of two weeks later
+  workflow_dispatch:           # run on demand from the Actions tab
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: staleness
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10        # a hung job otherwise runs to GitHub's 360-minute default
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6 (SHA-pinned)
+
+      - name: Are the trackers still updating?
+        run: python3 staleness.py
+
+      - name: Open or update tracking issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="[staleness] a tracker has stopped updating"
+          BODY="$(cat report.md 2>/dev/null || echo 'Staleness check failed before it could report.')
+
+          — run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          EXISTING=$(gh issue list --state open --json number,title \
+            --jq ".[] | select(.title==\"$TITLE\") | .number" | head -1)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
