@@ -1,33 +1,35 @@
-# World Cup 2026 — your-timezone schedule, live scores & one-tap calendar
+# World Cup 2026 — the complete archive: every result, the full bracket & 96 years of history
 
-> Every World Cup I just wanted two simple things: to see when each match kicks off in **my own time zone**, and to add the ones I care about to my **calendar** — without wading through cluttered, ad-heavy sites to piece it together. I couldn't find anything that did just that, cleanly, so I built it. This is that project: a fast, ad-free, no-tracking companion for World Cup 2026. It's a one-person passion project. 🙌
+> **🏆 Spain won the 2026 World Cup — 1–0 (a.e.t.) against Argentina in the final at MetLife Stadium, 19 July 2026.**
 
 **Live site:** https://danpune.github.io/worldcup2026/
 
-> **🏆 Tournament complete — Spain beat Argentina 1–0 (a.e.t.) in the final at MetLife Stadium, 19 July 2026.**
-> The site is now a finished archive: every match, result, bracket, and official highlight stays online,
-> but the scheduled jobs that polled live data have been retired (see [Archive mode](#archive-mode)).
+The tournament is over, and the site is now its permanent archive: **every result, the full knockout
+bracket, official highlights and 96 years of World Cup history**. Nothing on it changes any more — the
+live scores, goal alerts and the scheduled jobs behind them were retired after the final (see
+[Archive mode](#archive-mode)).
+
+> Every World Cup I just wanted two simple things: to see when each match kicks off in **my own time zone**, and to add the ones I care about to my **calendar** — without wading through cluttered, ad-heavy sites to piece it together. I couldn't find anything that did just that, cleanly, so I built it. This is that project: a fast, ad-free, no-tracking companion for World Cup 2026. It's a one-person passion project. 🙌
 
 A single web page — no build step, no framework, just `index.html` — that you can host for free on GitHub Pages.
 
-## What it does
+## What's in the archive
 
-- 🗓 **Full schedule in your timezone**, with an **Add to Google Calendar** button on every match.
-- 📊 **Standings** that recalculate automatically as results come in.
-- 🔴 **Live scores** — minute-by-minute during matches, with a LIVE badge and a ticking match clock.
-- 📋 **Match detail** — possession, shots, xG and more, plus a **goal/card timeline** and both teams' **starting line-ups**.
-- 👥 **Squads** — tap any team (in Standings or on a fixture) to see their full **World Cup roster** grouped by position; upcoming matches have a **Squads** button showing both teams — useful before kickoff, when the official XI isn't out yet.
-- ⭐ **Follow your team** — star teams to filter to them and target your alerts.
-- 🔔 **Goal alerts** — opt-in push notifications for your teams, with an **Everything / Goals-only** preference.
-- 🎬 **Highlights** — every finished match, with an official clip where one's been added or a YouTube search link otherwise, plus a **🎬 Highlights** button right on each finished match card.
-- 📜 **All-time head-to-head & history** — tap **H2H** on any group fixture for the teams' past World Cup meetings plus each side's record (appearances, titles, best finish). Pre-baked from a historical dataset, so it adds zero live-API load.
-- ↗ **Share cards** — turn a result or matchup into a clean image (Web Share on mobile, download on desktop). Generated in your browser; nothing is uploaded.
-- 📺 **Where to watch** — a dedicated tab with the official broadcaster for your country (auto-detected from your time zone, free-to-air channels flagged), curated from FIFA's media-rights list.
-- 🌤️ **Per-match weather** — kickoff-time forecast on upcoming matches (Open-Meteo, in-browser, no extra API load).
-- 🏆 **Recap** — the tournament's story on one page: champion, the numbers, the winner's road to the title, and a collage of official FIFA clips for the defining moments. It's the landing tab now the tournament is done.
+- 🏆 **Recap** — the landing tab: the champion, the tournament in numbers (104 matches, 308 goals), Spain's road to the title, and official FIFA clips of the defining moments.
+- 🗓 **Every result** — all 104 matches with final scores, shown in your time zone and filterable by date, group, knockouts, host nation or the teams you star.
+- 🌳 **Full knockout bracket** — Round of 32 to the final, with extra-time and penalty results marked.
+- 📊 **Final group tables** for all 12 groups, plus **match stats** on finished matches — possession, shots, xG, passes and more.
+- 🎬 **Official highlights** — every finished match, with an embedded official FIFA clip where one's been added or a YouTube search link otherwise.
+- 📜 **96 years of history** — every final from 1930 to 2026, the all-time title count, trivia and the road to the centenary 2030 tournament, plus **all-time head-to-head** records for any group fixture (tap **H2H**).
+- 👥 **Squads** — each team's full World Cup roster, grouped by position.
+- ↗ **Share cards** — turn a result into a clean image (Web Share on mobile, download on desktop). Generated in your browser; nothing is uploaded.
 - 🗣️ **Fan wall** — leave a public comment, no account needed; every submission is held for review and only appears after the admin approves it (rate-limited, link-free, spam-capped).
-- 📱 **Installable & fast** — add it to your home screen like an app (web manifest); the page is a single ~58 KB file, so opens are near-instant. No offline cache by design — live scores should never be stale.
+- 📱 **Installable** — add it to your home screen like an app (web manifest). The page is a single ~221 KB file.
 - **Ad-free, no accounts, no money handled.** No cross-site tracking, cookies, fingerprinting, or ad networks; the only analytics is [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/) — cookieless and aggregate-only (page-view counts, no per-user identifiers).
+
+During the tournament the page also ran minute-by-minute live scores, goal alerts, per-match weather
+and a where-to-watch guide; the sections below still document how those worked, for anyone reviving
+it for another tournament.
 
 ## How it's built (two layers)
 
