@@ -126,7 +126,7 @@ nav.tabs{position:sticky;top:0;z-index:20;background:rgba(11,61,46,.97);backdrop
 .trow.koplace{color:var(--muted)}
 /* wide screens: put the matchup back on one line ("Home v Away"); phones stay stacked */
 @media(min-width:640px){.tcol{flex-direction:row;align-items:center;gap:9px}.tcol .trow{flex:0 1 auto}.vsep{display:inline}}
-.fav{border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:6px 6px;margin:-6px -8px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent;vertical-align:middle}
+.fav{min-width:40px;min-height:40px;border:0;background:none;cursor:pointer;font-size:17px;line-height:1;padding:6px 6px;margin:-6px -8px;color:var(--muted);opacity:.65;-webkit-tap-highlight-color:transparent;vertical-align:middle}
 .fav.on{color:var(--gold);opacity:1}
 .fav:hover{opacity:1}
 .fav:focus-visible{outline:2px solid var(--gold);border-radius:4px;opacity:1}
@@ -155,7 +155,7 @@ body.np-open{padding-bottom:88px}
 .meta .drive{color:#7d6314;font-weight:600}
 .mno{color:var(--muted);font-weight:600;font-size:11px}
 .meta .pred{color:#4a56c0;font-weight:600}
-.badge{font-family:Oswald;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--c,#7A8C99);border-radius:5px;padding:2px 6px;display:inline-block}
+.badge{font-family:Oswald;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--c,#5c6b76);border-radius:5px;padding:2px 6px;display:inline-block}
 .right{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:7px}
 .cal{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--pitch);border-radius:8px;padding:9px 11px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
 .cal:hover{background:#f3f8f5;border-color:var(--pitch2)}
@@ -508,6 +508,9 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
  :root{
   --paper:#0e1512;--card:#16201b;--line:#28332c;--text:#e7efe9;--muted:#94a89d;
   --advance:#163524;--advance-line:#2f7a48;
+  /* the bracket paints the WINNING side with these; left at their light values
+     they were dark-on-dark -- 1.03:1 for the score, 1.37:1 for the name */
+  --ink:#e7efe9;--pitch:#7fcfa2;--pitch2:#5fb98a;--live:#ff8a78;
  }
  .prov{background:#16201b}
  .prov .src{color:#7fcfa2}
@@ -724,12 +727,11 @@ footer{border-top:1px solid var(--line);margin-top:28px;padding:18px 0 40px;colo
   <p>🚗 Dallas — AT&amp;T Stadium (~3 hrs, 9 games incl. a semifinal) and Houston — NRG (~2.5 hrs). Both air-conditioned.</p>
   <h3>Sources — where every number comes from</h3>
   <ul>
-   <li><b>Schedule, venues &amp; official results</b> — <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener">FIFA</a> (the official source of truth), cross-checked against <a href="https://www.nbcsports.com/soccer/world-cup/schedule-scores" target="_blank" rel="noopener">NBC Sports</a> and FIFA host-city sites (<a href="https://www.dallasfwc26.com/our-venues/match-schedule/" target="_blank" rel="noopener">Dallas</a>, <a href="https://nynjfwc26.com/schedule/" target="_blank" rel="noopener">NY/NJ</a>, Atlanta).</li>
+   <li><b>Schedule, venues &amp; official results</b> — <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener">FIFA</a> (the official source of truth), cross-checked against <a href="https://www.nbcsports.com/soccer/world-cup/schedule-scores" target="_blank" rel="noopener">NBC Sports</a> and FIFA host-city sites (<a href="https://www.dallasfwc26.com/" target="_blank" rel="noopener">Dallas</a>, <a href="https://nynjfwc26.com/schedule/" target="_blank" rel="noopener">NY/NJ</a>, Atlanta).</li>
    <li><b>Live scores &amp; standings</b> — <a href="https://www.api-football.com/" target="_blank" rel="noopener">API-Football</a> via our Cloudflare Worker for the live layer, and <a href="https://www.espn.com/" target="_blank" rel="noopener">ESPN</a>'s public scoreboard for the committed results (it supplied the semi-finals onward). Both unofficial; FIFA remains canonical.</li>
    <li><b>FIFA World Ranking (#)</b> — the official <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noopener">FIFA/Coca-Cola Men's World Ranking</a> (snapshot 11 Jun 2026).</li>
    <li><b>Group odds (%)</b> — <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket</a>, a prediction market (live "to win the group" — informational only, not betting advice).</li>
    <li><b>Highlights</b> — official broadcaster uploads on YouTube (e.g. <a href="https://www.youtube.com/channel/UCwNqHDsnBCKT-olwJwIFyfg" target="_blank" rel="noopener">FOX Sports</a>); availability varies by region.</li>
-   <li><b>Live audio (USA)</b> — <a href="https://www.iheart.com/live/fifa-world-cup-2026-11554/" target="_blank" rel="noopener">iHeartRadio</a> (free FOX Sports English commentary).</li>
    <li><b>Social buzz</b> — <a href="https://x.com/search?q=%23FIFAWorldCup&f=live" target="_blank" rel="noopener">X (#FIFAWorldCup)</a>.</li>
    <li><b>TV listings (USA)</b> — <a href="https://www.foxsports.com/soccer/fifa-world-cup" target="_blank" rel="noopener">FOX Sports</a>.</li>
    <li><b>Kickoff times</b> — official Eastern kickoff times, converted to your device's timezone.</li>
@@ -1009,7 +1011,7 @@ function maybeRetryStats(fid){
  const d=statsCache[fid];
  /* clean empty can be transient (just kicked off, KV not warm yet) — retry a few times before giving up;
     retries hit the cheap KV read, so this is safe and recovers the "stuck unavailable" case. */
- if(d&&!statsErr(fid)&&((d._tries||0)>=5))return;
+ if(d&&((d._tries||0)>=5))return;
  const tries=(d&&d._tries)||0,wait=Math.min(10000*Math.pow(2,Math.min(tries,3)),80000);
  if(Date.now()-((d&&d._t)||0)>=wait)fetchStats(fid);
 }
@@ -1040,7 +1042,9 @@ function statsPanelHTML(fid,m){
   body+=content;
  }else if(!factsHTML){
   return '<div class="statload">'+(statsErr(fid)?'Match details aren’t loaded yet — they’ll appear here shortly.':'Match details aren’t available for this match yet.')+'</div>';
- }else body+='<div class="statnote">Detailed stats, timeline &amp; line-ups aren’t posted for this match yet.</div>';
+ }else body+='<div class="statnote">'+(archived()
+   ? 'Detailed stats are no longer available — the live feed was retired after the tournament.'
+   : 'Detailed stats, timeline &amp; line-ups aren’t posted for this match yet.')+'</div>';
  /* last-synced stamp: server time (cron/API sync) preferred, client fetch time as fallback — so stale data is visible, not silent */
  const ts=d.updated||(d._t?new Date(d._t).toISOString():null);
  if(ts)body+='<div class="statsync">⟳ Synced '+relTime(ts)+'</div>';
@@ -1175,7 +1179,7 @@ function sendFeedback(){
  const body=encodeURIComponent("Your feedback or idea:\n\n\n(Optional) phone / browser: ");
  location.href="mailto:"+a+"?subject="+sub+"&body="+body;
 }
-setTimeout(showNotifPrompt,4500);
+if(!archived())setTimeout(showNotifPrompt,4500);
 updateAlertPrefUI();
 const escA=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const favBtn=t=>RANK[t]?`<button class="fav${isFollowed(t)?" on":""}" type="button" data-team="${escA(t)}" aria-pressed="${isFollowed(t)}" aria-label="${isFollowed(t)?"Unfollow ":"Follow "}${escA(t)}" title="${isFollowed(t)?"Following — tap to unfollow":"Follow this team"}">${isFollowed(t)?"★":"☆"}</button>`:"";
@@ -1236,11 +1240,13 @@ const calSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 /* After the final, sections that only make sense during the tournament (buying tickets,
    enabling goal alerts that can no longer fire) are hidden rather than left contradicting
    the archive. Marked in the markup with class="dur" on the heading. */
+function archived(){return Date.now()>Date.UTC(2026,6,20);}
 function archiveMode(){
- if(Date.now()<=Date.UTC(2026,6,20))return;
+ if(!archived())return;
  const tl=document.getElementById("tagline");
  if(tl)tl.textContent="104 matches · every result · official highlights · 96 years of history";
  document.querySelectorAll("li.dur-li").forEach(el=>el.remove());   /* features that no longer exist */
+ document.getElementById("notifprompt")?.remove();  /* body-level, so the li sweep above misses it */
  document.querySelectorAll("#view-info h3.dur").forEach(hd=>{
   for(let el=hd;el;){const nx=el.nextElementSibling;el.style.display="none";
    if(!nx||nx.tagName==="H3")break;el=nx;}
@@ -1300,7 +1306,7 @@ async function loadNews(attempt){
   const r=await fetch(NEWS_API); const d=r.ok?await r.json():null;
   if(d&&d.items&&d.items.length){
    _newsLoaded=true;
-   box.innerHTML=d.items.map(n=>{var img=n.img?'<img class="nc-img" src="'+escA(n.img)+'" alt="" loading="lazy" onerror="newsImgErr(this)">':'';var time=n.pub&&relTime(n.pub)?' · '+relTime(n.pub):'';return '<a class="newscard'+(n.img?'':' noimg')+'" href="'+escA(/^https?:/i.test(n.link||"")?n.link:"#")+'" target="_blank" rel="noopener">'+img+'<div><span class="nt">'+escA(n.title)+'</span><span class="nm">'+escA(n.source||'')+time+'</span></div></a>';}).join("");
+   box.innerHTML=d.items.map(n=>{var img=(n.img&&/^https?:/i.test(n.img))?'<img class="nc-img" src="'+escA(n.img)+'" alt="" loading="lazy" onerror="newsImgErr(this)">':'';var time=n.pub&&relTime(n.pub)?' · '+relTime(n.pub):'';return '<a class="newscard'+(n.img?'':' noimg')+'" href="'+escA(/^https?:/i.test(n.link||"")?n.link:"#")+'" target="_blank" rel="noopener">'+img+'<div><span class="nt">'+escA(n.title)+'</span><span class="nm">'+escA(n.source||'')+time+'</span></div></a>';}).join("");
    return;
   }
  }catch(e){}
@@ -1407,7 +1413,7 @@ function renderList(){
   const dh=dispTeam(m,"home"),da=dispTeam(m,"away");
   const c=document.createElement("div");c.className="card"+((isFollowed(dh.name)||isFollowed(da.name))?" following":"");c.style.setProperty("--c",STAGE_COLOR[m.stage]);c.dataset.n=m.n;
   const rkx=t=>RANK[t]?` <span class="rk">#${RANK[t]}</span>`:"";
-  const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${t}</button>`;
+  const tk=t=>`<button type="button" class="teamlink" data-squad="${escA(t)}" title="View ${escA(t)} squad">${escA(t)}</button>`;
   const es=cardScore(m.n),ew=koWinner(es);
   const tsc=(v,lose)=>es?`<span class="tscore${lose?" lose":""}">${v==null?"–":v}</span>`:"";   /* inline score next to each team for live/finished matches */
   // knockout slots resolve to real/projected teams (same engine as the bracket); unresolved keeps the seed label
@@ -1425,7 +1431,7 @@ function renderList(){
    if(isOngoing(es.s))c.classList.add("live");
    const t=liveTag(es,m.n);
    right+=`<div class="result${t.cls}">${t.dot?'<span class="livedot"></span>':""}${t.pill||(es.h+"–"+es.a)}</div>`;
-   if(es.fid)right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
+   if(es.fid&&!archived())right+=`<button class="statsbtn" type="button" data-n="${m.n}" data-fid="${es.fid}" aria-expanded="${openStats.has(m.n)}" aria-controls="stats-${m.n}">📊 ${openStats.has(m.n)?"Hide stats":"Match stats"}</button>`;
    if(es.s==="FINISHED")right+=`<button class="statsbtn hlbtn" type="button" data-n="${m.n}" data-h="${escA(dh.name)}" data-a="${escA(da.name)}">🎬 Highlights</button>`;
   }
   if(off)right+=`<div class="result off">${off}</div>`;
@@ -1534,7 +1540,7 @@ function renderStandings(){
   box.appendChild(card);
  });
  renderThirdRace();
- if(!pmLoaded)fetchPolymarket();
+ if(!pmLoaded&&!archived())fetchPolymarket();   /* markets have resolved: 100%/0% reads as a live forecast */
 }
 /* The 48-team format's signature twist: the 8 best 3rd-placed teams (of 12) also reach the Round of 32.
    Fans can't easily track this anywhere — so rank all 12 third-placed teams by FIFA's tiebreakers (Pts → GD → GF). */
@@ -1744,7 +1750,7 @@ function activateTab(t,fromHash){
  document.getElementById("view-"+currentView).classList.remove("hide");
  render();
  if(currentView==="buzz")loadNews();   /* lazy: fetch headlines only when the Buzz tab is opened */
- if(currentView==="standings")loadTopScorers();
+ if(currentView==="standings"&&!archived())loadTopScorers();  /* /topscorers: plan has no access to this season */
  if(currentView==="recap")renderRecap();
  if(currentView==="history")renderHistoryTab();   /* lazy: history dataset only when the tab is opened */
  if(currentView==="feedback")fwLoad();   /* lazy: fan-wall comments only when the Feedback tab is opened */   /* lazy: Golden Boot race only when Standings is opened */
@@ -1825,7 +1831,8 @@ function observeWx(){
  if(v){const t=tabFor(v);if(t){if(v!==currentView)activateTab(t,true);return;}}   /* shared #hash wins (e.g. .../worldcup2026/#highlights); unknown hash falls through */
  /* No hash: during the tournament the schedule is what people came for; once it's over the
     story is. Land on the recap instead of a list of matches that have all been played. */
- if(Date.now()>Date.UTC(2026,6,20)){const t=document.getElementById("tab-recap");if(t)activateTab(t,true);}
+ if(archived()){const t=document.getElementById("tab-recap");
+  if(t){history.replaceState(null,"","#recap");activateTab(t,true);}}
 })();
 archiveMode();render();fetchLive();fetchHighlights();
 /* fun footer visit counter (free Abacus API; counts page views; fails silently if the service is down) */

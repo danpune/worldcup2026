@@ -56,6 +56,11 @@ try:
         fails.append("Worker /scores errors: %s" % errs)
     elif not d.get("count"):
         fails.append("Worker /scores returned 0 fixtures")
+    elif d["count"] < 104:
+        # The tournament is over: 104 is the whole of it. Anything less means the
+        # worker is serving a stale mid-tournament snapshot, which is what
+        # "102 fixtures" was quietly reporting as healthy.
+        warns.append("Worker /scores: %s fixtures, expected 104 (stale snapshot)" % d["count"])
     else:
         oks.append("Worker /scores: %s fixtures" % d["count"])
 except Exception as e:
@@ -80,10 +85,14 @@ try:
         raise ValueError("status unavailable (%s)" % (parsed.get("errors") or "empty response"))
     sub, req = r.get("subscription", {}), r.get("requests", {})
     cur, lim = req.get("current", 0), req.get("limit_day", 0) or 0
-    if not sub.get("active"):
+    # "active" cannot tell a working paid plan from one auto-downgraded to Free.
+    # Free has no access to this season, so it reported "plan active (Free)" as a
+    # pass while every /match and /topscorers call was failing.
+    if not sub.get("active") or str(sub.get("plan", "")).strip().lower() == "free":
         # Accepted state since Jul 14 2026: the plan lapsed mid-tournament by choice;
         # fetch_scores.py carries scores via the ESPN fallback. Warn, don't page.
-        warns.append("API-Football plan inactive (accepted — ESPN fallback carries scores)")
+        warns.append(f"API-Football plan not usable for 2026 (plan={sub.get('plan')!r}, "
+                     "accepted — ESPN fallback carries scores)")
     else:
         oks.append("API-Football plan active (%s)" % sub.get("plan"))
     if lim:
@@ -175,7 +184,7 @@ except Exception as e:
 
 # Report
 status = "FAIL" if fails else ("WARN" if warns else "OK")
-lines = ["## Health check: **%s** — %sZ" % (status, datetime.datetime.utcnow().isoformat(timespec="seconds")), ""]
+lines = ["## Health check: **%s** — %sZ" % (status, datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")), ""]
 lines += ["- ❌ %s" % x for x in fails]
 lines += ["- ⚠️ %s" % x for x in warns]
 lines += ["- ✅ %s" % x for x in oks]
